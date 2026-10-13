@@ -1,0 +1,407 @@
+{
+  "_说明": "两级分类规则库。**分类只能从这里取，不允许运行时自由创建**。发现新类型时写入 data/taxonomy-suggestions.json，由人批准后才加入本文件。",
+  "_版本": "1.5.0",
+  "_更新时间": "2026-10-13",
+  "_变更记录": [
+    "1.3.1（2026-10-13）：AI办公 补 powerpoint / keynote。原因：效率/笔记 的关键词 \"note\" 会子串命中同义词 \"keynote\"，且匹配取最长命中，导致 PowerPoint 替代品 storytold/deckcraft 被误判为「效率/笔记」（实测影响 1 条）。"
+  ],
+  "_设计原则": [
+    "一级分类面向用途（用户想干什么），不是面向技术。",
+    "二级分类要能被普通用户直接看懂，不用术语。",
+    "同一个项目只落一个二级分类（取匹配分最高的）。",
+    "**匹配顺序**：先看强信号（人话层的 功能标签 / 用户搜索词 / 同义词）；强信号一条都不中，再看弱信号（描述 / GitHub topics / 仓库名）。",
+    "**台账备注只在「描述与 topics 都为空」且项目未被淘汰时兜底** —— 备注常是剔除理由或元信息，当特征用会把电子书判成「AI办公」。",
+    "**同一档内按「最长关键词」优先，不是按书写顺序**（2026-10-13 修正：原说明写的『按顺序匹配』与代码不符）。",
+    "**ASCII 关键词 ≤4 字符必须整词匹配**（book 不能匹配 bookmark）；**中文关键词不做整词匹配**（中文没有词边界，'表格' 要能匹配「表格软件」）。"
+  ],
+  "一级分类": {
+    "AI": {
+      "说明": "和人工智能相关的工具",
+      "children": {
+        "AI聊天": [
+          "chatbot",
+          "chat bot",
+          "对话",
+          "聊天机器人",
+          "ai assistant",
+          "llm chat",
+          "conversation"
+        ],
+        "AI绘画": [
+          "出图",
+          "电商图",
+          "多模态",
+          "画图",
+          "绘画",
+          "绘图",
+          "抠图",
+          "去背景",
+          "商品图",
+          "提示词",
+          "图片处理",
+          "图片生成",
+          "图像编辑",
+          "图像理解",
+          "图像生成",
+          "文生图",
+          "comfyui",
+          "diffusion",
+          "drawing",
+          "illustration",
+          "image generation",
+          "inpainting",
+          "stable diffusion",
+          "text-to-image"
+        ],
+        "AI视频": [
+          "动画",
+          "短剧",
+          "分镜",
+          "漫剧",
+          "视频创作",
+          "视频生成",
+          "影视",
+          "ai video",
+          "animation",
+          "text-to-video",
+          "video generation"
+        ],
+        "AI写作": [
+          "writing assistant",
+          "写作",
+          "文案",
+          "copywriting",
+          "summariz"
+        ],
+        "AI Agent": [
+          "代理",
+          "助手",
+          "自动化助手",
+          "agent",
+          "ai-agent",
+          "assistant agent",
+          "automation agent",
+          "autonomous",
+          "mcp",
+          "planning",
+          "skill"
+        ],
+        "本地模型": [
+          "local llm",
+          "localai",
+          "本地跑",
+          "local model",
+          "gguf",
+          "ollama",
+          "llama.cpp",
+          "inference",
+          "推理引擎",
+          "本地大模型"
+        ],
+        "模型训练": [
+          "fine-tune",
+          "finetune",
+          "training",
+          "微调",
+          "训练",
+          "lora",
+          "unsloth",
+          "trl"
+        ],
+        "AI办公": [
+          "笔记",
+          "表格",
+          "幻灯片",
+          "文档",
+          "文档处理",
+          "演示",
+          "ppt",
+          "powerpoint",
+          "keynote"
+        ]
+      }
+    },
+    "设计": {
+      "说明": "图像、建模、界面设计类",
+      "children": {
+        "图片处理": [
+          "裁剪",
+          "查看器",
+          "截图",
+          "看图",
+          "抠图",
+          "去背景",
+          "水印",
+          "图片编辑",
+          "图片查看",
+          "修图",
+          "background removal",
+          "image edit",
+          "image viewer",
+          "photo edit",
+          "photo editor",
+          "screenshot",
+          "viewer"
+        ],
+        "建模": [
+          "3d",
+          "cad",
+          "建模",
+          "render",
+          "渲染",
+          "blender",
+          "mesh"
+        ],
+        "UI设计": [
+          "ui",
+          "ux",
+          "design system",
+          "figma",
+          "界面设计",
+          "prototype",
+          "svg",
+          "icon"
+        ]
+      }
+    },
+    "效率": {
+      "说明": "让日常做事更快更省事的工具",
+      "children": {
+        "文件管理": [
+          "备份",
+          "本地索引",
+          "内容搜索",
+          "全文检索",
+          "索引搜索",
+          "同步",
+          "文件管理",
+          "文件搜索",
+          "语义搜索",
+          "云盘",
+          "找文件",
+          "整理",
+          "cleanup",
+          "file manage",
+          "file search",
+          "search tool",
+          "semantic search",
+          "spotlight"
+        ],
+        "自动化": [
+          "automation",
+          "automate",
+          "workflow",
+          "自动化",
+          "schedul",
+          "rpa",
+          "browser automation",
+          "网页自动化"
+        ],
+        "笔记": [
+          "笔记",
+          "待办",
+          "规划",
+          "记录",
+          "旅行",
+          "行程",
+          "知识管理",
+          "knowledge base",
+          "markdown",
+          "note",
+          "obsidian",
+          "planning",
+          "todo"
+        ],
+        "系统工具": [
+          "操作系统",
+          "监控",
+          "剪贴板",
+          "快捷",
+          "启动器",
+          "系统",
+          "桌面",
+          "clipboard",
+          "desktop",
+          "desktop utility",
+          "launcher",
+          "monitor",
+          "os",
+          "shortcut"
+        ]
+      }
+    },
+    "开发": {
+      "说明": "给写代码的人用的工具",
+      "children": {
+        "编程助手": [
+          "coding agent",
+          "code assistant",
+          "编程助手",
+          "写代码",
+          "ai coding",
+          "codex",
+          "copilot",
+          "harness"
+        ],
+        "代码分析": [
+          "code quality",
+          "static analysis",
+          "refactor",
+          "代码分析",
+          "code intelligence",
+          "dead code",
+          "依赖分析",
+          "lint"
+        ],
+        "开发工具": [
+          "包管理",
+          "编译",
+          "构建",
+          "脚手架",
+          "命令行",
+          "移植",
+          "build tool",
+          "cli",
+          "command-line",
+          "debug",
+          "developer-tools",
+          "git",
+          "port"
+        ],
+        "框架库": [
+          "framework",
+          "library",
+          "sdk",
+          "runtime",
+          "parser",
+          "compiler"
+        ]
+      }
+    },
+    "学习": {
+      "说明": "教程、课程、参考资料",
+      "children": {
+        "教程文档": [
+          "tutorial",
+          "教程",
+          "guide",
+          "指南",
+          "course",
+          "课程",
+          "book",
+          "roadmap"
+        ],
+        "数据集资源": [
+          "dataset",
+          "数据集",
+          "awesome",
+          "collection",
+          "resource",
+          "prompt library",
+          "案例集"
+        ]
+      }
+    },
+    "数据": {
+      "说明": "数据存储、分析、处理",
+      "children": {
+        "数据库存储": [
+          "database",
+          "数据库",
+          "storage",
+          "存储",
+          "duckdb",
+          "sqlite",
+          "vector db",
+          "向量"
+        ],
+        "数据分析": [
+          "analytics",
+          "分析",
+          "etl",
+          "data workspace",
+          "数据工作台",
+          "bi",
+          "dashboard"
+        ]
+      }
+    },
+    "安全": {
+      "说明": "安全与隐私相关",
+      "children": {
+        "安全工具": [
+          "security",
+          "安全",
+          "encrypt",
+          "加密",
+          "firewall",
+          "防火墙",
+          "vpn",
+          "password",
+          "密码"
+        ],
+        "隐私工具": [
+          "privacy",
+          "隐私",
+          "anonym",
+          "匿名",
+          "block",
+          "拦截"
+        ]
+      }
+    },
+    "运维": {
+      "说明": "部署、托管、监控",
+      "children": {
+        "部署托管": [
+          "deploy",
+          "部署",
+          "docker",
+          "kubernetes",
+          "self-hosted",
+          "自托管",
+          "hosting"
+        ],
+        "监控日志": [
+          "observability",
+          "metrics",
+          "日志",
+          "logging",
+          "alert",
+          "trace",
+          "uptime"
+        ]
+      }
+    },
+    "DSH 生态": {
+      "说明": "DeepSeek Harness（DSH）本体的插件与周边工具",
+      "children": {
+        "DSH 插件": [
+          "dsh-plugin",
+          "dsh-plugins",
+          "dsh-plugin-market",
+          "dsh",
+          "deepseek-harness",
+          "cordis-plugin"
+        ],
+        "DSH 技能": [
+          "agent-skills",
+          "agent-skill",
+          "agent-tools",
+          "skill"
+        ],
+        "DSH 配置": [
+          "dsh-config",
+          "配置",
+          "quota",
+          "billing"
+        ]
+      }
+    }
+  },
+  "_其他分类": {
+    "说明": "以上都匹配不到时归入「其他 → 其他工具」。**不要因为归不进去就临时新建分类**；如果某个方向反复出现，走候选分类流程。",
+    "一级": "其他",
+    "二级": "其他工具"
+  }
+}
