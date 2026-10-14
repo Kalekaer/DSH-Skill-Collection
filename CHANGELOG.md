@@ -9,8 +9,40 @@
 |---|---|
 | SKILL.md | 438 行 / 44275 B |
 | SHA256 | 0F56C96F58FC6CEE1067FCF819318E2E11EC9B0C0D58A872BEF01CF7DAAF3FEB |
-| 校验 | 130 项全通过（`audit.ps1`） |
+| 校验 | 137 项全通过（`audit.ps1`） |
 | 定版日期 | 2026-10-13 |
+
+---
+
+## [5.2.0] — 2026-10-14 · 发布包实测修复 + 自检补强
+
+起因：发布包上线后做了一次**「陌生人视角」实测**——把包复制成全新副本（无 `data/seen.jsonl`），逐个跑全部工具、逐条核对文档链接与命令。修掉 4 个 bug，补 6 条自检。
+
+### 修复
+
+| # | Bug | 现象（实测） | 修法 |
+|---|---|---|---|
+| 1 | `tools/sync-projects.ps1` 空输入崩溃 | 发布包没有 `data/seen.jsonl` → `$projects` 为空 → `WriteAllLines` 收到 `$null`，抛 .NET `Value cannot be null. (Parameter 'contents')`，退出码 1，且**先落了 `data/_backup` 副作用** | 顶部加「无原始层」降级分支（说明原因 + 零副作用 `exit 0`）；`$projLines` / `$evLines` 一律 `@()` 数组化 |
+| 2 | `tools/check-config.ps1 -StatusRoundTrip -Restore` 在发布包上 FAIL | README 第 7 节让用户跑这条命令，却因台账不存在报「测试目标存在于台账 = FAIL」→ `exit 1`（官方命令在官方包上自带红灯） | demo 判据下**显式跳过**往返测试（不适用 ≠ 失败）；台账里找不到指定目标时退化为「台账首行」；`Get-Content` 前加 `Test-Path` 守卫（不再打印「找不到路径」红字） |
+| 3 | `audit.ps1` 第 13 节失明 | 把**不存在**的 `TABLE.md` 一起传给 `Select-String`，PowerShell 报错后**匹配结果被吞** → 「表格名唯一」永远 0 命中 → 恒 SKIP，README 写错表格名也测不出来 | 只扫真实存在的文件，让「文档里 `.univer` 文件名只有一个」**真跑**；`TABLE.md` 缺失仍显式 SKIP（保留原语义） |
+| 4 | 交付链路缺 `git add` / `commit` | `发布测试\2-推送-走代理.cmd` 只有 fetch → merge → push → **新截图、新文档永远推不上去**（线上 README 破图、文档停在旧版） | 新增 `发布测试\4-提交并推送.cmd`：`add -A` → `commit` → `fetch` → `merge` → `push` |
+
+### 发布包补齐
+
+- `data/picks/README.md`（picks 目录说明）→ 顺手修掉 `references/schema-migration.md` 指向它的死引用；
+- `data/snapshots/.gitkeep`（**git 不跟踪空目录**，不加占位的话 clone 后首次运行无处可写）；
+- 文档口径重写：`README.md` 分「演示包 / 你自己的库」两套路径、删 9 处死链、新增第 0 节「先让 DSH 认得这两个技能」、自检数字从 `58 / 126 / 17` 三种说法统一为实测值；`QUICKSTART.md` 同步（143/88 → 15/14）。
+
+### 自检补强（`audit.ps1` 新增第 23 节 · 6 项）
+
+1. 文档里的相对链接全部存在（含 3 张截图）——本轮 9 处死链就是这么被抓出来的
+2. `README` 声明的校验项数与 `TOTAL_CHECKS` 一致——防再次出现 58/126/129 三种说法
+3. `README` 是「演示包」口径（只对 demo 副本检查，含「演示包」+15 条、不得写个人库规模 143）
+4. `data\picks` 与 `data\snapshots` 目录存在（首次运行要往里写）
+5. `sync-projects` 有「无原始层」降级分支 + 数组化写入（防 bug 1 复发）
+6. 投递脚本含 `git add` + `commit`（防 bug 4 复发；发布包无 `发布测试\` 时 SKIP）
+
+**校验项数 130 → 137。** 发布包副本应得 **135 通过 / 2 跳过 / 0 失败**（两个 SKIP 都按设计：`.univer` 个人表不发布、投递脚本只在原库存在）。
 
 ---
 
