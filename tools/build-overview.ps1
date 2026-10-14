@@ -132,11 +132,14 @@ $evJsonStr = if ($evMap.Count) { $evJson | ConvertTo-Json -Depth 5 -Compress } e
 # 角色与「为什么需要这一步」是人工写的一次性内容（data/plans.json）；
 # 具体填哪个工具由页面**按 l2/ft 从本地库自动匹配**——数据驱动，不编造。
 $plansJson = '[]'
+$planCount = 0   # hero 文案里的「N 个工作方案」用它（2026-10-14 修复：原来硬编码 143 个项目 / 11 个方案，
+                 # demo 页面于是自称「143 个项目」而页面实际只有 15 条 —— 数字必须由数据算出来）
 $plansPath = P 'data\plans.json'
 if (Test-Path $plansPath) {
   try {
     $pj = Get-Content $plansPath -Raw -Encoding UTF8 | ConvertFrom-Json
     $plansJson = ConvertTo-Json -InputObject @($pj.plans) -Depth 8 -Compress
+    $planCount = @($pj.plans).Count
   } catch { Write-Warning "plans.json 解析失败，方案区将为空：$($_.Exception.Message)" }
 }
 if (-not $plansJson -or $plansJson -eq 'null') { $plansJson = '[]' }
@@ -332,7 +335,7 @@ table.cmpt td:first-child{color:var(--dim);white-space:nowrap;background:#181d26
 </header>
 <div class="wrap">
   <section id="hero">
-    <h2>👋 欢迎来到你的开源工具库 <em>143 个项目 · 11 个工作方案 · 全部本地、双击即用</em></h2>
+    <h2>👋 欢迎来到你的开源工具库 <em>$totalN 个项目 · $planCount 个工作方案 · 全部本地、双击即用</em></h2>
     <div class="catbox">
       <div class="items">
         <span class="chip" onclick="document.getElementById('q').value='做视频';render();document.getElementById('q').scrollIntoView({block:'center'})">🔍 试试搜「做视频」</span>

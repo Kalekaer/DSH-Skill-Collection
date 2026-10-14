@@ -18,7 +18,7 @@ $dread = Join-Path $root 'data\README.md'
 $script:pass = 0; $script:fail = 0; $script:skip = 0
 # 本脚本的检查项总数。**新增/删除 Chk 时必须同步改这里**，并同步 CHANGELOG.md 与 README.md 里的「N 项」，
 # 否则第 17 节会报 FAIL —— 这是故意设计的，防止校验项被悄悄删掉而无人察觉。
-$script:TOTAL_CHECKS = 137
+$script:TOTAL_CHECKS = 139
 function Chk([string]$name, [bool]$ok, [string]$detail = '') {
   if ($ok) { $script:pass++; Write-Host ("  [PASS] {0}" -f $name) -ForegroundColor Green }
   else     { $script:fail++; Write-Host ("  [FAIL] {0} {1}" -f $name, $detail) -ForegroundColor Red }
@@ -601,6 +601,33 @@ if (Test-Path $deliverDir) {
       "缺 add/commit=$(-not $okCmd)；行尾异常: $($badEol -join ', ')"
 } else {
   Skip "投递脚本含 git add + commit（否则新增文件推不上去）" "发布包不含 发布测试\ 目录（仅原库有）"
+}
+
+# ---------- 页面自述数字 & 截图源页（2026-10-14 新增）----------
+# 两起事故：① hero 文案把「143 个项目」硬编码在 build-overview.ps1 里 → demo 页面头部写「共 15 个工具」，
+#             hero 却自称「143 个项目」；② 截图源页直接拿**个人库页面**生成，把真实工作区名拍进了公开仓库。
+$ovPath = Join-Path $root 'overview.html'
+$heroN = $null
+if (Test-Path $ovPath) {
+  $ov = Get-Content $ovPath -Raw -Encoding UTF8
+  if ($ov -match '欢迎来到你的开源工具库 <em>(\d+) 个项目') { $heroN = [int]$Matches[1] }
+}
+$projN = @(Get-Content (Join-Path $root 'data\projects.jsonl') -Encoding UTF8 | Where-Object { $_.Trim() }).Count
+Chk "页面 hero 自述项目数 = 主档案条数（$projN）" ($heroN -eq $projN) "hero 写的是 $heroN"
+
+$shotDir = Join-Path $root '发布测试\_shots'
+if (Test-Path $shotDir) {
+  $projIds = @(Get-Content (Join-Path $root 'data\projects.jsonl') -Encoding UTF8 | Where-Object { $_.Trim() } | ForEach-Object { ($_ | ConvertFrom-Json).id })
+  $shotBad = @()
+  foreach ($f in (Get-ChildItem $shotDir -Filter '*.html' -File)) {
+    $st = Get-Content $f.FullName -Raw -Encoding UTF8
+    $ids = @([regex]::Matches($st, '"id":"([^"]+/[^"]+)"') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
+    $notDemo = @($ids | Where-Object { $projIds -notcontains $_ })
+    if ($notDemo.Count -gt 0) { $shotBad += "$($f.Name)→$($notDemo -join ',')" }
+  }
+  Chk "截图源页只含 demo 项目（防再把个人库页面拍进去）" ($shotBad.Count -eq 0) ($shotBad -join '; ')
+} else {
+  Skip "截图源页只含 demo 项目（防再把个人库页面拍进去）" "发布包不含 发布测试\_shots\（仅原库有）"
 }
 
 # 总项数核对：**刻意不放进 Chk 计数器**（否则自我指涉、恒差一）
