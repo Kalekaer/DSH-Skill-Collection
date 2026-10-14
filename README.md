@@ -43,7 +43,7 @@
 
 ![根据目标组合工具，而不是收藏链接](docs/screenshots/3-workspace.png)
 
-> 上图是 **demo 数据**的页面（15 条公开项目；工作区那张是**示例态** —— demo 里 `data/workspaces.jsonl` 为空，所以「📌 我的工作区」一开始是 0 个）。拍摄说明见 [docs/screenshots/README.md](docs/screenshots/README.md)。
+> 上图是 **demo 数据**的页面（15 条公开项目）。第 3 张是**示例态**：demo 包里 `data/workspaces.jsonl` 为空（「📌 我的工作区」一开始是 0 个），截图时临时注入了一个**只含 demo 项目**的示例工作区。拍摄说明见 [docs/screenshots/README.md](docs/screenshots/README.md)（**截图源页只允许用 demo 数据生成** —— 这条有自检兜着）。
 > 下面是每张图要展示的内容与图注：
 
 | 图 | 展示什么 | 图注 |
@@ -274,13 +274,13 @@ github-daily-picks/                 ← 解压出来的仓库根目录
 | 星数看起来不对 | 日报头部「抓取时间」 | 数据是快照时点，不是实时 |
 | 定时没触发 | 第 1 节限制 | **DSH 必须开着**；关闭期间不跑 |
 | 配置改了没效果 | 跑 `check-config.ps1` | 字段名写错，或改到了不生效的 `schedule` |
-| 想确认文件没互相矛盾 | 跑 `audit.ps1` | 137 项不变量，报红=文档打架 |
+| 想确认文件没互相矛盾 | 跑 `audit.ps1` | 139 项不变量，报红=文档打架 |
 | **页面点不动 / 交互坏了** | 跑 `check-page.ps1` | 它**真执行页面 JS**——单文件页面的 JS 出错时页面照常渲染，只有真跑才暴露 |
 
 **三条自检命令**（改完任何东西都该跑）：
 
 ```powershell
-# 1) skill 自身一致性（137 项不变量；本演示包应得 135 通过 / 2 跳过 / 0 失败，退出码 0）
+# 1) skill 自身一致性（139 项不变量；本演示包应得 136 通过 / 3 跳过 / 0 失败，退出码 0）
 & ".dsh\skills\github-daily-picks\audit.ps1"
 
 # 2) 配置 + 状态读写往返（本演示包应得 15 通过 / 0 失败）
