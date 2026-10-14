@@ -1,0 +1,14 @@
+{"full_name":"robbietilton/Compositor","function_tags":["图片编辑","修图","照片处理"],"user_keywords":["修图","改照片","p图","做图","抠图","调色"],"synonyms":["photoshop 替代","图像编辑","photo editor"],"written_at":"2026-10-13"}
+{"full_name":"browser-use/jev-ultrafast","function_tags":["网页自动化","浏览器代理","AI代理"],"user_keywords":["自动点网页","网页操作","爬数据","自动填表","代替我点"],"synonyms":["web agent","browser automation","RPA"],"written_at":"2026-10-13"}
+{"full_name":"storytold/photocraft","function_tags":["图片编辑","修图","照片处理"],"user_keywords":["修图","改照片","免费ps","批量调色"],"synonyms":["photoshop 替代","image editor","Rust 图像"],"written_at":"2026-10-13"}
+{"full_name":"Niko1221/Strata","function_tags":["本地大模型","推理引擎","OpenAI 兼容"],"user_keywords":["本地跑模型","离线ai","自己电脑跑ai","私有模型"],"synonyms":["local llm","inference","本地部署模型"],"written_at":"2026-10-13"}
+{"full_name":"easydiffusion/easydiffusion","function_tags":["AI绘画","本地生成","一键安装"],"user_keywords":["画图","ai画图","本地绘画","一键生成图片","免费画图"],"synonyms":["stable diffusion","文生图","local ai art"],"written_at":"2026-10-13"}
+{"full_name":"ImageMagick/ImageMagick","function_tags":["图片处理","批量转换","命令行工具"],"user_keywords":["批量压缩图片","图片格式转换","批量改尺寸","处理图片"],"synonyms":["imagemagick","convert","批量图片"],"written_at":"2026-10-13"}
+{"full_name":"unslothai/unsloth","function_tags":["模型微调","训练加速","本地训练"],"user_keywords":["微调模型","训练自己的模型","省显存","本地训练"],"synonyms":["fine-tune","LoRA","微调"],"written_at":"2026-10-13"}
+{"full_name":"mudler/LocalAI","function_tags":["本地模型","OpenAI兼容","自建服务"],"user_keywords":["本地跑模型","离线ai","自建ai服务","替代openai"],"synonyms":["local llm","自托管","私有部署"],"written_at":"2026-10-13"}
+{"full_name":"HBAI-Ltd/Toonflow-app","function_tags":["短剧制作","漫画生成","内容创作"],"user_keywords":["做短剧","做漫画","小说改编","生成剧集"],"synonyms":["short drama","comic","漫剧"],"written_at":"2026-10-13"}
+{"full_name":"storytold/wordcraft","function_tags":["文档编辑","办公软件","替代Word"],"user_keywords":["写文档","word替代","免费办公","写报告"],"synonyms":["word","文档处理","office"],"written_at":"2026-10-13"}
+{"full_name":"storytold/pdfcraft","function_tags":["PDF工具","阅读编辑","文档处理"],"user_keywords":["看pdf","改pdf","合并pdf","pdf怎么编辑"],"synonyms":["pdf reader","pdf editor","拆pdf"],"written_at":"2026-10-13"}
+{"full_name":"storytold/filmcraft","function_tags":["视频剪辑","剪辑软件","替代Premiere"],"user_keywords":["剪视频","视频剪辑","剪片子","合成视频"],"synonyms":["video editor","premiere","剪辑"],"written_at":"2026-10-13"}
+{"full_name":"yetone/magpie","function_tags":["模型路由","Agent 工具","开发辅助"],"user_keywords":["换模型","codex 用 deepseek","模型切换","接模型"],"synonyms":["model router","LLM gateway","模型网关"],"written_at":"2026-10-13"}
+{"full_name":"NandhaKishorM/laya","function_tags":["非自回归决策引擎","需自取权重","上手成本高"],"user_keywords":["非自回归决策引擎","需自取权重","上手成本高"],"synonyms":[],"source":"auto(topics+descr)","written_at":"2026-10-13"}

@@ -1,0 +1,26 @@
+{
+  "_说明": "太宽的词：出现在**弱信号**（GitHub topics / 描述 / 仓库名）里不足以定分类；出现在**强信号**（人写的人话层标签）里仍然算数。",
+  "_为什么": "Bug 测试报告 B7：一个 mcp topic 把 WebGPU 组件库判成 AI Agent；desktop topic 把本地音频工具判成系统工具。",
+  "_维护": "这些词**不能从 taxonomy 删掉**——它们仍是有效关键词（mcp/agent 是 AI Agent 的主要信号），只是不能在弱信号里单独定分类。",
+  "_形态词规则": "名字里有 OS / Framework / Platform / SDK / Library 等**形态词**不决定分类，看它解决的问题（用户 2026-10-14 定）。例：AI Agent OS → AI Agent；文件管理 OS 工具 → 系统工具；Linux 发行版 → 看用途。这些词在**弱信号**里降权，只在没有别的信号时兜底。",
+  "wide": [
+    "mcp",
+    "agent",
+    "agents",
+    "os",
+    "cli",
+    "automation",
+    "desktop",
+    "desktop-app",
+    "api",
+    "plugin",
+    "tool",
+    "tools",
+    "framework",
+    "platform",
+    "sdk",
+    "library",
+    "app"
+  ],
+  "_版本": "1.1.0"
+}

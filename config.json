@@ -1,0 +1,122 @@
+{
+  "_说明": "推荐偏好配置（机器可读）。这是 RUBRIC.md 的可调参数层，不替代它。硬性排除、每维分值、分档阈值仍在 RUBRIC.md；本文件的 fail_closed 会自动校验两边不冲突，冲突时以 RUBRIC.md 为准。",
+  "_版本": "1.1.0",
+  "_更新时间": "2026-10-13",
+
+  "output": {
+    "daily_limit": 5,
+    "hard_max": 8,
+    "s_tier_max": 3,
+    "skill_level": "beginner",
+    "detail_mode": "quick",
+    "zh_only": true,
+    "min_score_S": 80,
+    "min_score_A": 65,
+    "short_push_target_chars": 400,
+    "short_push_top_n": 3
+  },
+
+  "sources": {
+    "search_min_calls": 3,
+    "search_max_calls": 4,
+    "verify_max_calls": 5,
+    "daily_api_ceiling": 9,
+    "allow_token": true,
+    "forbid_local_direct_connect": true,
+    "topics_by_weekday": {
+      "周一": "ai-agent",
+      "周二": "mcp",
+      "周三": "self-hosted",
+      "周四": "windows",
+      "周五": "automation",
+      "周六": "developer-tools",
+      "周日": "llm"
+    },
+    "extra_queries": { "周三": "cli", "周六": "cli" }
+  },
+
+  "filters": {
+    "exclude_topics": [
+      "awesome", "awesome-list", "roadmap", "books", "interview-questions",
+      "tutorial", "course", "cheatsheet", "collection"
+    ],
+    "min_stars": 150,
+    "max_stars": null,
+    "min_forks": 0,
+    "require_license": false,
+    "max_days_since_commit": 180,
+    "exclude_archived": true,
+    "exclude_fork": true,
+    "exclude_empty_description": true,
+    "detect_star_farming": true,
+    "star_farm_fork_ratio": 0.02
+  },
+
+  "dedup": {
+    "recommend_cooldown_days": 30,
+    "dropped_cooldown_days": 90,
+    "same_owner_cooldown_days": 3,
+    "note": "same_owner_cooldown_days=3 表示同一 owner 3 天内最多出现 1 个；门径以 RUBRIC.md 第 5 节为准，本值会自动参与 tools/check-config.ps1 的一致性校验。"
+  },
+
+  "language": {
+    "preferred": ["Python", "TypeScript", "Rust", "Go", "JavaScript", "Swift", "C++", "Kotlin", "HTML", "Shell"],
+    "exclude": [],
+    "penalize": []
+  },
+
+  "license": {
+    "whitelist": ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "MPL-2.0", "Unlicense", "CC0-1.0"],
+    "warn": ["GPL-2.0", "GPL-3.0", "LGPL-2.1", "LGPL-3.0", "AGPL-3.0"],
+    "block": [],
+    "note": "warn 不是排除，是在条目里加风险提示；block 留空，需要时再启用。"
+  },
+
+  "risk": {
+    "fail_closed": true,
+    "max_allowed": "中",
+    "note": "fail_closed=true 时，任何无法核实来源/凭据/供应链的候选按最保守口径处理；风险等级为「高」的候选不进推荐区。"
+  },
+
+  "notify": {
+    "channels": ["console"],
+    "webhook_url": null,
+    "on_success": false,
+    "on_failure": true,
+    "note": "DSH 没有通用 HTTP POST 工具，webhook 目前无法自动投递；见 reports/验收测试报告-2026-10-12.md 第 10 项。"
+  },
+
+  "schedule": {
+    "enabled": false,
+    "daily_time": "09:00",
+    "timezone": "Asia/Shanghai",
+    "note": "定时提醒绑定当前 DSH 会话；DSH 关闭时不触发。启用需你单独确认。"
+  },
+
+  "subscriptions": [
+    { "name": "Niko1221/Strata", "url": "https://github.com/Niko1221/Strata" },
+    { "name": "rociiu/talorys", "url": "https://github.com/rociiu/talorys" },
+    { "name": "QingYunA/answer-me-with-html", "url": "https://github.com/QingYunA/answer-me-with-html" },
+    { "name": "zhongerxin/iPhone-use", "url": "https://github.com/zhongerxin/iPhone-use" },
+    { "name": "browser-use/jev-ultrafast", "url": "https://github.com/browser-use/jev-ultrafast" },
+    { "name": "storytold/photocraft", "url": "https://github.com/storytold/photocraft" },
+    { "name": "MichaelKinsy/PiG", "url": "https://github.com/MichaelKinsy/PiG" },
+    { "name": "shihabal3amri/DiPlay", "url": "https://github.com/shihabal3amri/DiPlay" },
+    { "name": "ARahim3/DigUp", "url": "https://github.com/ARahim3/DigUp" },
+    { "name": "yetone/magpie", "url": "https://github.com/yetone/magpie" },
+    { "name": "liseami/CCBaga", "url": "https://github.com/liseami/CCBaga" },
+    { "name": "t4t5/omdrop-owl", "url": "https://github.com/t4t5/omdrop-owl" },
+    { "name": "repowise-dev/repowise", "url": "https://github.com/repowise-dev/repowise" },
+    { "name": "wheresryan22/anatomy", "url": "https://github.com/wheresryan22/anatomy" },
+    { "name": "nano-muse/nanoMuse", "url": "https://github.com/nano-muse/nanoMuse" },
+    { "name": "noahdunnagan/fsearch", "url": "https://github.com/noahdunnagan/fsearch" },
+    { "name": "HelixDB/helix-foundry", "url": "https://github.com/HelixDB/helix-foundry" },
+    { "name": "zai-org/ZCode", "url": "https://github.com/zai-org/ZCode" },
+    { "name": "robbietilton/Compositor", "url": "https://github.com/robbietilton/Compositor" },
+    { "name": "shanliuling/dsh-image-gen", "url": "https://github.com/shanliuling/dsh-image-gen" },
+    { "name": "jd-opensource/JoyAI-Image", "url": "https://github.com/jd-opensource/JoyAI-Image" },
+    { "name": "zidniryi/unbagrnd", "url": "https://github.com/zidniryi/unbagrnd" },
+    { "name": "DenRakEiw/scumble", "url": "https://github.com/DenRakEiw/scumble" },
+    { "name": "techjarves/Portable-Local-Studio", "url": "https://github.com/techjarves/Portable-Local-Studio" }
+  ]
+}
