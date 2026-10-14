@@ -10,6 +10,10 @@
 
 **先看说明书 → [`QUICKSTART.md`](QUICKSTART.md)（5 分钟）**
 
+> ⚠️ **你下载到的是「演示包」**：只带 **15 条公开项目的 demo 数据** + 全套规则与脚本。
+> 它**不含**作者的日报历史、个人笔记、工作区内容、推荐记录 —— 那些只在你自己跑起来之后才会生成。
+> `overview.html` 双击就能看；但「跑日报 / 加项目 / 建工作区」要在对话里完成，需要先让 DSH 认得这两个技能 —— **见第 0 节**。
+
 ## 本仓库有什么
 
 | 内容 | 说明 |
@@ -18,6 +22,16 @@
 | **`tool-stack`** | 配套：说一句「我要做 X」，从你自己的库里配出一套工具（`.dsh/skills/tool-stack/`） |
 | **`overview.html`** | 15 条 demo 数据的单文件页面，**下载后双击即可体验**（离线、无需服务器） |
 | **`data/`** | 只有 demo + 规则文件 + 空数据桩；你的真实数据从空文件长出来 |
+
+**「演示包」和「你自己的库」有什么区别**（避免照文档做时找不到文件）：
+
+| | 本演示包（下载到的） | 你自己的库（跑起来之后） |
+|---|---|---|
+| 项目数 | 15 条公开项目 demo | 从 0 开始，每天长 |
+| 页面 | `overview.html` 已生成，直接能看 | 每次同步后用 `build-overview.ps1` 重新生成 |
+| 原始层 | **不含** `data/seen.jsonl` | 跑过一次日报后生成，是唯一可手工编辑的文件 |
+| 日报 / 快照 / 推荐记录 | **不含** | `reports/`、`data/snapshots/`、`data/picks/`、`data/recommend-log.csv` |
+| 个人内容（笔记 / 工作区） | **不含**（空文件桩） | `data/user-notes.jsonl`、`data/workspaces.jsonl` |
 
 ---
 
@@ -29,7 +43,7 @@
 
 ![根据目标组合工具，而不是收藏链接](docs/screenshots/3-workspace.png)
 
-> 上图是 **demo 数据**的页面（15 条公开项目）。拍摄说明见 [docs/screenshots/README.md](docs/screenshots/README.md)。
+> 上图是 **demo 数据**的页面（15 条公开项目；工作区那张是**示例态** —— demo 里 `data/workspaces.jsonl` 为空，所以「📌 我的工作区」一开始是 0 个）。拍摄说明见 [docs/screenshots/README.md](docs/screenshots/README.md)。
 > 下面是每张图要展示的内容与图注：
 
 | 图 | 展示什么 | 图注 |
@@ -65,7 +79,30 @@
 
 ---
 
+## 0. 先让 DSH 认得这两个技能
+
+`overview.html` **不需要这一步**（双击即用、离线可看）。
+
+但「跑今天的日报 / 我要做 ___ / 加项目 / 建工作区」都是**在对话里**完成的，所以需要 DSH 能读到本仓库的技能文件：
+
+| 方式 | 怎么做 | 适合谁 |
+|---|---|---|
+| **A. 直接把这个仓库当工作区**（推荐） | 把下载的包解压到一个目录，用 DSH **打开这个目录**。工作区里的 `.dsh/skills/<技能名>/SKILL.md` 会被 DSH 自动识别 | 想一次配好，数据也放一起 |
+| **B. 只借技能** | 把 `.dsh/skills/github-daily-picks/` 和 `.dsh/skills/tool-stack/` 两个目录，复制到你现有工作区的 `.dsh/skills/` 下 | 已经有自己的 DSH 工作区 |
+
+装好后在对话里说任意一句：
+
+- 「**跑今天的日报**」｜「今日 GitHub 精品」｜「最近热门项目」｜「有什么值得关注的开源项目」→ 走 `PROMPT-daily.md` 的完整流程
+- 「**我要做 ___ **」→ 走 `/tool-stack`，从你自己的库里配一套工具
+
+> 怎么确认装好了：直接说触发口令，看它是否照 `PROMPT-daily.md` 的步骤走（读台账 → 搜索 → 打分 → 写日报）。
+> 技能目录里还有 `SKILL.md`（编排与边界）和 `audit.ps1`（不变量自检），可以自己打开看。
+
+---
+
 ## 1. 30 秒跑起来
+
+**前提**：已按第 0 节把技能装进 DSH。
 
 在 DSH 对话里说任意一句：
 
@@ -90,65 +127,85 @@ Agent 会读 `PROMPT-daily.md` 执行完整流程。
 | 6 | 回写台账、快照、picks、索引、CSV、累积表格 | `data/seen.jsonl`、`data/snapshots/`、`data/picks/`、`reports/index.md`、`data/recommend-log.csv`、`GitHub推荐记录.univer` | Agent |
 | 7 | 记录本次运行结果（成功/限流/失败/建议） | `data/runs/YYYY-MM-DD.md` | Agent |
 
+> 上表第 5–7 步的产物都产生在**你自己的运行**里；本演示包不含这些文件（见第 3 节）。
+
 **关键设计**：GitHub 官方 Trending 页面没有 API，`web_fetch` 抓 HTML 又容易超时。所以主源用 **Search API**（自带 star/license/pushed_at 等全字段），并用**本地星数快照算 `Δstars/天`** 替代官方的「trending」口径——比爬页面更稳，也更可解释。
 
 ---
 
-## 3. 目录结构
+## 3. 本包实际包含什么
 
 ```
-GitHub日报/
-├─ README.md              ← 你在这：总说明
-├─ config.json            ← 推荐偏好配置（可改，见第 5 节）
-├─ overview.html          ← 本地总览页（可离线打开，可选增强，非核心依赖）
-├─ RUNBOOK.md             ← 运维手册：改时间、加源、限流、失败、回滚
-├─ SOURCES.md             ← 数据源与检索式（含 URL、限流额度、已排除的源）
-├─ RUBRIC.md              ← 筛选与打分标准（决定日报质量的核心文件）
-├─ PROMPT-daily.md        ← 每日执行指令（定时任务直接引用它）
-├─ AGENTS.md              ← 给 Agent 的工作区约束
-├─ TABLE.md               ← 累积表格（Univer）的字段与更新规则
-├─ GitHub推荐记录.univer   ← 可累积、可排序的长期跟踪表（尚未生成）
+github-daily-picks/                 ← 解压出来的仓库根目录
+├─ README.md                        ← 你在这：总说明
+├─ QUICKSTART.md                    ← 5 分钟上手
+├─ config.json                      ← 推荐偏好配置（可改，见第 5 节）
+├─ overview.html                    ← 单文件总览页（demo 数据，双击即用）
+├─ RUNBOOK.md                       ← 运维手册：改时间、加源、限流、失败、回滚
+├─ SOURCES.md                       ← 数据源与检索式（含 URL、限流额度、已排除的源）
+├─ RUBRIC.md                        ← 筛选与打分标准（决定日报质量的核心文件）
+├─ PROMPT-daily.md                  ← 每日执行指令（定时任务直接引用它）
+├─ CHANGELOG.md                     ← 改动记录（含「明确不做」清单）
+├─ privacy-report.md                ← 发布前隐私扫描结果
+├─ LICENSE                          ← MIT
 ├─ TEMPLATES/
-│   ├─ daily.md           ← 日报格式唯一出处（S 档 12 项 + A 档简条 + 枚举表）
-│   └─ weekly.md          ← 周报模板（周日汇总）
+│  ├─ daily.md                      ← 日报格式唯一出处（S 档 12 项 + A 档简条 + 枚举表）
+│  └─ weekly.md                     ← 周报模板（周日汇总）
 ├─ data/
-│   ├─ README.md          ← 数据字典（字段含义、枚举白名单）
-│   ├─ seen.jsonl         ← 去重台账：收录过的仓库，一条一行
-│   ├─ snapshots/         ← 每日星数快照，用于算 Δstars
-│   ├─ picks/             ← 机器可读推荐档案（评分 / 风险 / 行动）
-│   ├─ push/              ← 短版推送文案（≤400 字，手动复制用）
-│   ├─ recommend-log.csv  ← 累积推荐记录（周报统计用）
-│   └─ runs/              ← 每次运行日志
-├─ reports/
-│   ├─ index.md           ← 日报索引（按日期倒序）
-│   ├─ YYYY-MM-DD.md      ← 每日日报
-│   └─ 验收测试报告-*.md   ← 功能验收结果
-├─ 精品项目/               ← 推荐条目的可读卡片（按日期分文件夹）
-├─ tools/
-│   ├─ README.md          ← 工具说明
-│   ├─ check-config.ps1   ← 配置自检 + 收藏状态往返测试
-│   └─ build-overview.ps1 ← 生成 overview.html
-└─ .dsh/skills/github-daily-picks/
-    ├─ SKILL.md           ← 技能主体（编排 / 边界 / 失败处理 / 验收）
-    ├─ CHANGELOG.md       ← 改动记录（含「明确不做」清单）
-    ├─ README.md          ← 自检脚本说明
-    ├─ audit.ps1          ← 58 项不变量校验
-    └─ references/        ← 5 个渐进式披露文件（示例 / 许可证表 / 算例 …）
+│  ├─ README.md                     ← 数据字典（字段含义、枚举白名单）
+│  ├─ projects.jsonl                ← 投影层：项目主档案（demo 15 条）
+│  ├─ events.jsonl                  ← 投影层：事件流（收录 / 星数变化 / 推荐）
+│  ├─ plans.json                    ← 方案模板（11 个场景的角色与「为什么需要」）
+│  ├─ taxonomy.json                 ← 两级分类定义
+│  ├─ wide-terms.json               ← 过泛关键词表（搜索降权用）
+│  ├─ human/
+│  │  ├─ repo-intro.jsonl           ← 人话介绍层（一句话 / 痛点 / 例子 / 功能说明）
+│  │  ├─ function-tags.jsonl        ← 功能标签 + 用户搜索词
+│  │  ├─ search-synonyms.jsonl      ← 同义词组
+│  │  └─ synonym-suggestions.jsonl  ← 同义词候选（待人工批准，本包为空）
+│  ├─ picks/
+│  │  └─ README.md                  ← picks 目录说明（数据文件跑日报后生成）
+│  ├─ snapshots/
+│  │  └─ .gitkeep                   ← 空目录占位（git 不跟踪空目录，没它会缺目录）
+│  ├─ meta/
+│  │  └─ 2026-10-13.jsonl           ← 抓取元数据（demo 快照）
+│  ├─ taxonomy-suggestions.jsonl    ← 分类候选（待人工批准，本包为空）
+│  ├─ status-log.jsonl              ← 状态变更日志（本包为空桩）
+│  ├─ user-notes.jsonl              ← 用户备注层（本包为空桩）
+│  └─ workspaces.jsonl              ← 工作区层（本包为空桩）
+├─ docs/screenshots/                ← README 的 3 张截图 + 拍摄说明
+├─ examples/demo/                   ← demo 数据副本（无个人数据，可对照 / 重置）
+├─ tools/                           ← 19 个 PowerShell 脚本 + check-page.js（见 tools/README.md）
+└─ .dsh/skills/
+   ├─ github-daily-picks/           ← 主技能（SKILL.md / CHANGELOG.md / audit.ps1 / references/）
+   └─ tool-stack/                   ← 配套技能 /tool-stack
 ```
+
+**跑过一次日报之后才会出现的文件**（本包按设计不含，避免带出个人数据）：
+
+| 路径 | 是什么 |
+|---|---|
+| `data/seen.jsonl` | 去重台账（原始层，**唯一可手工编辑**的文件） |
+| `data/snapshots/*.jsonl` `data/picks/*.jsonl` | 每日星数快照 / 机器可读推荐档案（评分 / 风险 / 行动）。**目录本身随包提供**（带说明文件与占位），数据文件跑日报后生成 |
+| `data/recommend-log.csv` `data/runs/` `data/push/` | 推荐记录（周报统计）/ 运行日志 / 短版推送文案 |
+| `reports/` `精品项目/` | 中文日报（含 `index.md` 索引）与推荐条目的可读卡片 |
+| `TABLE.md` `GitHub推荐记录.univer` | 累积表格的字段说明与表格本体（未生成时流程自动跳过并记日志，**不报错、不自创文件名**） |
 
 ---
 
-## 4. 怎么查看日报
+## 4. 日报在哪看
 
-| 想看什么 | 打开 |
+**本包不含日报历史**（那属于个人数据），下面这些是**你自己跑起来之后**的产物：
+
+| 想看什么 | 打开（运行后生成） |
 |---|---|
-| 今天的日报 | `reports/2026-10-12.md` |
+| 今天的日报 | `reports/YYYY-MM-DD.md` |
 | 全部日报索引 | `reports/index.md` |
-| **可视化总览**（按状态 / 风险 / 档位筛选） | `overview.html`（双击，离线可用） |
-| 某个项目的详细卡片 | `精品项目/2026-10-12/` 下的单个 md |
-| 这次运行发生了什么 | `data/runs/2026-10-12.md` |
-| 机器可读数据 | `data/picks/2026-10-12.jsonl` |
-| 推送文案 | `data/push/2026-10-12.txt` |
+| **可视化总览** | `overview.html`（双击，离线可用；本包已带 demo 版） |
+| 某个项目的详细卡片 | `精品项目/YYYY-MM-DD/` 下的单个 md |
+| 这次运行发生了什么 | `data/runs/YYYY-MM-DD.md` |
+| 机器可读数据 | `data/picks/YYYY-MM-DD.jsonl` |
+| 推送文案 | `data/push/YYYY-MM-DD.txt` |
 
 ---
 
@@ -179,7 +236,7 @@ GitHub日报/
 
 ## 6. 怎么管理项目状态
 
-台账 `data/seen.jsonl` 每行有一个 `status` 字段，**只能取这 5 个值**（白名单，不得自造）：
+状态存在**原始层台账** `data/seen.jsonl` 里（**跑过一次日报后才有；本演示包不含**），每行有一个 `status` 字段，**只能取这 5 个值**（白名单，不得自造）：
 
 | 值 | 含义 |
 |---|---|
@@ -201,6 +258,8 @@ GitHub日报/
 ```powershell
 & ".\tools\build-overview.ps1"
 ```
+> 第 2 种要先有 `data/seen.jsonl`（即先跑过一次日报）。
+> `data/projects.jsonl` / `data/events.jsonl` 是**投影层**（由 `tools/sync-projects.ps1` 从原始层生成、可全量重建）——**不要手工改**，下次同步会覆盖；`overview.html` 是视图，改完数据用 `build-overview.ps1` 重新生成。
 
 > 状态写入往返测试已实测通过：`tools/check-config.ps1 -StatusRoundTrip -Restore`。
 
@@ -210,26 +269,29 @@ GitHub日报/
 
 | 症状 | 先看 | 常见原因 |
 |---|---|---|
-| 今天没出日报 | `data/runs/YYYY-MM-DD.md` | 数据源失败 / 网络不通 / 已存在被幂等跳过 |
+| 今天没出日报 | `data/runs/YYYY-MM-DD.md`（运行后生成） | 数据源失败 / 网络不通 / 已存在被幂等跳过 |
 | 日报条目明显变少 | 日报头部「候选 N 条」 | 检索式返回骤降，或当天候选确实少（**不降标准凑数**） |
 | 星数看起来不对 | 日报头部「抓取时间」 | 数据是快照时点，不是实时 |
 | 定时没触发 | 第 1 节限制 | **DSH 必须开着**；关闭期间不跑 |
 | 配置改了没效果 | 跑 `check-config.ps1` | 字段名写错，或改到了不生效的 `schedule` |
-| 想确认文件没互相矛盾 | 跑 `audit.ps1` | 126 项不变量，报红=文档打架 |
+| 想确认文件没互相矛盾 | 跑 `audit.ps1` | 137 项不变量，报红=文档打架 |
 | **页面点不动 / 交互坏了** | 跑 `check-page.ps1` | 它**真执行页面 JS**——单文件页面的 JS 出错时页面照常渲染，只有真跑才暴露 |
 
 **三条自检命令**（改完任何东西都该跑）：
 
 ```powershell
-# 1) skill 自身一致性（126 项不变量）
+# 1) skill 自身一致性（137 项不变量；本演示包应得 135 通过 / 2 跳过 / 0 失败，退出码 0）
 & ".dsh\skills\github-daily-picks\audit.ps1"
 
-# 2) 配置 + 状态读写往返（17 项）
+# 2) 配置 + 状态读写往返（本演示包应得 15 通过 / 0 失败）
 & ".\tools\check-config.ps1" -StatusRoundTrip -Restore
 
-# 3) 页面真跑（10 项：143 条详情逐个打开、对比、分词容错、方案、工作区）
+# 3) 页面真跑（逐个打开库里每张卡片 + 对比 + 分词容错 + 方案；需要 JS 运行时）
 & ".\tools\check-page.ps1"
 ```
+
+> 关于第 3 条：它需要 **Node.js，或 DSH 自带的 Electron**（脚本会自动找）。两者都没有时，它会明确报「没有可用的 JS 运行时」并退出 1 —— 这不是页面坏了。
+> 演示包没有 `data/seen.jsonl` / `TABLE.md`：审计脚本会把依赖个人数据的检查按设计**自动通过或跳过**（只有它仍会打印几行"找不到路径"的红字，属预期，不影响结论）；`check-config.ps1` 与 `sync-projects.ps1` 的同类红字与空输入崩溃已在 2026-10-14 修掉。
 
 ---
 
@@ -246,6 +308,9 @@ GitHub日报/
 | 定时任务 | 绑定会话，DSH 关闭不触发 | 需要时手动说「跑今天的日报」 |
 | 消息推送 | DSH 没有通用 HTTP POST 工具 | 推送文案生成到 `data/push/`，**手动复制粘贴** |
 | `.univer` 累积表格 | 尚未生成 | 每次运行自动跳过并记日志，不影响日报 |
+| **演示包的「我的工作区」是空的** | `data/workspaces.jsonl` 为空桩（README 第 3 张图是示例态） | 想看效果：跟 Agent 说「给我建个工作区：___」 |
+| **演示包没有日报历史** | `reports/` 按设计不含 | 说一句「跑今天的日报」生成第一份 |
+| **`check-page.ps1` 需要 JS 运行时** | 无 Node 且无 DSH Desktop 时退出 1 | 装 Node，或直接在 DSH 桌面版里跑 |
 
 ---
 
@@ -261,10 +326,13 @@ GitHub日报/
 
 ## 10. 相关文档
 
+- 5 分钟上手 → [QUICKSTART.md](QUICKSTART.md)
 - 数据源与检索式 → [SOURCES.md](SOURCES.md)
 - 打分与排除标准 → [RUBRIC.md](RUBRIC.md)
 - 每日执行指令 → [PROMPT-daily.md](PROMPT-daily.md)
 - 运维与排错 → [RUNBOOK.md](RUNBOOK.md)
 - 日报格式 → [TEMPLATES/daily.md](TEMPLATES/daily.md)
 - 数据字典 → [data/README.md](data/README.md)
-- 验收测试报告 → [reports/验收测试报告-2026-10-12.md](reports/验收测试报告-2026-10-12.md)
+- 脚本一览 → [tools/README.md](tools/README.md)
+- demo 数据说明 → [examples/demo/README.md](examples/demo/README.md)
+- 截图说明 → [docs/screenshots/README.md](docs/screenshots/README.md)

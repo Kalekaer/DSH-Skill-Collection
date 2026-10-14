@@ -18,7 +18,7 @@ $dread = Join-Path $root 'data\README.md'
 $script:pass = 0; $script:fail = 0; $script:skip = 0
 # 本脚本的检查项总数。**新增/删除 Chk 时必须同步改这里**，并同步 CHANGELOG.md 与 README.md 里的「N 项」，
 # 否则第 17 节会报 FAIL —— 这是故意设计的，防止校验项被悄悄删掉而无人察觉。
-$script:TOTAL_CHECKS = 130
+$script:TOTAL_CHECKS = 137
 function Chk([string]$name, [bool]$ok, [string]$detail = '') {
   if ($ok) { $script:pass++; Write-Host ("  [PASS] {0}" -f $name) -ForegroundColor Green }
   else     { $script:fail++; Write-Host ("  [FAIL] {0} {1}" -f $name, $detail) -ForegroundColor Red }
@@ -146,14 +146,19 @@ $escape = Select-String -Path $skill, $prompt -Pattern 'C:\\Users|AppData|C:/Use
 Chk "无工作区外路径写入" ($null -eq $escape)
 
 Write-Host "`n=== 13. 表格文件（.univer）一致性 ==="
+# 2026-10-14 修复：原写法把**不存在**的 TABLE.md 一起传给 Select-String，PowerShell 报错后匹配结果被吞，
+# 这条检查在发布版永远是「0 命中 → SKIP」——即使 README 写错表格名也测不出来（检查等于失明）。
+# 现在：① 只扫真实存在的文件，让「文档里表格名唯一」这条**真跑**；② TABLE.md 缺失仍显式 SKIP（保留原语义）。
 # 注意：Select-String 结果可能被折叠成标量字符串，必须用 @() 强制成数组
-$tableRefs = @(Select-String -Path (Join-Path $root 'README.md'), $prompt, (Join-Path $root 'TABLE.md') -Pattern 'GitHub[^`\s]*?\.univer' -AllMatches |
+$tableFiles = @((Join-Path $root 'README.md'), $prompt, (Join-Path $root 'TABLE.md')) | Where-Object { Test-Path $_ }
+$tableRefs = @(Select-String -Path $tableFiles -Pattern 'GitHub[^`\s]*?\.univer' -AllMatches -ErrorAction SilentlyContinue |
              ForEach-Object { $_.Matches } | ForEach-Object { $_.Value } | Sort-Object -Unique)
-$onlyOne = ($tableRefs.Count -eq 1)
-$rightName = $onlyOne -and ("$($tableRefs[0])" -ceq 'GitHub推荐记录.univer')
-if ($tableRefs.Count -eq 0) {
+Chk "文档里 .univer 文件名只有一个（防笔误）" ($tableRefs.Count -le 1) "实际: $($tableRefs -join ', ')"
+if (-not (Test-Path (Join-Path $root 'TABLE.md'))) {
   Skip ".univer 文件名唯一（只有 GitHub推荐记录.univer）" "未使用表格 / 发布版按设计不含个人推荐表"
 } else {
+  $onlyOne = ($tableRefs.Count -eq 1)
+  $rightName = $onlyOne -and ("$($tableRefs[0])" -ceq 'GitHub推荐记录.univer')
   Chk ".univer 文件名唯一（只有 GitHub推荐记录.univer）" $rightName "实际: $($tableRefs -join ', ')"
 }
 Chk "SKILL 有表格不存在时的降级规则" ($S -match '表格不存在时的处理')
@@ -535,6 +540,67 @@ foreach ($pair in @(
     }
     Chk "$($pair[1])每行都是合法 JSON（无注释行）" ($bad -eq 0) "异常 $bad 行"
   }
+}
+
+Write-Host "`n=== 23. 发布包文档与交付一致性（v5.2 · 2026-10-14 新增）==="
+# 这一节兜住本轮实测出的三类事故：
+#   ① 文档指向包里不存在的文件（README 曾引用 reports/、seen.jsonl、TABLE.md 等 9 处）
+#   ② README 的「N 项」与脚本常量漂移（历史上同时存在 58 / 126 / 129 三种说法）
+#   ③ 发布版被写成个人库口径（新手照着找文件，全都找不到）
+$docFiles = @('README.md','QUICKSTART.md','RUNBOOK.md','SOURCES.md','RUBRIC.md','PROMPT-daily.md',
+              'data\README.md','tools\README.md','docs\screenshots\README.md','examples\demo\README.md')
+$deadLinks = @()
+foreach ($rel in $docFiles) {
+  $fp = Join-Path $root $rel
+  if (-not (Test-Path $fp)) { $deadLinks += "$rel（文档缺失）"; continue }
+  $dir = Split-Path -Parent $fp
+  $txt = Get-Content $fp -Raw -Encoding UTF8
+  foreach ($m in [regex]::Matches($txt, '\]\(([^)\s]+)\)')) {
+    $t = $m.Groups[1].Value
+    if ($t -match '^(https?:|#|mailto:)') { continue }
+    $t = ($t -split '#')[0]
+    if (-not $t) { continue }
+    if (-not (Test-Path (Join-Path $dir ($t -replace '/','\')))) { $deadLinks += "$rel → $t" }
+  }
+}
+Chk "文档里的相对链接全部存在（含 3 张截图）" ($deadLinks.Count -eq 0) "死链: $($deadLinks -join '; ')"
+
+$rd = Get-Content (Join-Path $root 'README.md') -Raw -Encoding UTF8
+$declaredN = if ($rd -match '(\d+)\s*项不变量') { [int]$Matches[1] } else { $null }
+Chk "README 声明的校验项数 = TOTAL_CHECKS（$($script:TOTAL_CHECKS)）" ($declaredN -eq $script:TOTAL_CHECKS) "README 写的是 $declaredN 项"
+
+if ($isDemo) {
+  Chk "README 是「演示包」口径（含演示包 + 15 条，且不含个人库规模 143）" (($rd -match '演示包') -and ($rd -match '15\s*(条|个项目)') -and ($rd -notmatch '143 个项目'))
+} else {
+  Skip "README 是「演示包」口径" "完整个人库不需要 demo 口径（该检查只对发布包有意义）"
+}
+
+$dirOk = (Test-Path (Join-Path $root 'data\picks')) -and (Test-Path (Join-Path $root 'data\snapshots'))
+Chk "data\picks 与 data\snapshots 目录存在（首次运行要往里写）" $dirOk
+
+# 事故复现防护：空输入时曾①抛 .NET「contents cannot be null」②（更糟）静默把投影覆写成空
+$sp = Get-Content (Join-Path $root 'tools\sync-projects.ps1') -Raw
+Chk "sync-projects 空输入有双重保护（无原始层退出 + 不清空投影 + 数组化写入）" `
+    (($sp -match '没有原始层') -and ($sp -match '不写盘') -and ($sp -match '\$projLines = @\(') -and ($sp -match '\$evLines = @\('))
+
+# 交付脚本：只检查存在 发布测试\ 的副本（原库有、发布包没有）
+# 2026-10-14 血的教训：`.cmd` 若写成 **LF 行尾**，cmd.exe 会把每行前半截吃掉 —— 用户实测报
+# 「'cal' / 'IT' / 'Commit' 不是内部或外部命令」（setlocal / set GIT / title 被截断）。所以这里连行尾一起查。
+$deliverDir = Join-Path $root '发布测试'
+if (Test-Path $deliverDir) {
+  $okCmd = $false; $badEol = @()
+  foreach ($c in (Get-ChildItem $deliverDir -Filter '*.cmd' -File)) {
+    $bytes = [System.IO.File]::ReadAllBytes($c.FullName)
+    $cr = @($bytes | Where-Object { $_ -eq 13 }).Count
+    $lf = @($bytes | Where-Object { $_ -eq 10 }).Count
+    if ($cr -ne $lf) { $badEol += "$($c.Name)(CR=$cr/LF=$lf，必须全 CRLF)" }
+    $ct = Get-Content $c.FullName -Raw
+    if ($ct -match 'git[^\r\n]*\badd\b' -and $ct -match '\bcommit\b') { $okCmd = $true }
+  }
+  Chk "投递脚本含 git add + commit 且全部 CRLF 行尾" ($okCmd -and $badEol.Count -eq 0) `
+      "缺 add/commit=$(-not $okCmd)；行尾异常: $($badEol -join ', ')"
+} else {
+  Skip "投递脚本含 git add + commit（否则新增文件推不上去）" "发布包不含 发布测试\ 目录（仅原库有）"
 }
 
 # 总项数核对：**刻意不放进 Chk 计数器**（否则自我指涉、恒差一）

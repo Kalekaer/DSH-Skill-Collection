@@ -70,7 +70,9 @@ if (Test-Path $csvPath) {
 Write-Host "`n=== 4. 台账读取与 status 合法性 ==="
 $rows = @()
 $badLines = 0
-foreach ($line in Get-Content $seenPath) {
+# demo / 发布版没有 data\seen.jsonl：先判存在再读，否则 Get-Content 会抛「找不到路径」红字（2026-10-14 修复）
+$seenLinesRead = if (Test-Path $seenPath) { Get-Content $seenPath } else { @() }
+foreach ($line in $seenLinesRead) {
   if ([string]::IsNullOrWhiteSpace($line)) { continue }
   try { $rows += ($line | ConvertFrom-Json) } catch { $badLines++ }
 }
@@ -84,10 +86,22 @@ Write-Host ("        分布：{0}" -f ($dist -join '  '))
 
 if ($StatusRoundTrip) {
   Write-Host "`n=== 5. status 写入 / 读取往返测试（实测收藏状态可保存）==="
-  $target = $rows | Where-Object { $_.full_name -eq $TestRepo } | Select-Object -First 1
-  if (-not $target) {
-    Chk "测试目标 $TestRepo 存在于台账" $false
+  # demo / 发布版没有 data\seen.jsonl → 往返测试**不适用**，明确跳过。
+  # （2026-10-14 修复：旧行为在这里报 FAIL 并 exit 1，而 README 又让用户跑这条带 -StatusRoundTrip 的命令，
+  #   等于官方命令在官方包上自带红灯；"不适用"与"真失败"必须分开。）
+  if ($isDemo) {
+    Write-Host "  [SKIP] status 往返测试 —— 本工作区没有 data\seen.jsonl（发布版 / demo 包），按设计跳过" -ForegroundColor DarkYellow
+    $target = $null
   } else {
+    $target = $rows | Where-Object { $_.full_name -eq $TestRepo } | Select-Object -First 1
+    if (-not $target) {
+      $target = $rows | Select-Object -First 1
+      if ($target) { Write-Host ("        [提示] 目标 {0} 不在台账，改用台账首行 {1} 做往返测试" -f $TestRepo, $target.full_name) -ForegroundColor Yellow }
+    }
+  }
+  if (-not $target -and -not $isDemo) {
+    Write-Host "  [SKIP] status 往返测试 —— 台账为空，没有可测目标" -ForegroundColor DarkYellow
+  } elseif ($target) {
     $originalStatus = $target.status
     $originalNote = $target.note
     Write-Host ("        目标：{0}  原 status={1}" -f $TestRepo, $originalStatus)

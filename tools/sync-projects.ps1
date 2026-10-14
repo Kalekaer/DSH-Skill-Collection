@@ -24,6 +24,26 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 function P([string]$rel) { Join-Path $root $rel }
 
+# ---------- 降级：没有原始层时不派生（2026-10-14 修复）----------
+# 发布版 / demo 数据包按设计**不含** data\seen.jsonl（个人数据不发布）。
+# 旧行为：空输入 → $projects 为空 → $projLines 为 $null → [IO.File]::WriteAllLines 抛
+#         "Value cannot be null. (Parameter 'contents')"，退出码 1，用户看到的是 .NET 报错。
+# 新行为：先判断原始层是否存在；不存在就说明原因、**零副作用**退出（连 tools/ 备份都不做）。
+# 判据只看**去重台账** data\seen.jsonl —— 它是原始层的主文件。
+# （2026-10-14 二次修正：第一版把 data\taxonomy.json / data\human\*.jsonl 也算原始层，
+#   于是 demo 包被判定为"有原始层"，脚本继续往下跑，**静默把 projects.jsonl / events.jsonl 写成空**，
+#   比原来的崩溃更糟。现在：缺台账 = 不派生，直接退出。）
+if (-not (Test-Path (P 'data\seen.jsonl'))) {
+  Write-Host ""
+  Write-Host "=== 跳过同步：本工作区没有原始层 ===" -ForegroundColor Yellow
+  Write-Host "  data\seen.jsonl 等原始文件都不存在 —— 这是**发布版 / demo 数据包**（个人数据按设计不发布）。"
+  Write-Host "  没有原始层就没有可派生的东西，本次不做任何写入（含 tools/ 备份）。"
+  Write-Host "  → 想让它变成你自己的库：先跑一次日报（对话里说「跑今天的日报」），"
+  Write-Host "    生成 data\seen.jsonl 之后再执行本脚本即可正常重建 projects.jsonl / events.jsonl。"
+  Write-Host ""
+  exit 0
+}
+
 # ---------- 自动备份 tools/（2026-10-13 事故的教训：脚本无版本控制，误操作后无法回滚）----------
 # 备份 tools/*.ps1 与 audit.ps1，按日期归档到 data/_backup/YYYY-MM-DD/。
 # 恢复方法：从备份目录复制回 tools/。**这些脚本是不可再生的**（projects/events 能靠它们重建，它们自己不能）。
@@ -664,11 +684,23 @@ if (-not $Force -and (Test-Path $sigFile) -and (Test-Path $projPath) -and (Get-C
   exit 0
 }
 
+# 保护：宁可什么都不做，也不能清空投影。
+# （2026-10-14 实测：原始层被判空后，$projects 为空 → 仍会往下写，把 projects.jsonl / events.jsonl 覆写成空文件，
+#   页面瞬间变"0 个工具"。空输入应当中止写盘，而不是静默擦除。）
+if (@($projects).Count -eq 0) {
+  Write-Host ""
+  Write-Host "⚠ 没有任何可写入的项目 —— 为避免清空 projects.jsonl / events.jsonl，**本次不写盘**。" -ForegroundColor Yellow
+  Write-Host "  请检查 data\seen.jsonl（去重台账）是否被清空或删除；确认无误后可加 -Force 重跑。"
+  if (-not $Force) { exit 0 }
+  Write-Host "  （已传 -Force：仍然继续写盘）" -ForegroundColor DarkYellow
+}
+
 $enc = New-Object System.Text.UTF8Encoding($false)
-$projLines = $projects | Sort-Object id | ForEach-Object { ($_ | ConvertTo-Json -Depth 10 -Compress) }
+# 用 @() 强制成数组：空集合经管道会变成 $null，而 WriteAllLines 收到 null 会抛 .NET 异常（2026-10-14 修复）
+$projLines = @($projects | Sort-Object id | ForEach-Object { ($_ | ConvertTo-Json -Depth 10 -Compress) })
 [System.IO.File]::WriteAllLines($projPath, $projLines, $enc)
 
-$evLines = $events | Sort-Object date, id, type | ForEach-Object { ($_ | ConvertTo-Json -Depth 4 -Compress) }
+$evLines = @($events | Sort-Object date, id, type | ForEach-Object { ($_ | ConvertTo-Json -Depth 4 -Compress) })
 [System.IO.File]::WriteAllLines($evPath, $evLines, $enc)
 
 Set-Content -Path $sigFile -Value $sig -Encoding UTF8
