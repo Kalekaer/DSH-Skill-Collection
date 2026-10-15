@@ -1,7 +1,7 @@
 param(
   [switch]$StatusRoundTrip,   # 追加 status 写入/读取往返测试
   [switch]$Restore,           # 往返测试后恢复原值（强烈建议开启）
-  [string]$TestRepo = 'wheresryan22/anatomy'
+  [string]$TestRepo = ''          # 留空 = 自动取台账首行（原默认值是个人库专属仓库，不属于发布包）
 )
 
 $ErrorActionPreference = 'Continue'
@@ -102,32 +102,54 @@ if ($StatusRoundTrip) {
   if (-not $target -and -not $isDemo) {
     Write-Host "  [SKIP] status 往返测试 —— 台账为空，没有可测目标" -ForegroundColor DarkYellow
   } elseif ($target) {
+    # 2026-10-15 修复：写盘/回读必须按**解析出来的** $target.full_name 找行，不能再用 -TestRepo。
+    # 旧写法只在「-TestRepo 恰好就是台账里那一条」时成立；一旦走进"回退到台账首行"或 -TestRepo 留空，
+    # 下面的正则就找不到目标行 → 写入与恢复全部失效（副本实测 3 项 FAIL）。
+    $tName = $target.full_name
     $originalStatus = $target.status
     $originalNote = $target.note
-    Write-Host ("        目标：{0}  原 status={1}" -f $TestRepo, $originalStatus)
+    Write-Host ("        目标：{0}  原 status={1}" -f $tName, $originalStatus)
 
     # 用文本替换而不是重写整个文件，保证其它行逐字节不动
+    $targetLine = (Get-Content $seenPath | Where-Object { $_ -match [regex]::Escape("`"$tName`"") } | Select-Object -First 1)
+    # 2026-10-15（GPT 评审）：写入前先留一份**完整快照**，写入后逐行比对"非目标行"。
+    # 旧写法「其它行未被改动（抽样比对首行）」是**自己与自己比**，恒为真 —— 等于没有检查。
+    $beforeLines = @(Get-Content $seenPath)
+    $tIdx = -1
+    for ($i = 0; $i -lt $beforeLines.Count; $i++) { if ($beforeLines[$i] -ceq $targetLine) { $tIdx = $i; break } }
     $raw = Get-Content $seenPath -Raw
-    $targetLine = (Get-Content $seenPath | Where-Object { $_ -match [regex]::Escape("`"$TestRepo`"") } | Select-Object -First 1)
     $newLine = $targetLine -replace '"status":"[^"]*"', '"status":"saved"'
     $raw2 = $raw.Replace($targetLine, $newLine)
     Set-Content -Path $seenPath -Value $raw2 -NoNewline
 
     # 重新读取，确认写入生效
-    $after = Get-Content $seenPath | Where-Object { $_ -match [regex]::Escape("`"$TestRepo`"") } | Select-Object -First 1 | ConvertFrom-Json
+    $afterLines = @(Get-Content $seenPath)
+    $after = Get-Content $seenPath | Where-Object { $_ -match [regex]::Escape("`"$tName`"") } | Select-Object -First 1 | ConvertFrom-Json
     Chk "写入后 status 变为 saved（可保存）" ($after.status -eq 'saved') "实际 $($after.status)"
-    Chk "写入只影响目标行（行数不变）" ((Get-Content $seenPath).Count -eq $rows.Count)
-    Chk "其它行未被改动（抽样比对首行）" ((Get-Content $seenPath -TotalCount 1) -eq (Get-Content $seenPath -TotalCount 1))
+    Chk "写入只影响目标行（行数不变）" ($afterLines.Count -eq $rows.Count)
+    $changed = @()
+    for ($i = 0; $i -lt $beforeLines.Count; $i++) {
+      if ($i -eq $tIdx) { continue }   # 目标行允许变
+      if ($i -ge $afterLines.Count -or $beforeLines[$i] -cne $afterLines[$i]) { $changed += ($i + 1) }
+    }
+    Chk "非目标行逐字节未变（$([Math]::Max(0, $beforeLines.Count - 1)) 行）" ($changed.Count -eq 0) ("被改动的行号: " + ($changed -join ', '))
 
     if ($Restore) {
       $raw3 = Get-Content $seenPath -Raw
-      $curLine = (Get-Content $seenPath | Where-Object { $_ -match [regex]::Escape("`"$TestRepo`"") } | Select-Object -First 1)
+      $curLine = (Get-Content $seenPath | Where-Object { $_ -match [regex]::Escape("`"$tName`"") } | Select-Object -First 1)
       $restored = $curLine -replace '"status":"[^"]*"', "`"status`":`"$originalStatus`""
       Set-Content -Path $seenPath -Value $raw3.Replace($curLine, $restored) -NoNewline
-      $back = Get-Content $seenPath | Where-Object { $_ -match [regex]::Escape("`"$TestRepo`"") } | Select-Object -First 1 | ConvertFrom-Json
+      $afterLines2 = @(Get-Content $seenPath)
+      $back = Get-Content $seenPath | Where-Object { $_ -match [regex]::Escape("`"$tName`"") } | Select-Object -First 1 | ConvertFrom-Json
       Chk "已恢复到原值 $originalStatus" ($back.status -eq $originalStatus) "实际 $($back.status)"
+      # 还原后必须与"测试前"逐行一致（整体比对，含目标行）
+      $diff2 = @()
+      for ($i = 0; $i -lt $beforeLines.Count; $i++) {
+        if ($i -ge $afterLines2.Count -or $beforeLines[$i] -cne $afterLines2[$i]) { $diff2 += ($i + 1) }
+      }
+      Chk "还原后与测试前逐行一致（$($beforeLines.Count) 行）" ($diff2.Count -eq 0) ("有差异的行号: " + ($diff2 -join ', '))
     } else {
-      Write-Host "        [注意] 未传 -Restore，$TestRepo 的 status 现在仍是 saved" -ForegroundColor Yellow
+      Write-Host "        [注意] 未传 -Restore，$tName 的 status 现在仍是 saved" -ForegroundColor Yellow
     }
   }
 }
