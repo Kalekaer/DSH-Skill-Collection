@@ -519,6 +519,7 @@ function sorted(arr){
   });
   return r;
 }
+function hasNote(p){ return !!(p.note || (p.un && p.un.filter(x=>x&&x.note).length)); }
 function cardHtml(p){
   const flags=[];
   if(p.tier==='S'||p.tier==='A') flags.push('<span class="pill tier-'+p.tier+'">'+p.tier+' 档</span>');
@@ -532,8 +533,11 @@ function cardHtml(p){
   // 待补全条目**不隐藏、但降低视觉权重**（GPT 建议）：明确标出来，而不是让用户以为"就这么点东西"
   const thin = (p.hs!=='complete');
   // 卡片上没有任何"收藏"元素：收藏功能已整体撤销（用户 2026-10-13 决定：用起来太麻烦繁琐）
+  // 📝 备注标记（2026-10-15 用户要求，方案 A）：该条有台账备注或用户备注时，在标题旁给一个记号 ——
+  // 不用点进详情就知道"这条有备注"。备注**只在详情面板里显示**（页面是只读单文件，不能在页面里编辑）。
+  const noteMark = hasNote(p) ? '<span title="这条有备注（台账备注 / 用户备注）—— 点开卡片看详情" style="margin-left:6px;font-size:12px;color:var(--gold);cursor:help">📝</span>' : '';
   return '<div class="card'+(thin?' thin':'')+'" onclick="detail(\''+p.id+'\')">'
-    +'<h3><a href="'+repoUrl(p)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">'+esc(p.id)+'</a>'
+    +'<h3><a href="'+repoUrl(p)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">'+esc(p.id)+'</a>'+noteMark
       +'<span class="cmp'+(cmpSel.indexOf(p.id)>=0?' on':'')+'" onclick="toggleCmp(event,\''+p.id+'\')">'+(cmpSel.indexOf(p.id)>=0?'✓ 已选对比':'对比')+'</span></h3>'
     +'<div style="margin-bottom:6px">'+stars5(p.exp)+' <span class="pill">'+esc(p.l2)+'</span></div>'
     +'<p class="one'+(one?'':' none')+'">'+esc(one||'（暂无中文介绍，仅有英文描述或台账备注）')+'</p>'
@@ -856,7 +860,7 @@ function clearAll(){
 }
 function miniHtml(p){
   return '<div class="mini" onclick="detail(\''+p.id+'\')">'
-    +'<div class="n">'+esc(p.id)+'</div>'
+    +'<div class="n">'+esc(p.id)+(hasNote(p)?' <span title="这条有备注" style="color:var(--gold);cursor:help">📝</span>':'')+'</div>'
     +'<div style="margin:2px 0">'+stars5(p.exp)+'</div>'
     +'<div class="d">'+esc(oneText(p)||'（暂无中文介绍）')+'</div>'
     +'<div class="m"><span>★ '+p.stars.toLocaleString()+'</span><span>'+when(p.pushed)+'</span></div></div>';

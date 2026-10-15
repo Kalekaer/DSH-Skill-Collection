@@ -468,21 +468,26 @@ if (Test-Path $ovPath) {
   # 人话层补全流水线（GPT 评审第 1 优先：普通用户看不懂 owner/repo）
   Chk "人话层待补清单工具存在（humanize-next.ps1）" ((Test-Path (Join-Path $root 'tools\humanize-next.ps1')) -and ($S -match 'humanize-next'))
   Chk "人话层批量写入工具存在（add-intro.ps1）" (Test-Path (Join-Path $root 'tools\add-intro.ps1'))
-  # 分类锚点（防止分类器被改坏）：三条分别覆盖「人话层强信号 / topics 弱信号 / 人话层标签」三条路径
+  # 分类锚点（防止分类器被改坏）：锚点 = 「项目 → 期望的 l1/l2」，分类算法被改坏时它会变红。
   # 起因：2026-10-13 发现 sync 里 $topicText/$noteText 从未定义，topics 实际没参与分类 —— 这类静默失效
   # 只有锚点能感知。改分类算法后若锚点变了，先确认是有意为之。
+  # 注意：锚点必须用**当前包里有数据的项目**（见下方 2026-10-15 说明），否则会被逐个跳过、形同虚设。
   $projPath3 = Join-Path $root 'data\projects.jsonl'
   if (Test-Path $projPath3) {
     $pr3 = @()
     foreach ($l3 in (Get-Content $projPath3 -Encoding UTF8)) { if ($l3.Trim()) { try { $pr3 += ($l3 | ConvertFrom-Json) } catch {} } }
-    $anchors = [ordered]@{ 'ARahim3/DigUp' = '效率/文件管理'; 'zyddnys/manga-image-translator' = '设计/图片处理'; 'storytold/deckcraft' = '办公/演示文稿'; 'enricoros/big-AGI' = 'AI/AI聊天'; 'amontlabs/lcu' = '开发/编程助手'; 'iamlukethedev/Herald-OS' = 'AI/AI Agent' }
+    # 2026-10-15：锚点换成**发布包 demo 里真实存在的项目**。
+    # 原锚点用的是**原库专属仓库**（这里不再列举 id，避免把个人痕迹写回发布包），
+    # 它们在 demo 包里会被下面的 continue 全部跳过 → 这条检查等于空转。
+    # demo 只覆盖 AI / 设计 / 办公 / 效率 四个一级桶，所以锚点集合与原库版本不同 —— 这是有意为之，不是漏改。
+    $anchors = [ordered]@{ 'easydiffusion/easydiffusion' = 'AI/AI绘画'; 'mudler/LocalAI' = 'AI/本地模型'; 'yetone/magpie' = 'AI/AI Agent'; 'storytold/photocraft' = '设计/图片处理'; 'storytold/wordcraft' = '办公/文档处理'; 'browser-use/jev-ultrafast' = '效率/自动化' }
     $badAnchor = @()
     foreach ($k3 in $anchors.Keys) {
       $row3 = @($pr3 | Where-Object { $_.id -eq $k3 })[0]
       if (-not $row3) { continue }   # demo 数据里没有这个项目 → 跳过，不算错
       if ("$($row3.category.l1)/$($row3.category.l2)" -ne $anchors[$k3]) { $badAnchor += "$k3=$($row3.category.l1)/$($row3.category.l2)" }
     }
-    Chk "分类锚点稳定（6 条：强信号 / topics / 人话层 / 防AI污染 / 开发桶 / 形态词规则）" ($badAnchor.Count -eq 0) ($badAnchor -join '; ')
+    Chk "分类锚点稳定（demo 6 条：AI绘画 / 本地模型 / AI Agent / 图片处理 / 文档处理 / 自动化）" ($badAnchor.Count -eq 0) ($badAnchor -join '; ')
   $wsP  = Join-Path $root 'data\workspaces.jsonl'
   $wsOk2 = Test-Path $wsP
   if ($wsOk2) { foreach ($l in (Get-Content $wsP -Encoding UTF8)) { if ($l.Trim()) { try { $null = ($l | ConvertFrom-Json) } catch { $wsOk2 = $false } } } }

@@ -238,7 +238,9 @@ try {
 } catch (e) { console.log('PLANS6 FAIL ' + e.message); }
 // §6 分数明细（诊断）：为什么某个不相关的工具会进某个场景？**忠实复刻 planRoleTools 的规则**
 try {
-  const TARGET = ['ARahim3/DigUp','freestylefly/WeChatBridge','linbei0/EcomGen','storytold/photocraft'];
+  // 只对这几个项目打印明细（**诊断用，不参与 PASS/FAIL**）。用发布包 demo 里真实存在的项目 ——
+  // 列原库专属仓库在 demo 页面里永远命不中，等于空跑（2026-10-15 更换，旧 id 不再列举）。
+  const TARGET = ['storytold/photocraft','easydiffusion/easydiffusion','ImageMagick/ImageMagick','yetone/magpie'];
   const PLD = cap.PLANS || [];
   const rows = [];
   for (const pl of PLD) {

@@ -94,29 +94,12 @@
   },
 
   "subscriptions": [
-    { "name": "Niko1221/Strata", "url": "https://github.com/Niko1221/Strata" },
-    { "name": "rociiu/talorys", "url": "https://github.com/rociiu/talorys" },
-    { "name": "QingYunA/answer-me-with-html", "url": "https://github.com/QingYunA/answer-me-with-html" },
-    { "name": "zhongerxin/iPhone-use", "url": "https://github.com/zhongerxin/iPhone-use" },
-    { "name": "browser-use/jev-ultrafast", "url": "https://github.com/browser-use/jev-ultrafast" },
-    { "name": "storytold/photocraft", "url": "https://github.com/storytold/photocraft" },
-    { "name": "MichaelKinsy/PiG", "url": "https://github.com/MichaelKinsy/PiG" },
-    { "name": "shihabal3amri/DiPlay", "url": "https://github.com/shihabal3amri/DiPlay" },
-    { "name": "ARahim3/DigUp", "url": "https://github.com/ARahim3/DigUp" },
-    { "name": "yetone/magpie", "url": "https://github.com/yetone/magpie" },
-    { "name": "liseami/CCBaga", "url": "https://github.com/liseami/CCBaga" },
-    { "name": "t4t5/omdrop-owl", "url": "https://github.com/t4t5/omdrop-owl" },
-    { "name": "repowise-dev/repowise", "url": "https://github.com/repowise-dev/repowise" },
-    { "name": "wheresryan22/anatomy", "url": "https://github.com/wheresryan22/anatomy" },
-    { "name": "nano-muse/nanoMuse", "url": "https://github.com/nano-muse/nanoMuse" },
-    { "name": "noahdunnagan/fsearch", "url": "https://github.com/noahdunnagan/fsearch" },
-    { "name": "HelixDB/helix-foundry", "url": "https://github.com/HelixDB/helix-foundry" },
-    { "name": "zai-org/ZCode", "url": "https://github.com/zai-org/ZCode" },
-    { "name": "robbietilton/Compositor", "url": "https://github.com/robbietilton/Compositor" },
-    { "name": "shanliuling/dsh-image-gen", "url": "https://github.com/shanliuling/dsh-image-gen" },
-    { "name": "jd-opensource/JoyAI-Image", "url": "https://github.com/jd-opensource/JoyAI-Image" },
-    { "name": "zidniryi/unbagrnd", "url": "https://github.com/zidniryi/unbagrnd" },
-    { "name": "DenRakEiw/scumble", "url": "https://github.com/DenRakEiw/scumble" },
-    { "name": "techjarves/Portable-Local-Studio", "url": "https://github.com/techjarves/Portable-Local-Studio" }
-  ]
+    { "name": "ollama/ollama",       "url": "https://github.com/ollama/ollama" },
+    { "name": "astral-sh/uv",        "url": "https://github.com/astral-sh/uv" },
+    { "name": "sharkdp/fd",          "url": "https://github.com/sharkdp/fd" },
+    { "name": "microsoft/PowerToys", "url": "https://github.com/microsoft/PowerToys" },
+    { "name": "n8n-io/n8n",          "url": "https://github.com/n8n-io/n8n" },
+    { "name": "jqlang/jq",           "url": "https://github.com/jqlang/jq" }
+  ],
+  "subscriptions_note": "示例订阅清单：以上 6 个均为真实存在的知名公开仓库（2026-10-15 用 API 核实）。它不是推荐结果，只是「每天扫哪些来源」的起点 —— 换成你自己的关注来源即可。",
 }
