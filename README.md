@@ -155,7 +155,7 @@ github-daily-picks/                 ← 解压出来的仓库根目录
 ├─ LICENSE                          ← MIT
 ├─ TEMPLATES/
 │  ├─ daily.md                      ← 日报格式唯一出处（S 档 12 项 + A 档简条 + 枚举表）
-│  └─ weekly.md                     ← 周报模板（周日汇总）
+│  └─ weekly.md                     ← 周报模板 2.0（每周一汇总上一周；双榜 / 一屏）
 ├─ assets/                          ← 本地字体 + NASA 公有领域结构摄影（离线可用）
 ├─ data/
 │  ├─ README.md                     ← 数据字典（字段含义、枚举白名单）

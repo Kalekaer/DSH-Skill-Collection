@@ -28,6 +28,13 @@
 
 ---
 
+## [5.1.4] — 2026-10-19 · 周报模板 2.0 ✓
+
+- `TEMPLATES/weekly.md` 重写：**每周一第一次日报后产出上一周**（周一~周日，`W01` 起）。
+- 结构：双榜（星数周增 / 本周主推荐 S/A 档）、本周主推荐总览、入库与变化、当前状态（人工填）、下周关注、数据质量、折叠附录。
+- 术语严格按 `GLOSSARY.md`；D 档与不再看只给数量+原因类别；不替人写当前状态。
+- 包内 README 周报说明同步；库内 `term-check.ps1` 已把周报模板纳入扫描。
+
 ## [5.1.3] — 2026-10-19 · 术语清扫同步 + 旧单页修正 ✓
 
 - 同步库内术语清扫：`build-overview.ps1`、`build-samples.ps1`、`score.ps1`、`daily-layout-c-finsara.html`、`library-notebook.html`、`site-shell.html`、`_detail.js|css`、`templates/overview.js|css`；包内 5 页重建。
