@@ -1,4 +1,4 @@
-# suggest-plans.ps1 — 发现「库里工具攒够了、但没有对应方案」的用途方向，作为方案候选
+﻿# suggest-plans.ps1 — 发现「库里工具攒够了、但没有对应方案」的用途方向，作为方案候选
 #
 # 解决的问题：data/plans.json 是人工写的固定场景。库变大后会出现：
 # **某个方向的工具已经一堆了，但没有任何方案会带用户看到它们**（例如 AI 音乐攒了 6 个）。
@@ -28,13 +28,13 @@ if (Test-Path $planPath) {
         foreach ($x in @($r.ft)) { if ($x) { $coveredFt["$x".ToLower()] = $true } }
       }
     }
-  } catch {}
+  } catch { $null = $_ }
 }
 
 $all = @()
 foreach ($l in (Get-Content (P 'data\projects.jsonl') -Encoding UTF8)) {
   if ([string]::IsNullOrWhiteSpace($l)) { continue }
-  try { $all += ($l | ConvertFrom-Json) } catch {}
+  try { $all += ($l | ConvertFrom-Json) } catch { $null = $_ }
 }
 
 # ---- 按二级分类统计（排除已淘汰、排除「其他工具」）----

@@ -25,7 +25,7 @@ New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 $all = @()
 foreach ($l in (Get-Content (P 'data\projects.jsonl') -Encoding UTF8)) {
   if ([string]::IsNullOrWhiteSpace($l)) { continue }
-  try { $all += ($l | ConvertFrom-Json) } catch {}
+  try { $all += ($l | ConvertFrom-Json) } catch { $null = $_ }
 }
 
 # ---- 选样本：自动发现的优先；覆盖尽量多的分类；带 1 条已淘汰的（展示状态机）----
@@ -45,12 +45,16 @@ if ($dropped) { $picked += $dropped }
 $ids = @($picked | ForEach-Object { $_.id })
 
 # ---- 剥个人数据后写 projects.jsonl ----
+# 2026-10-19：audit 166 要求投影层字段齐全（score / source / kind / owner_class /
+# function_tags_l1 / note / user_notes …）。所以「个人内容」改成**置空**而不是删字段；
+# 只删真正属于个人库的 library。note / user_notes 一律空串。
 $projLines = foreach ($p in $picked) {
   $o = $p.PSObject.Copy()
-  foreach ($f in 'library', 'user_notes', 'score', 'source') {
+  foreach ($f in 'library') {
     if ($o.PSObject.Properties[$f]) { $o.PSObject.Properties.Remove($f) }
   }
-  if ($o.PSObject.Properties['note']) { $o.note = '（demo 数据：真实公开项目，已去掉个人备注）' }
+  if ($o.PSObject.Properties['note']) { $o.note = '' }
+  if ($o.PSObject.Properties['user_notes']) { $o.user_notes = '' }
   $o | ConvertTo-Json -Compress -Depth 8
 }
 [System.IO.File]::WriteAllLines((Join-Path $outDir 'projects.jsonl'), $projLines, (New-Object System.Text.UTF8Encoding($false)))

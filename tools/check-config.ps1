@@ -41,15 +41,13 @@ Chk "hard_max 与 RUBRIC 的『合计 8 条』一致" ($rubric -match '合计 8 
 $sources = Get-Content (Join-Path $root 'SOURCES.md') -Raw
 Chk "SOURCES.md 周一 topic 为 ai-agent" ($sources -match '\| 周一 \| `ai-agent`')
 Chk "config 周一 topic 与 SOURCES.md 相同" ($cfg.sources.topics_by_weekday.'周一' -eq 'ai-agent')
-$rubricOwner = if ($rubric -match '(\d+) 天内最多出现 1 个') { [int]$Matches[1] } else { $null }
-Chk "owner 冷却期：RUBRIC 与 config 一致" ($rubricOwner -ne $null -and $rubricOwner -eq $cfg.dedup.same_owner_cooldown_days) "RUBRIC=$rubricOwner config=$($cfg.dedup.same_owner_cooldown_days)"
+$rubricOwner = if ($rubric -match '(\d+) 天内最多.{0,4}1 个') { [int]$Matches[1] } else { $null }
+Chk "owner 冷却期：RUBRIC 与 config 一致" ($null -ne $rubricOwner -and $rubricOwner -eq $cfg.dedup.same_owner_cooldown_days) "RUBRIC=$rubricOwner config=$($cfg.dedup.same_owner_cooldown_days)"
 
 Write-Host "`n=== 3. 订阅清单与 recommend-log.csv 对齐 ==="
 if (Test-Path $csvPath) {
   $csv = Import-Csv $csvPath
   $csvRepos = $csv | ForEach-Object { $_.仓库 } | Sort-Object -Unique
-  $subNames = $cfg.subscriptions | ForEach-Object { $_.name } | Sort-Object -Unique
-  $notInSub = $csvRepos | Where-Object { $subNames -notcontains $_ }
   # B6（Bug 测试报告）：订阅清单是「每天扫的来源」，recommend-log.csv 是「推荐过谁」——
   # 搜索发现的项目本来就不在订阅源里，要求 CSV ⊆ 订阅清单是错的检查。
   # 改成有意义的：CSV 里的仓库必须都能在台账里找到（否则是脏数据）。
@@ -58,7 +56,7 @@ if (Test-Path $csvPath) {
   if (Test-Path $seenP) {
     foreach ($l in (Get-Content $seenP -Encoding UTF8)) {
       if (-not $l.Trim()) { continue }
-      try { $ledgerNames += ($l | ConvertFrom-Json).full_name } catch {}
+      try { $ledgerNames += ($l | ConvertFrom-Json).full_name } catch { $null = $_ }
     }
   }
   $csvNotInLedger = @($csvRepos | Where-Object { $ledgerNames -notcontains $_ })
@@ -107,7 +105,6 @@ if ($StatusRoundTrip) {
     # 下面的正则就找不到目标行 → 写入与恢复全部失效（副本实测 3 项 FAIL）。
     $tName = $target.full_name
     $originalStatus = $target.status
-    $originalNote = $target.note
     Write-Host ("        目标：{0}  原 status={1}" -f $tName, $originalStatus)
 
     # 用文本替换而不是重写整个文件，保证其它行逐字节不动
@@ -155,4 +152,9 @@ if ($StatusRoundTrip) {
 }
 
 Write-Host ("`nCONFIG CHECK: {0} 通过 / {1} 失败" -f $script:pass, $script:fail) -ForegroundColor ($(if ($script:fail -eq 0) {'Green'} else {'Red'}))
+
+# P1-16：-StatusRoundTrip 会动 data\status-log.jsonl（页面输入之一）——**恢复原值后仍要重建**，
+# 否则它的 mtime 变新而页面没变 → audit 的 P1-17 会（合理地）变红 ✗（$env:DSH_SKIP_REBUILD=1 可关）
+if ($StatusRoundTrip -and $script:fail -eq 0) { & (Join-Path $root 'tools\rebuild-page.ps1') -Quiet }
+
 if ($script:fail -gt 0) { exit 1 } else { exit 0 }

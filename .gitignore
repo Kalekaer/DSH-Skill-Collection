@@ -2,3 +2,11 @@ debug.log
 data/_backup/
 data/_tmp/
 *.tmp
+*.log
+data/_pyenv/
+data/_models/
+data/_pip-cache/
+legacy/
+data/runs/
+data/push/
+reports/*.md

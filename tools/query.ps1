@@ -1,4 +1,4 @@
-# query.ps1 — 按条件查询项目档案（读 projects.jsonl，不写任何文件）
+﻿# query.ps1 — 按条件查询项目档案（读 projects.jsonl，不写任何文件）
 #
 # 用法示例：
 #   & ".\tools\query.ps1"                                  # 概览：总数 + 各维分布
@@ -32,7 +32,7 @@ function Read-Jsonl([string]$p) {
   $out = @()
   foreach ($l in Get-Content $p -Encoding UTF8) {
     if ([string]::IsNullOrWhiteSpace($l)) { continue }
-    try { $out += ($l | ConvertFrom-Json) } catch {}
+    try { $out += ($l | ConvertFrom-Json) } catch { $null = $_ }
   }
   return $out
 }

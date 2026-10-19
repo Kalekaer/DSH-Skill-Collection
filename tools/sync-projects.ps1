@@ -24,24 +24,19 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 function P([string]$rel) { Join-Path $root $rel }
 
-# ---------- 降级：没有原始层时不派生（2026-10-14 修复）----------
-# 发布版 / demo 数据包按设计**不含** data\seen.jsonl（个人数据不发布）。
-# 旧行为：空输入 → $projects 为空 → $projLines 为 $null → [IO.File]::WriteAllLines 抛
-#         "Value cannot be null. (Parameter 'contents')"，退出码 1，用户看到的是 .NET 报错。
-# 新行为：先判断原始层是否存在；不存在就说明原因、**零副作用**退出（连 tools/ 备份都不做）。
-# 判据只看**去重台账** data\seen.jsonl —— 它是原始层的主文件。
-# （2026-10-14 二次修正：第一版把 data\taxonomy.json / data\human\*.jsonl 也算原始层，
-#   于是 demo 包被判定为"有原始层"，脚本继续往下跑，**静默把 projects.jsonl / events.jsonl 写成空**，
-#   比原来的崩溃更糟。现在：缺台账 = 不派生，直接退出。）
+# ---------- 降级：没有原始层就不派生（2026-10-16 从发布包移植）----------
+# 原始层 data\seen.jsonl（去重台账）**不可再生**：它记录了你所有见过的仓库、状态与备注。
+# 旧行为：它缺失/为空时继续往下跑 → $projects 为空 → [IO.File]::WriteAllLines 抛
+# 「Value cannot be null. (Parameter 'contents')」（2026-10-16 在副本实测复现）。
+# 现在改成：**明确报错 + 不做任何写入**（含 tools/ 备份），退出码 1，让调用方停下来先查。
 if (-not (Test-Path (P 'data\seen.jsonl'))) {
   Write-Host ""
-  Write-Host "=== 跳过同步：本工作区没有原始层 ===" -ForegroundColor Yellow
-  Write-Host "  data\seen.jsonl 等原始文件都不存在 —— 这是**发布版 / demo 数据包**（个人数据按设计不发布）。"
-  Write-Host "  没有原始层就没有可派生的东西，本次不做任何写入（含 tools/ 备份）。"
-  Write-Host "  → 想让它变成你自己的库：先跑一次日报（对话里说「跑今天的日报」），"
-  Write-Host "    生成 data\seen.jsonl 之后再执行本脚本即可正常重建 projects.jsonl / events.jsonl。"
-  Write-Host ""
-  exit 0
+  Write-Host "=== 中止：缺少原始层 data\seen.jsonl ===" -ForegroundColor Red
+  Write-Host "  它是**不可再生**的原始层；缺失时派生结果必然为空，写盘只会毁掉投影。"
+  Write-Host "  本次**不做任何写入**：projects.jsonl / events.jsonl / tools 备份都不动。"
+  Write-Host "  → 先找回 data\seen.jsonl（看 data\_backup\ 下的历史副本），再重跑本脚本。"
+  Write-Host "  → 若确实要从零开始：人工确认后删掉 data\projects.jsonl 与 data\events.jsonl，再跑一次日报。"
+  exit 1
 }
 
 # ---------- 自动备份 tools/（2026-10-13 事故的教训：脚本无版本控制，误操作后无法回滚）----------
@@ -70,7 +65,7 @@ if ($toolFiles.Count -gt 0) {
 
 # ---------- 读配置 ----------
 $cfg = $null
-try { $cfg = Get-Content (P 'config.json') -Raw | ConvertFrom-Json } catch {}
+try { $cfg = Get-Content (P 'config.json') -Raw | ConvertFrom-Json } catch { $null = $_ }
 if ($StarsThreshold -lt 0) {
   $StarsThreshold = if ($cfg -and $cfg.events -and $cfg.events.stars_threshold) { [int]$cfg.events.stars_threshold } else { 30 }
 }
@@ -82,7 +77,6 @@ $picksDir   = P 'data\picks'
 $snapDir    = P 'data\snapshots'
 $statusLog   = P 'data\status-log.jsonl'
 $metaDir     = P 'data\meta'      # 元数据层（按天追加，是事件源之一，不能覆盖）
-$backfillDir = P 'data\backfill'  # 一次性补录的来源凭证（不再直接读，历史已并入 meta/）
 $humanDir    = P 'data\human'     # 人话层（项目介绍 / 功能标签 / 同义词；优先级高于自动推断）
 $taxonomyPath= P 'data\taxonomy.json'  # 两级分类规则库（**分类只能从这里取，不允许运行时自由创建**）
 $userNotesPath = P 'data\user-notes.jsonl'  # 用户自己的备注（个人数据，**与机器生成的人话层分开存**）
@@ -114,7 +108,7 @@ if (Test-Path $metaDir) {
         $metaHistory[$m.full_name] += [pscustomobject]@{
           date = $d; description = $m.description; license = $m.license
           topics = @($m.topics | Where-Object { $_ }); archived = $m.archived; pushed_at = $m.pushed_at
-          stars = $m.stars; release_at = $m.release_at
+          stars = $m.stars; release_at = $m.release_at; forks = $m.forks; open_issues = $m.open_issues; created_at = $m.created_at
         }
       }
     }
@@ -131,11 +125,9 @@ foreach ($k in $metaHistory.Keys) {
 # 人话层**优先级高于自动推断**：有就用人话层的，没有才用自动生成的。
 $introMap = @{}
 $tagMap   = @{}
-$synGroups = @()
 if (Test-Path $humanDir) {
   foreach ($x in (Read-Jsonl (Join-Path $humanDir 'repo-intro.jsonl')))    { $introMap[$x.full_name] = $x }
   foreach ($x in (Read-Jsonl (Join-Path $humanDir 'function-tags.jsonl'))) { $tagMap[$x.full_name]   = $x }
-  $synGroups = Read-Jsonl (Join-Path $humanDir 'search-synonyms.jsonl')
 }
 
 # --- 用户备注层（个人数据，单独加载，避免重建投影时丢失）---
@@ -155,7 +147,7 @@ foreach ($n in (Read-Jsonl $userNotesPath)) {
 $script:WIDE = @()
 $widePath = P 'data\wide-terms.json'
 if (Test-Path $widePath) {
-  try { $script:WIDE = @((Get-Content $widePath -Raw -Encoding UTF8 | ConvertFrom-Json).wide | Where-Object { $_ }) } catch {}
+  try { $script:WIDE = @((Get-Content $widePath -Raw -Encoding UTF8 | ConvertFrom-Json).wide | Where-Object { $_ }) } catch { $null = $_ }
 }
 
 # --- 两级分类规则库 ---
@@ -179,6 +171,31 @@ function Get-TwoLevelCategory {
     $bestL1 = $null; $bestL2 = $null; $bestLen = 0
     foreach ($l1 in $taxonomy.'一级分类'.PSObject.Properties) {
       foreach ($l2 in $l1.Value.children.PSObject.Properties) {
+        # 与条件（侧表 `_类目门槛`，2026-10-16 新增）：类目可声明"必须先出现某类信号"。
+        # 只影响这里；taxonomy 的 children 保持数组形状不变，其它脚本零改动。
+        # 起因：「DSH 技能」的关键词（skill / agent-skills / agent-tools）是通用词，
+        #       任何给 AI 助手用的技能包都会命中，把 Claude Code / Codex 生态的项目吸进 DSH 生态。
+        $gateSpec = $null
+        $gates = $taxonomy.'_类目门槛'
+        if ($gates) {
+          $gk = ($l1.Name + '/' + $l2.Name)
+          $gp = $gates.PSObject.Properties[$gk]
+          if ($gp) { $gateSpec = @($gp.Value) }
+        }
+        if ($gateSpec -and $gateSpec.Count -gt 0) {
+          # 看**强+弱并集**：只要项目任何一处提到 DSH（含 topics 里的 dsh-plugin），这一档才参与匹配。
+          $gateText = (($StrongText + ' ' + $WeakText)).ToLower()
+          $tn = ($gateText -replace '[-_ ]','')
+          $gateOk = $false
+          foreach ($rq in $gateSpec) {
+            $rqs = [string]$rq
+            $rn = $rqs.ToLower() -replace '[-_ ]',''
+            if (-not $rn) { continue }
+            if ($rn.Length -ge 8) { if ($tn.Contains($rn)) { $gateOk = $true; break } }
+            elseif ($gateText -match ('\b' + [regex]::Escape($rqs) + '\b')) { $gateOk = $true; break }
+          }
+          if (-not $gateOk) { continue }
+        }
         foreach ($kw in @($l2.Value)) {
           if (-not $kw) { continue }
           $k = $kw.ToLower()
@@ -205,9 +222,8 @@ function Get-TwoLevelCategory {
 # 关键：**不看 star 数**。500 star 但装上就能用的工具可以是五星；
 #       5 万 star 但要配半天环境的，只能三星。
 function Get-ExperienceRating {
-  param($Desc, $License, $PushedAt, $Risk, $HumanStatus, $Topics, $Archived)
+  param($Desc, $PushedAt, $Risk, $HumanStatus, $Topics, $Archived)
   $d = if ($Desc) { ([string]$Desc).ToLower() } else { '' }
-  $topicTxt = (@($Topics) -join ' ').ToLower()
 
   # **信息不足 → 不评分**。否则"没落盘描述"会被误判成"难用"，
   # 出现"60% 的项目都是 1 星"这种没有信息量的结果。
@@ -245,7 +261,7 @@ function Get-ExperienceRating {
       $days = ([datetime]::Now - [datetime]$PushedAt).Days
       if ($days -le 7) { $active = 15 } elseif ($days -le 30) { $active = 13 }
       elseif ($days -le 90) { $active = 10 } elseif ($days -le 365) { $active = 5 } else { $active = 2 }
-    } catch {}
+    } catch { $null = $_ }
   }
 
   # ⑤ 风险 15：风险低得满分
@@ -463,9 +479,14 @@ foreach ($s in $seen) {
     $plist = @($plist | Sort-Object date)
   }
   $recCount = 0
-  foreach ($p in $plist) {
-    # **已放弃的决策不产生「已推荐」事件**（那是淘汰记录，不是推荐）。
-    # 但它必须留在 $plist 里，否则 pickDates 认不出当天已有记录，CSV 兜底会误注入假推荐。
+  # 只有 S/A 算「推荐」：B/C 是观察/候选，不写 recommended 事件、不计次数、不启动 7 天冷却。
+  # 满额未刊（daily_status=over_quota）同样不算推荐。
+  $publist = @($plist | Where-Object {
+      $_.tier -in @('S', 'A') -and
+      (-not $_.PSObject.Properties['daily_status'] -or $_.daily_status -ne 'over_quota')
+    })
+  foreach ($p in $publist) {
+    # 历史 dropped 行仍留在 $plist（pickDates 要用），但 $publist 已排除；这里保留兜底 guard。
     if ($p.tier -eq 'dropped') { continue }
     $recCount++
     $type = if ($recCount -eq 1) { 'recommended' } else { 're_recommended' }
@@ -475,6 +496,7 @@ foreach ($s in $seen) {
     Add-Event $id $p.date $type $detail $evtSrc
   }
   $lastPick = if ($plist.Count -gt 0) { $plist[-1] } else { $null }
+  $lastPub = if ($publist.Count -gt 0) { $publist[-1] } else { $null }
 
   # --- 首次发现事件 ---
   $srcQ = if ($csvMap.ContainsKey($id) -and $csvMap[$id].方向) { $csvMap[$id].方向 }
@@ -491,7 +513,7 @@ foreach ($s in $seen) {
     try {
       $days = ([datetime]::Now - [datetime]$pushedAt).Days
       if ($days -ge 90) { Add-Event $id $lastDate 'push_activity' "已 $days 天无提交" 'api' }
-    } catch {}
+    } catch { $null = $_ }
   }
 
   # --- 分类标签 ---
@@ -544,7 +566,7 @@ foreach ($s in $seen) {
     $lastPush = $null
     foreach ($h in $hist) {
       if ($h.release_at) { $lastRel = [datetime]$h.release_at }
-      $pushT = $null; if ($h.pushed_at) { try { $pushT = [datetime]$h.pushed_at } catch {} }
+      $pushT = $null; if ($h.pushed_at) { try { $pushT = [datetime]$h.pushed_at } catch { $null = $_ } }
       if ($pushT -and $lastPush -and $pushT -gt $lastPush) {
         $gapOk = (-not $lastRel) -or (($pushT - $lastRel).TotalDays -ge 14)
         if ($gapOk) {
@@ -568,15 +590,36 @@ foreach ($s in $seen) {
     problem      = if ($intro) { $intro.problem } else { $null }
     example      = if ($intro) { $intro.example } else { $null }
     feature_note = if ($intro) { $intro.feature_note } else { $null }
+  # P1-13：**适合谁**（audience）原本只存在原始层 data/human/repo-intro.jsonl，投影没带出来 ✗ → 补上 ✓
+  #   字段是可选的（目前 39 条推荐项有、来源 agent-draft）；用 PSObject.Properties 守卫，缺字段不报错 ✓
+  audience     = if ($intro -and $intro.PSObject.Properties['audience']) { [string]$intro.audience } else { $null }
+  audience_src = if ($intro -and $intro.PSObject.Properties['audience_source']) { [string]$intro.audience_source } else { $null }
     written_at   = if ($intro -and $intro.written_at) { $intro.written_at } else { $null }
     note_extra   = if ($intro -and $intro.PSObject.Properties['note_extra']) { $intro.note_extra } else { $null }
   }
   # **禁止 `$x = if (...) { @() }` 写法**：PowerShell 里语句值返回空数组会塌成 $null，
   # 之后 @($null) 又变成「含一个 null 的数组」，序列化成 [null]，前端 .map 取值直接 TypeError。
   # 一律用「先初始化为 @()，再 if 赋值」。2026-10-13 卡片点不了就是这个坑造成的。
+  # P1-6：功能标签 → **一级方向** 的映射（`data/tags-vocabulary.json` 的 `parent`，25 条）
+  $tagParent = @{}
+  $vocabPath = Join-Path $root 'data\tags-vocabulary.json'
+  if (Test-Path $vocabPath) {
+    try {
+      $vocab = Get-Content $vocabPath -Raw -Encoding UTF8 | ConvertFrom-Json
+      if ($vocab.PSObject.Properties['parent']) {
+        foreach ($pr in $vocab.parent.PSObject.Properties) { $tagParent[[string]$pr.Name] = [string]$pr.Value }
+      }
+    } catch { $tagParent = @{} }
+  }
   $functionTags = @(); $userKeywords = @(); $synonyms = @()
   if ($ftag) {
     if ($ftag.function_tags) { $functionTags = @($ftag.function_tags | Where-Object { $_ }) }
+  # P1-6：功能标签 → 一级方向（词表 parent 映射）。**必须在哈希表字面量之前算好** ✗ 字面量里放不了语句
+  $l1dirs = @()
+  foreach ($tg in $functionTags) {
+    $pt = [string]$tg
+    if ($tagParent.ContainsKey($pt)) { $pv = [string]$tagParent[$pt]; if ($l1dirs -notcontains $pv) { $l1dirs += $pv } }
+  }
     if ($ftag.user_keywords) { $userKeywords = @($ftag.user_keywords | Where-Object { $_ }) }
     if ($ftag.synonyms)      { $synonyms     = @($ftag.synonyms      | Where-Object { $_ }) }
   }
@@ -605,7 +648,7 @@ foreach ($s in $seen) {
   $l2cat = Get-TwoLevelCategory -StrongText $strongText -WeakText $weakText
 
   # --- 使用体验五星（独立于 S/A/B 推荐档；**不看 star 数**）---
-  $exp = Get-ExperienceRating -Desc $desc -License $lic -PushedAt $pushedAt -Risk $tags['风险等级'] `
+  $exp = Get-ExperienceRating -Desc $desc -PushedAt $pushedAt -Risk $tags['风险等级'] `
                               -HumanStatus $human.status -Topics $topics -Archived $archived
 
   # --- 来源与评级状态 ---
@@ -613,24 +656,76 @@ foreach ($s in $seen) {
   # 用户主动推荐的项目未经日报流程筛选，故 tier 记 'unrated'，不伪装成 S/A/B。
   $origin = if ($s.PSObject.Properties['origin'] -and $s.origin) { $s.origin } else { 'auto' }
   $isUserAdded = ($origin -eq 'user')
-  $tierOut = if ($isUserAdded -and -not $lastPick) { 'unrated' } elseif ($lastPick) { $lastPick.tier } else { $null }
+  # 库内档位：有当日 pick 用 pick；没有 pick 的库内项目（用户自推/历史空白）用
+  # 备注里的“B/C/D 档”或体验分补成 SABCD；不允许库内没有档位。
+  $expTier = if ($null -ne $exp.score) {
+    if ($exp.score -ge 80) { 'S' } elseif ($exp.score -ge 65) { 'A' } elseif ($exp.score -ge 55) { 'B' } elseif ($exp.score -ge 45) { 'C' } else { 'D' }
+  } else { 'D' }
+  $noteTier = $null
+  if ($s.note -match '(?<![A-Za-z])([SABCD])\s*档') { $noteTier = $Matches[1] }
+  $tierOut = if ($lastPick) {
+    if ($lastPick.tier -eq 'dropped') { 'D' }
+    elseif ($lastPick.tier -in @('S','A','B','C','D')) { $lastPick.tier }
+    else { $expTier }
+  } elseif ($noteTier) { $noteTier } else { $expTier }
 
+  # --- P0-1：趋势口径显式化（只加不改；delta_7d 语义不变）---
+  $forkVal    = if ($m -and $m.PSObject.Properties['forks'] -and $null -ne $m.forks) { [int]$m.forks } elseif ($snaps.Count -gt 0 -and $snaps[-1].PSObject.Properties['forks']) { [int]$snaps[-1].forks } else { $null }
+  $createdVal = if ($m -and $m.PSObject.Properties['created_at'] -and $m.created_at) { [string]$m.created_at } elseif ($snaps.Count -gt 0 -and $snaps[-1].PSObject.Properties['created_at']) { [string]$snaps[-1].created_at } else { $null }   # 优先 meta
+  $winDays = 0; $winValid = $false
+  if ($snaps.Count -ge 2) {
+    $winDays = [int]([datetime]::ParseExact($snaps[-1].date, 'yyyy-MM-dd', $null) - [datetime]::ParseExact($snaps[0].date, 'yyyy-MM-dd', $null)).TotalDays
+    $winValid = ($winDays -ge 5)
+  }
+
+# --- P1-1/P1-2：实体类型与来源级别（2026-10-17；只加不改）---
+$orgWhitelist = @{}
+try {
+  $wlPath = Join-Path $root 'data\owner-whitelist.json'
+  if (Test-Path $wlPath) {
+    $wlJson = Get-Content $wlPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    foreach ($pr in $wlJson.orgs.PSObject.Properties) { $orgWhitelist[$pr.Name] = [string]$pr.Value }
+  }
+} catch { $null = $_ }
+function Get-Kind([string]$tagsJoined, [string]$topicsJoined, [string]$desc, [string]$name, [string]$lang) {
+  $t = ($tagsJoined + ' ' + $topicsJoined).ToLower(); $d = ([string]$desc).ToLower()
+  if ($tagsJoined -match '资源合集' -or $name -like 'awesome-*' -or $d -match 'awesome') { return @('resource-list', '资源合集/awesome 迹象') }
+  if ($t -match 'dataset|数据集') { return @('dataset', 'topics/tags 含 dataset') }
+  if ($t -match 'llm|模型|model|权重|checkpoint') { return @('model', 'topics/tags 含 model/模型') }
+  if ($tagsJoined -match '教程|学习|课程|roadmap') { return @('learning', 'tag 含学习类') }
+  if ($t -match 'plugin|插件|skill|技能') { return @('plugin-skill', 'topics/tags 含 plugin/skill') }
+  if ($t -match 'server|self-host|docker|部署|infra|运维') { return @('infra', 'topics/tags 含 server/docker/部署') }
+  if ($d -match 'library|sdk|framework|框架|库') { return @('library', '描述含 library/sdk/框架') }
+  if ($d -match 'cli|command-line|命令行|工具|tool|app|desktop|客户端') { return @('tool', '描述含 cli/tool/app') }
+  if ($lang) { return @('unknown', '有语言但无更强证据 → 老实记 unknown') }
+  return @('unknown', '证据不足')
+}
+  $kindPair = Get-Kind (@($functionTags) -join ' ') (@($topics) -join ' ') $desc $name $s.language
+  $kindOut = $kindPair[0]; $kindBasis = $kindPair[1]
+  $ownerLogin = ([string]$id -split '/')[0]
+  $ownerClass = if ($orgWhitelist.ContainsKey($ownerLogin)) { 'official' } else { 'community' }
+  $ownerLabel = if ($orgWhitelist.ContainsKey($ownerLogin)) { $orgWhitelist[$ownerLogin] } else { $null }
   [void]$projects.Add([pscustomobject][ordered]@{
     id = $id; url = $s.url; owner = $owner; name = $name
     description = $desc; description_source = $descSource
     license = $lic; topics = $topics; archived = $archived; pushed_at = $pushedAt
     language = $s.language
     first_seen = $s.first_seen; last_seen = $s.last_seen
-    recommended = ($tierOut -in @('S','A')) -and ($s.status -ne 'dropped'); recommend_count = $recCount
-    last_recommended = if ($lastPick) { $lastPick.date } elseif ($s.PSObject.Properties['last_recommended']) { $s.last_recommended } else { $null }
+    recommended = ($tierOut -in @('S','A')) -and ($null -ne $lastPub) -and ($s.status -ne 'dropped'); recommend_count = $recCount
+    last_recommended = if ($lastPub) { $lastPub.date } elseif ($s.PSObject.Properties['last_recommended']) { $s.last_recommended } else { $null }
     tier = $tierOut
     score = if ($lastPick) { $lastPick.score } else { $null }
-    risk = if ($lastPick) { $lastPick.risk } else { $null }
+    risk = if ($lastPick) { $lastPick.risk } elseif ($s.PSObject.Properties['risk'] -and $s.risk) { [string]$s.risk } else { $null }
     source = if ($lastPick) { $lastPick.source } else { $null }
     origin = $origin
+    kind = $kindOut; kind_basis = $kindBasis
+    owner_class = $ownerClass; owner_label = $ownerLabel
     origin_note = if ($isUserAdded) { '用户推荐' } else { '自动发现' }
     action = if ($lastPick) { $lastPick.action } else { $null }
     status = $s.status
+    # 淘汰原因（2026-10-16 新增投影）：此前 drop_reason 只写在 seen.jsonl / picks 里，
+    # 同步脚本完全不读它 → 淘汰原因在页面上不可见，只能靠 note 人肉带（建议调整项 13）。
+    drop_reason = if ($s.PSObject.Properties['drop_reason'] -and $s.drop_reason) { $s.drop_reason } else { $null }
     tags = $tags
     category = [pscustomobject]@{ l1 = $l2cat.l1; l2 = $l2cat.l2 }
     experience = [pscustomobject]@{ stars = $exp.stars; score = $exp.score; parts = $exp.parts }
@@ -641,12 +736,15 @@ foreach ($s in $seen) {
       last_snapshot = $lastDate; snapshots = $snaps.Count
       github = if ($m -and $m.stars) { [int]$m.stars } else { $null }
       github_at = if ($m -and $m.fetched_at) { $m.fetched_at } else { $null }
+      forks = $forkVal; created_at = $createdVal; open_issues = $null
+      delta_7d_window_days = $winDays; delta_7d_valid = $winValid
     }
     events_count = $evCount
     note = $s.note
     user_notes = $userNotesArr
     human = $human
     function_tags = $functionTags
+    function_tags_l1 = $l1dirs        # P1-6：一级方向（计算写在**字面量之前** ✗ 字面量里不能放语句）
     user_keywords = $userKeywords
     synonyms = $synonyms
     updated_at = (Get-Date).ToString('yyyy-MM-ddTHH:mm:sszzz')
@@ -684,19 +782,19 @@ if (-not $Force -and (Test-Path $sigFile) -and (Test-Path $projPath) -and (Get-C
   exit 0
 }
 
-# 保护：宁可什么都不做，也不能清空投影。
-# （2026-10-14 实测：原始层被判空后，$projects 为空 → 仍会往下写，把 projects.jsonl / events.jsonl 覆写成空文件，
-#   页面瞬间变"0 个工具"。空输入应当中止写盘，而不是静默擦除。）
+# ---------- 防静默清空：空投影不写盘（2026-10-16 从发布包移植）----------
+# 原始层存在、但一条项目都派生不出来时（例如 seen.jsonl 被清空成 0 字节），
+# 直接写盘会把 projects.jsonl / events.jsonl **覆写成空** —— 这是不可接受的。
+# 默认不写盘并退出 1；确认无误后可用 -Force 强制写入。
 if (@($projects).Count -eq 0) {
   Write-Host ""
-  Write-Host "⚠ 没有任何可写入的项目 —— 为避免清空 projects.jsonl / events.jsonl，**本次不写盘**。" -ForegroundColor Yellow
-  Write-Host "  请检查 data\seen.jsonl（去重台账）是否被清空或删除；确认无误后可加 -Force 重跑。"
-  if (-not $Force) { exit 0 }
-  Write-Host "  （已传 -Force：仍然继续写盘）" -ForegroundColor DarkYellow
+  Write-Host "⚠ 派生结果为空 —— 为避免清空 projects.jsonl / events.jsonl，**本次不写盘**。" -ForegroundColor Yellow
+  Write-Host "  请检查 data\seen.jsonl（去重台账）是否被清空或损坏；确认无误后可加 -Force 重跑。"
+  if (-not $Force) { exit 1 }
 }
 
 $enc = New-Object System.Text.UTF8Encoding($false)
-# 用 @() 强制成数组：空集合经管道会变成 $null，而 WriteAllLines 收到 null 会抛 .NET 异常（2026-10-14 修复）
+# 用 @() 强制成数组：空集合经管道会变成 $null，而 WriteAllLines 收到 null 会抛 .NET 异常（2026-10-16 移植）
 $projLines = @($projects | Sort-Object id | ForEach-Object { ($_ | ConvertTo-Json -Depth 10 -Compress) })
 [System.IO.File]::WriteAllLines($projPath, $projLines, $enc)
 
@@ -716,3 +814,8 @@ Write-Host "  星数事件阈值   : ±$StarsThreshold"
 $byType = $events | Group-Object type | Sort-Object Count -Descending
 if ($byType) { Write-Host ("  事件分布       : " + (($byType | ForEach-Object { "$($_.Name)=$($_.Count)" }) -join '  ')) }
 Write-Host "  输入指纹       : $($sig.Substring(0,12))…"
+
+# 明确退出码：**不写这句，成功时 $LASTEXITCODE 不会被更新**（它在同进程里是"粘"的，
+# 会残留上一条脚本的退出码）→ 调用方（如 rebuild-page.ps1）会误判成功为失败 ✗
+# 2026-10-16 实测：audit 刚 exit 1，紧接着跑本脚本成功，调用方却读到 1。
+exit 0

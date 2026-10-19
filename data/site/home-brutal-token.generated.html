@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>首页 · 后朋克 × 粗野主义</title>
+<style>
+/* ============================================================================
+   依据：
+   · 视觉 ← 用户 brief「后朋克 × 粗野主义」：黑白高反差 / 荧光色 / 巨大标题 /
+            不对称分割 / 杂志拼贴；重点观察：大标题建立焦点、图片打破网格、醒目色引导视线
+   · 背景照 ← assets/bg/（NASA 公有领域，署名见 SOURCES.md），**本地文件，非在线链接**
+   · 巨字 ← assets/anton-latin.woff2（OFL，已登记 THIRD-PARTY.md）
+   · 数据 ← 真实：全部由 tools/build-samples.ps1 从 data/ 注入（库内条数 / 事件 / 分类 / 标签）
+   ============================================================================ */
+@font-face{font-family:"Anton";src:url("../../assets/anton-latin.woff2") format("woff2");font-weight:400;font-display:swap}
+:root{
+  --ink:#0a0a0a; --ink-2:#131313; --paper:#f5f5f0; --paper-2:#e6e6e0;
+  --fluoro:#e9ff2e; --magenta:#ff1f6b; --cyan:#2ef2d0; --grey:#8a8a86;
+  --rule:8px; --snap:90ms; --snap-ease:linear;
+  --anton:"Anton","Arial Narrow",Impact,sans-serif;
+  --mono:SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:"Noto Sans SC","Microsoft YaHei UI",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--ink);color:var(--paper);font:15px/1.45 var(--sans)}
+.cap{padding:14px 22px 6px;font:11px/1 var(--mono);letter-spacing:.18em;color:#5f5f5a;display:none}
+.cap b{color:var(--fluoro);letter-spacing:.06em;font-size:12px}
+.giant{font-family:var(--anton);font-weight:400;line-height:.82;letter-spacing:-.02em;text-transform:uppercase}
+.mono{font:600 10px/1.5 var(--mono);letter-spacing:.18em;text-transform:uppercase}
+
+/* ---------- 首页上半：照片背景 + 巨字 ---------- */
+.hero{position:relative;height:640px;margin:6px 16px 0;overflow:hidden;border:var(--rule) solid var(--paper)}
+/* 真照片：灰度 + 提对比 + 压暗 ⇒ 粗野主义的"印刷照片"质感 */
+.hero .photo{position:absolute;inset:0;background:#0a0a0a center/cover no-repeat;
+  background-image:url("../../assets/bg/nasa-vab-highbay.jpg");
+  background-position:50% 50%;transition:background-position .16s linear;
+  filter:grayscale(1) contrast(1.45) brightness(.5);transform:scale(1.04)}
+.hero::after{content:"";position:absolute;inset:0;z-index:4;pointer-events:none;opacity:0;transition:opacity .25s ease;
+  background:radial-gradient(340px circle at var(--mx,50%) var(--my,50%),rgba(233,255,46,.11),transparent 62%)}
+.hero.lit::after{opacity:1}
+.hero .w1{animation:homeW1 .55s cubic-bezier(.2,.8,.2,1) both}
+.hero .w2{animation:homeW2 .55s cubic-bezier(.2,.8,.2,1) .1s both}
+.hero .kick{animation:homeW2 .4s ease-out .22s both}
+@keyframes homeW1{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes homeW2{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.hero .w1,.hero .w2,.hero .kick{animation:none!important}.hero::after{display:none}}
+/* 双色调覆盖：荧光黄压暗部 ⇒ 印刷感；品红只留在右下角 */
+.hero .duo{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,10,.15) 0%,rgba(10,10,10,.72) 62%,#0a0a0a 100%);mix-blend-mode:normal}
+.hero .duo::after{content:"";position:absolute;inset:0;background:var(--fluoro);mix-blend-mode:color;opacity:.16}
+.hero .corner{position:absolute;right:0;bottom:0;width:34%;height:46%;
+  background-image:url("../../assets/bg/nasa-pad39b-steel.jpg");background-size:cover;background-position:center;
+  filter:grayscale(1) contrast(1.5) brightness(.42);border-top:var(--rule) solid var(--fluoro);border-left:var(--rule) solid var(--fluoro);
+  transform:skewY(-3deg)}
+.hero .toprule{position:absolute;left:0;right:0;top:0;height:var(--rule);background:var(--fluoro);z-index:5}
+.hero .meta{position:absolute;left:18px;right:18px;top:20px;display:flex;justify-content:space-between;z-index:6;
+
+  font:600 10px/1 var(--mono);letter-spacing:.2em;color:#cfcfc8;text-transform:uppercase}
+.hero .meta b{color:var(--paper)}
+.hero .hud{color:var(--fluoro);opacity:.75;font-size:9px;letter-spacing:.14em}
+.hero .words{position:absolute;left:20px;top:88px;z-index:6;width:62%}
+.hero .kick{display:inline-block;background:var(--magenta);color:#fff;font:600 10px/1 var(--mono);
+  letter-spacing:.2em;padding:5px 8px;margin-bottom:12px;text-transform:uppercase}
+.hero .w1{font-size:168px;margin:0;color:var(--paper);text-shadow:0 0 0 rgba(0,0,0,0)}
+.hero .w1 em{font-style:normal;color:var(--fluoro)}
+.hero .w2{font-size:54px;font-weight:900;line-height:.95;letter-spacing:-.045em;margin:0}
+.hero .w2 i{font-style:normal;color:var(--magenta)}
+/* 拼贴：一张旋转的照片卡，压住巨字（"图片打破规则网格"） */
+.hero .snap{position:absolute;left:38%;top:250px;width:250px;transform:rotate(-6deg);z-index:7;
+  border:6px solid var(--paper);box-shadow:14px 14px 0 var(--magenta)}
+.hero .snap .ph{height:150px;background:#111 center/cover;filter:grayscale(1) contrast(1.4) brightness(.62);
+  background-image:url("../../assets/bg/nasa-mobile-launcher.jpg")}
+.hero .snap .tx{background:var(--paper);color:var(--ink);padding:7px 9px;font:800 11px/1.3 var(--sans)}
+.hero .snap .tx span{display:block;font:600 8px/1.5 var(--mono);letter-spacing:.14em;color:#55554f;margin-top:2px}
+/* 右侧导航槽位（游戏选项感） */
+.hero .slots{position:absolute;right:16px;top:64px;width:31%;z-index:8;display:flex;flex-direction:column;gap:6px}
+.hero .slot{display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:9px;text-decoration:none;
+  background:var(--paper);color:var(--ink);padding:11px 11px 10px;
+  transition:transform var(--snap) var(--snap-ease),background var(--snap) var(--snap-ease),color var(--snap) var(--snap-ease)}
+.hero .slot .no{font-family:var(--anton);font-size:22px;line-height:1}
+.hero .slot .t{font:900 19px/1.05 var(--sans);letter-spacing:-.03em}
+.hero .slot .t small{display:block;font:600 9px/1.5 var(--mono);letter-spacing:.14em;color:#5a5a54;margin-top:2px}
+.hero .slot .go{font:600 10px/1 var(--mono)}
+.hero .slot:hover{transform:translateX(-6px)}
+.hero .slot.sel{background:var(--magenta);color:#fff}
+.hero .slot.sel .t small{color:rgba(255,255,255,.82)}
+.hero .slot.ghost{background:transparent;color:var(--paper);border:2px solid var(--paper)}
+.hero .slot.ghost:hover{background:var(--fluoro);color:var(--ink);border-color:var(--fluoro)}
+.hero .slot.ghost:hover .t small{color:#3d3d38}
+.hero .cmd{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:18px;z-index:9;
+  padding:9px 14px;border-top:2px solid var(--paper);background:rgba(10,10,10,.92)}
+.hero .cmd .k{font:600 10px/1 var(--mono);letter-spacing:.16em}
+.hero .cmd .k b{display:inline-block;background:var(--paper);color:var(--ink);padding:2px 6px;margin-right:6px}
+.hero .cmd .sp{flex:1}
+.hero .cmd .credit{font:600 9px/1 var(--mono);letter-spacing:.1em;color:var(--grey)}
+
+/* ---------- 首页下半：可视化区（不是日报） ---------- */
+.viz{margin:0 16px 30px;border:var(--rule) solid var(--paper);border-top:0;background:var(--ink)}
+.viz .head{display:flex;align-items:baseline;gap:14px;padding:12px 14px;border-bottom:var(--rule) solid var(--paper)}
+.viz .head .t{font-family:var(--anton);font-size:30px;line-height:1}
+.viz .head .s{font:600 10px/1 var(--mono);letter-spacing:.18em;color:var(--grey);text-transform:uppercase}
+.viz .head .sp{flex:1}
+.viz .grid{display:grid;grid-template-columns:1.35fr 1fr;gap:0}
+.viz .cell{padding:16px 16px 14px;border-right:2px solid #262624;border-bottom:2px solid #262624}
+.viz .cell:nth-child(2n){border-right:0}
+.viz .cell.wide{grid-column:1 / -1;border-right:0}
+.viz .lb{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.viz .lb b{font:600 10px/1 var(--mono);letter-spacing:.2em;color:var(--grey);text-transform:uppercase}
+.viz .lb i{font:600 10px/1 var(--mono);font-style:normal;color:var(--fluoro);letter-spacing:.1em}
+.viz .chart-note{margin:10px 0 0;font:400 11px/1.5 var(--sans);color:#8a8a86}
+/* 分类条：硬条 + 数字 */
+.vrow{display:grid;grid-template-columns:74px 1fr 38px;gap:8px;align-items:center;margin-bottom:5px}
+.vrow span{font:700 11px/1.2 var(--sans);letter-spacing:-.01em}
+.vrow .bar{height:15px;background:#232320;position:relative}
+.vrow .bar i{position:absolute;left:0;top:0;bottom:0;background:var(--fluoro)}
+.vrow .bar i.m{background:var(--magenta)}
+.vrow b{font:700 12px/1 var(--mono);color:var(--paper);text-align:right}
+/* 反白面板（粗野主义的"翻页"对比）：一整块纸白压在黑场上，立刻打破单调 */
+.viz .cell.inv{background:var(--paper);color:var(--ink)}
+.viz .cell.inv .lb b{color:#4d4d47}
+.viz .cell.inv .lb i{color:var(--magenta)}
+.viz .cell.inv .vrow span{color:var(--ink)}
+.viz .cell.inv .vrow .bar{background:#d9d9d3}
+.viz .cell.inv .vrow .bar i{background:var(--ink)}
+.viz .cell.inv .vrow .bar i.m{background:var(--magenta)}
+.viz .cell.inv .vrow b{color:var(--ink)}
+/* 7 天柱 */
+.spark{display:flex;align-items:flex-end;gap:6px;height:150px}
+.spark .c{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px}
+.spark .c i{width:100%;background:var(--fluoro)}
+.spark .c:last-child i{background:var(--magenta)}
+.spark .c b{font:700 10px/1 var(--mono)}
+.spark .c span{font:600 8px/1 var(--mono);color:var(--grey)}
+/* 档位/状态堆叠 */
+.stack{display:flex;height:26px;border:2px solid var(--paper);margin-bottom:8px}
+.stack i{display:block;height:100%}
+.leg{display:flex;flex-wrap:wrap;gap:10px;font:600 9px/1.5 var(--mono);letter-spacing:.1em;color:#c9c9c2;text-transform:uppercase}
+.leg i{width:9px;height:9px;display:inline-block;margin-right:4px}
+/* 标签热度 */
+.tags{display:flex;flex-direction:column;gap:4px}
+.tags .tr{display:grid;grid-template-columns:1fr 1fr 32px;gap:8px;align-items:center}
+.tags .tr span{font:700 11px/1.2 var(--mono);letter-spacing:0}
+.tags .tr .b{height:9px;background:#232320;position:relative}
+.tags .tr .b i{position:absolute;inset:0;right:auto;background:var(--cyan)}
+.tags .tr b{font:700 10px/1 var(--mono);color:var(--grey);text-align:right}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:1180px){
+  .hero{height:auto;padding:16px 14px 56px}
+  .hero .words,.hero .slots,.hero .meta,.hero .snap{position:static;width:auto;transform:none;margin:10px 0}
+  .hero .w1{font-size:72px}.hero .w2{font-size:30px}
+  .hero .corner{display:none}
+  .viz .grid{grid-template-columns:1fr}
+  .viz .cell{border-right:0}
+}
+</style>
+<!-- BUILD-STAMP: build 2026-10-19 18:16 ｜ 数据指纹 04E36F67152A ｜ 15 条 -->
+</head>
+<body>
+
+<section class="hero">
+  <div class="photo"></div><div class="corner"></div><div class="duo"></div><div class="toprule"></div>
+  <div class="meta"><span>ARCHIVE<span style="color:var(--fluoro)">//</span>INDEX</span><span class="hud" id="hudxy">X 000 · Y 000</span><span>LOCAL · OFFLINE · <b>2026-10-19</b></span></div>
+
+  <div class="words">
+    <span class="kick">LATEST ISSUE 2026-10-19</span>
+    <h1 class="w1 giant">ARCH<em>I</em>VE</h1>
+    <h2 class="w2">本地项目档案<i>／</i>每日精选</h2>
+  </div>
+
+  <div class="snap">
+    <div class="ph"></div>
+    <div class="tx">总装厂房 · High Bay 3<span>NASA / GLENN BENSON · 公有领域</span></div>
+  </div>
+
+  <div class="slots">
+    <a class="slot sel" href="#/daily"><span class="no">01</span><span class="t">每日精选<small>DAILY PICKS</small></span><span class="go">◀</span></a>
+    <a class="slot" href="#/all"><span class="no">02</span><span class="t">全库<small>15 ITEMS</small></span><span class="go">→</span></a>
+    <a class="slot" href="#/plans"><span class="no">03</span><span class="t">计划与工作区<small>11 PRESETS · 0 WS</small></span><span class="go">→</span></a>
+    <a class="slot ghost" href="#/legend"><span class="no">04</span><span class="t">图例<small>小窗 · G</small></span><span class="go">→</span></a>
+  </div>
+
+  <div class="cmd">
+    <span class="k"><b>↑↓</b>选择</span><span class="k"><b>ENTER</b>进入</span><span class="k"><b>1–4</b>切页</span><span class="k"><b>G</b>图例</span>
+    <span class="sp"></span><span class="credit">BG: NASA PUBLIC DOMAIN · 9 张 · 见 assets/bg/SOURCES.md</span>
+  </div>
+</section>
+
+<section class="viz">
+  <div class="head"><span class="t">DATA</span><span class="s">库里现在长什么样 · 全部为真实统计</span><span class="sp"></span><span class="s">15 ITEMS · 25 EVENTS</span></div>
+  <div class="grid">
+    <div class="cell inv" role="img" aria-label="分类分布柱状图：一级分类条目数">
+      <div class="lb"><b>分类分布 / L1</b><i id="catN">共 11 类</i></div>
+      <div id="catRows"></div>
+      <p class="chart-note">柱长 = 该一级分类的条目数；红色为条目最多的两类。</p>
+    </div>
+    <div class="cell" role="img" aria-label="近 7 天事件柱状图：每天新增事件数">
+      <div class="lb"><b>近 7 天事件</b><i>25 条总计</i></div>
+      <div class="spark" id="spark"></div>
+      <p class="chart-note">每根柱 = 当天事件条数；最新一天用红色标出。</p>
+    </div>
+    <div class="cell" role="img" aria-label="档位与状态分布堆叠条">
+      <div class="lb"><b>档位 / 状态</b><i>条数</i></div>
+      <div id="tierBar" class="stack"></div><div id="tierLeg" class="leg"></div>
+      <div style="height:12px"></div>
+      <div id="stBar" class="stack"></div><div id="stLeg" class="leg"></div>
+      <p class="chart-note">上条 = SABCD 档位占比；下条 = 当前状态占比。</p>
+    </div>
+    <div class="cell" role="img" aria-label="标签热度前 8 的标签云">
+      <div class="lb"><b>标签热度 / TOP 8</b><i>青 = 高频</i></div>
+      <div class="tags" id="tagRows"></div>
+      <p class="chart-note">字号与底色深浅表示该功能标签被多少项目使用。</p>
+    </div>
+  </div>
+</section>
+
+<script>
+const CATS = [{"l1":"AI","n":6},{"l1":"设计","n":3},{"l1":"其他","n":2},{"l1":"办公","n":2},{"l1":"开发","n":1},{"l1":"效率","n":1}];
+const TIER = [{"k":"S 档","n":4},{"k":"A 档","n":5},{"k":"B 档","n":2},{"k":"C 档","n":0},{"k":"D 档","n":4}];
+const STATUS = [{"k":"观望","n":8},{"k":"活跃","n":6},{"k":"已弃","n":1}];
+const SPARK = [{"d":"10-13","n":2},{"d":"10-14","n":0},{"d":"10-15","n":1},{"d":"10-16","n":0},{"d":"10-17","n":0},{"d":"10-18","n":0},{"d":"10-19","n":5}];
+const TAGS = [{"t":"rust","n":3},{"t":"art","n":2},{"t":"jev","n":2},{"t":"llm","n":2},{"t":"typed-decisions","n":2},{"t":"agent-skill","n":1},{"t":"agent-skills","n":1},{"t":"ai-agents","n":1}];
+(function(){
+  const max = Math.max.apply(null, CATS.map(c=>c.n));
+  document.getElementById('catN').textContent = '共 ' + CATS.length + ' 类';
+  document.getElementById('catRows').innerHTML = CATS.map(function(c,i){
+    return '<div class="vrow"><span>'+c.l1+'</span><span class="bar"><i class="'+(i<2?'m':'')+'" style="width:'+Math.max(3,Math.round(c.n/max*100))+'%"></i></span><b>'+c.n+'</b></div>';
+  }).join('');
+  const smax = Math.max.apply(null, SPARK.map(s=>s.n))||1;
+  document.getElementById('spark').innerHTML = SPARK.map(function(s){
+    /* 柱高用 px：.spark 是 align-items:flex-end，.c 不会被拉满高，% 高会塌成 0 */
+    return '<div class="c"><b>'+s.n+'</b><i style="height:'+Math.max(6,Math.round(s.n/smax*104))+'px"></i><span>'+s.d+'</span></div>';
+  }).join('');
+  function bar(h,l,rows,pal){
+    const t = rows.reduce((s,r)=>s+r.n,0)||1;
+    document.getElementById(h).innerHTML = rows.map(function(r,i){return '<i style="width:'+(r.n/t*100)+'%;background:'+pal[i%pal.length]+'"></i>';}).join('');
+    document.getElementById(l).innerHTML = rows.map(function(r,i){return '<span><i style="background:'+pal[i%pal.length]+'"></i>'+r.k+' '+r.n+'</span>';}).join('');
+  }
+  bar('tierBar','tierLeg', TIER, ['#e9ff2e','#2ef2d0','#ff1f6b','#8a8a86','#3a3a36']);
+  bar('stBar','stLeg', STATUS, ['#ff1f6b','#e9ff2e','#2ef2d0','#8a8a86']);
+  const tmax = Math.max.apply(null, TAGS.map(t=>t.n))||1;
+  document.getElementById('tagRows').innerHTML = TAGS.map(function(t){
+    return '<div class="tr"><span>'+t.t+'</span><span class="b"><i style="width:'+Math.round(t.n/tmax*100)+'%"></i></span><b>'+t.n+'</b></div>';
+  }).join('');
+})();
+
+/* 键盘：↑↓ 在四个入口间选择，ENTER 进入；1–4 / G / ESC 转发给站点外壳（在站点内打开时生效） */
+(function(){
+  var slots=[].slice.call(document.querySelectorAll('.slots .slot')), si=0;
+  function sel(i){ si=(i+slots.length)%slots.length; slots.forEach(function(s,j){ s.classList.toggle('sel',j===si); }); }
+  function routeTo(h){
+    if(!h) return;
+    if(window.parent!==window){ try{ parent.postMessage({__archiveRoute:h},'*'); return; }catch(err){} }
+    location.hash=h;
+  }
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){ e.preventDefault(); sel(si+(e.key==='ArrowDown'?1:-1)); return; }
+    if(e.key==='Enter'){ var a=slots[si]; if(a){ e.preventDefault(); routeTo(a.getAttribute('href')); } return; }
+    var t=e.target;
+    if(t&&/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+    if(/^[1-4gG]$/.test(e.key)||e.key==='Escape'){ try{ parent.postMessage({__archiveKey:e.key},'*'); }catch(err){} }
+  });
+  /* file:// 下父文档拿不到 contentWindow：点击 #/ 链接改成消息转发 */
+  if(window.parent!==window){
+    document.addEventListener('click',function(e){
+      var a=e.target&&e.target.closest?e.target.closest('a[href^="#/"]'):null;
+      if(!a) return;
+      e.preventDefault();
+      routeTo(a.getAttribute('href'));
+    },true);
+  }
+})();
+
+/* 低强度鼠标光斑 + 背景微视差（桌面端；减少动效时关闭） */
+(function(){
+  var hero=document.querySelector('.hero');
+  if(!hero) return;
+  if(matchMedia('(pointer:coarse)').matches || matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+  var photo=hero.querySelector('.photo'), snap=hero.querySelector('.snap'), hud=document.getElementById('hudxy');
+  var raf=0, mx=0.5, my=0.5;
+  function apply(){
+    raf=0;
+    hero.style.setProperty('--mx',(mx*100).toFixed(1)+'%');
+    hero.style.setProperty('--my',(my*100).toFixed(1)+'%');
+    if(photo){ photo.style.backgroundPosition=(50+(mx-0.5)*2.4).toFixed(2)+'% '+(50+(my-0.5)*2.4).toFixed(2)+'%'; }
+    if(snap){ snap.style.transform='rotate(-6deg) translate3d('+((mx-0.5)*10).toFixed(1)+'px,'+((my-0.5)*8).toFixed(1)+'px,0)'; }
+    if(hud){ hud.textContent='X '+String(Math.round(mx*999)).padStart(3,'0')+' · Y '+String(Math.round(my*999)).padStart(3,'0'); }
+  }
+  hero.addEventListener('pointermove',function(e){
+    var r=hero.getBoundingClientRect();
+    mx=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));
+    my=Math.max(0,Math.min(1,(e.clientY-r.top)/r.height));
+    hero.classList.add('lit');
+    if(hud){ hud.textContent='X '+String(Math.round(mx*999)).padStart(3,'0')+' · Y '+String(Math.round(my*999)).padStart(3,'0'); }
+    if(!raf) raf=requestAnimationFrame(apply);
+  },{passive:true});
+  hero.addEventListener('pointerleave',function(){
+    hero.classList.remove('lit'); mx=0.5; my=0.5;
+    if(!raf) raf=requestAnimationFrame(apply);
+  });
+})();
+</script>
+</body>
+</html>

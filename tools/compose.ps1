@@ -1,4 +1,4 @@
-# compose.ps1 — 按需求给「工具组合」建议（v3.1 验收第八节）
+﻿# compose.ps1 — 按需求给「工具组合」建议（v3.1 验收第八节）
 #
 # 场景：用户说「我要做一个 AI 视频」「我要做产品设计」——不是找单个工具，而是**要一套搭配**。
 # 做法：拿需求去本地库匹配（关键词 + 同义词 + 两级分类 + 功能标签），命中的工具**按用途分组**输出，
@@ -28,7 +28,7 @@ if (-not (Test-Path $projPath)) { Write-Host "❌ 找不到 data\projects.jsonl�
 $all = @()
 foreach ($l in (Get-Content $projPath -Encoding UTF8)) {
   if ([string]::IsNullOrWhiteSpace($l)) { continue }
-  try { $all += ($l | ConvertFrom-Json) } catch {}
+  try { $all += ($l | ConvertFrom-Json) } catch { $null = $_ }
 }
 
 # ---- 需求扩展：命中同义词组就把整组词都算上（和 query.ps1 同一套逻辑）----

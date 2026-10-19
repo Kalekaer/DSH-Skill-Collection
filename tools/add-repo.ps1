@@ -17,7 +17,7 @@
 #   * 已存在  → **不重复添加**；把「用户曾推荐过 + 备注」追加进 data/user-notes.jsonl（原始层）
 #
 # 纪律（与 SKILL.md 第十二节一致）：
-#   * 用户推荐 ≠ 日报推荐：origin=user，tier 由 sync 记为 unrated，**不伪装成 S/A/B**
+#   * 用户推荐 ≠ 日报推荐：origin=user，sync 会补 SABCD；默认进老朋友动态，**不伪装成主推荐**
 #   * 用户备注是**个人数据**，只进 data/user-notes.jsonl（原始层），不进 human 层（机器生成）
 #   * Agent 不得代替用户写备注；用户没说就记「用户再次提及推荐」
 
@@ -114,11 +114,26 @@ if ($exists) {
     $unLine = [pscustomobject]@{ full_name=$FullName; date=$today; note=$UserNote; by='user' } | ConvertTo-Json -Compress
     Add-Content -Path (P 'data\user-notes.jsonl') -Value $unLine -Encoding UTF8
   }
-  Write-Host "✅ 已入库：$FullName（origin=user，未评档，status=$Status）" -ForegroundColor Green
+  Write-Host "✅ 已入库：$FullName（origin=user，默认老朋友动态，status=$Status）" -ForegroundColor Green
 }
 
 # 需求 3：用户主动添加的项目，也要自动补标签与搜索词（与日报同一条流水线）
 if (-not $NoSync) {
   & (P 'tools\sync-projects.ps1') -Force
-  & (P 'tools\build-overview.ps1')
+  # --- P0-6 统一入库门禁（不分来源；2026-10-16 新增）---
+  try {
+    $gate = ((& (P 'tools\intake-check.ps1') -Id $FullName -Json 2>$null) | Out-String) | ConvertFrom-Json
+    if ($gate -and $gate.summary) {
+      $hard = [int]$gate.summary.hard_fail
+      if ($hard -gt 0) {
+        $hits = @($gate.rows | Where-Object { $_.hardN -gt 0 } | ForEach-Object { $_.hard }) -join '；'
+        Write-Host ("  ⚠️ 门禁：" + $FullName + " 有 " + $hard + " 项硬门禁未过 → 用户推荐照办 + 已写明风险") -ForegroundColor Yellow
+        Write-Host ("     原因：" + $hits) -ForegroundColor DarkYellow
+        Add-Content -Path (P 'data\user-notes.jsonl') -Value ([pscustomobject]@{ full_name = $FullName; date = $today; note = ('门禁提示：' + $hits); by = 'gate' } | ConvertTo-Json -Compress) -Encoding UTF8
+      } else { Write-Host ("  ✅ 门禁通过：" + $FullName) -ForegroundColor Green }
+    }
+  } catch { Write-Host ("  ⚠️ 门禁未执行（不阻断入库）：" + $_.Exception.Message) -ForegroundColor DarkYellow }
+  # P1-16：统一走 rebuild-page（sync + build + **自检页面真的变新了**），
+  #   而不是只调 build-overview —— 后者没有"页面是否真的更新"的护栏
+  & (P 'tools\rebuild-page.ps1')
 }

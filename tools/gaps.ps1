@@ -1,4 +1,4 @@
-# gaps.ps1 — 搜索缺口：记下「搜不到的词」，并给出补词建议
+﻿# gaps.ps1 — 搜索缺口：记下「搜不到的词」，并给出补词建议
 #
 # 解决的问题：**搜索词表原来只增不减、且靠人想起来才加**。用户搜了没结果，这件事就消失了，
 # 下次还是搜不到 —— 词表永远追不上库的增长。
@@ -32,7 +32,7 @@ if (-not (Test-Path $gapPath)) { Write-Host '还没有缺口记录（data\search
 $gaps = @()
 foreach ($l in (Get-Content $gapPath -Encoding UTF8)) {
   if ([string]::IsNullOrWhiteSpace($l)) { continue }
-  try { $gaps += ($l | ConvertFrom-Json) } catch {}
+  try { $gaps += ($l | ConvertFrom-Json) } catch { $null = $_ }
 }
 if (-not $gaps.Count) { Write-Host "缺口记录为空。" -ForegroundColor Yellow; exit 0 }
 
@@ -40,14 +40,14 @@ if (-not $gaps.Count) { Write-Host "缺口记录为空。" -ForegroundColor Yell
 $all = @()
 foreach ($l in (Get-Content (P 'data\projects.jsonl') -Encoding UTF8)) {
   if ([string]::IsNullOrWhiteSpace($l)) { continue }
-  try { $all += ($l | ConvertFrom-Json) } catch {}
+  try { $all += ($l | ConvertFrom-Json) } catch { $null = $_ }
 }
 $synGroups = @()
 $synPath = P 'data\human\search-synonyms.jsonl'
 if (Test-Path $synPath) {
   foreach ($l in (Get-Content $synPath -Encoding UTF8)) {
     if (-not $l.Trim()) { continue }
-    try { $synGroups += ($l | ConvertFrom-Json) } catch {}
+    try { $synGroups += ($l | ConvertFrom-Json) } catch { $null = $_ }
   }
 }
 $knownTerms = @()

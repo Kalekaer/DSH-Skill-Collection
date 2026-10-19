@@ -1,4 +1,4 @@
-# workspace.ps1 — 我的工作区（写 data/workspaces.jsonl）
+﻿# workspace.ps1 — 我的工作区（写 data/workspaces.jsonl）
 #
 # 与 plans.json 的分工（GPT 评审定的）：
 #   plans.json        = **官方模板**：「做 AI 视频」该走哪几步，不可变、人人一样
@@ -37,7 +37,7 @@ function Read-WS {
   if (Test-Path $wsPath) {
     foreach ($l in (Get-Content $wsPath -Encoding UTF8)) {
       if ([string]::IsNullOrWhiteSpace($l)) { continue }
-      try { $out += ($l | ConvertFrom-Json) } catch {}
+      try { $out += ($l | ConvertFrom-Json) } catch { $null = $_ }
     }
   }
   return $out
@@ -51,6 +51,7 @@ function Write-WS($items) {
     } | ConvertTo-Json -Compress -Depth 4
   }
   [System.IO.File]::WriteAllLines($wsPath, $lines, (New-Object System.Text.UTF8Encoding($false)))
+  $script:wroteWs = $true    # P1-16：只有**真写过盘**才重建页面（列表/只读操作不重建 ✓）
 }
 function Split-Tools([string]$t) {
   if (-not $t) { return @() }
@@ -104,6 +105,7 @@ if ($Remove) {
   Write-Host ("✅ 已更新工作区：{0}（{1} 个工具，{2} 个完成）" -f $item.name, $t.Count, $dn.Count) -ForegroundColor Green
 }
 
-if ($Sync) {
-  & (P 'tools\build-overview.ps1')
-}
+# P1-16：**默认**写盘后自动重建页面（原来是加 -Sync 才重建 → 用户要的是"写完页面就变"）
+#   只读操作（列表）不重建；$env:DSH_SKIP_REBUILD=1 可临时关闭
+if ($script:wroteWs) { & (P 'tools\rebuild-page.ps1') }
+else { Write-Host "   （只读操作：页面无需重建）" -ForegroundColor DarkGray }

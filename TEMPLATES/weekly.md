@@ -16,6 +16,8 @@
 
 ## 已试用的项目
 
+> 「已试用」只能由人填：生成周报时把本周推荐全部列出，默认 `待试`，附上 `tools\mark-status.ps1` 的用法（例：`& ".\tools\mark-status.ps1" -Repo owner/repo -Status using`），**禁止替用户编造结论**。
+
 | 仓库 | 结论 | 备注 |
 |---|---|---|
 | {{owner/repo}} | {{好用 / 弃用 / 待试}} | {{为什么}} |

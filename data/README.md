@@ -8,15 +8,15 @@
 {"full_name":"owner/repo","url":"https://github.com/owner/repo","first_seen":"2026-10-11","last_seen":"2026-10-12","recommended":true,"recommend_count":1,"last_recommended":"2026-10-12","status":"active","language":"Rust","first_stars":4359,"last_stars":5100,"note":"Word 的 Rust 重写，S 档"}
 ```
 
-> **存量 17 行没有 `last_recommended` 与 `drop_reason`**，这是预期状态：读不到 `last_recommended` 时回退用 `last_seen` 判断 30 天冷却，并在运行日志注明「本次回退」。**不要为补齐字段改写存量行。**
+> **存量 17 行没有 `last_recommended` 与 `drop_reason`**，这是预期状态：读不到 `last_recommended` 时回退用 `last_seen` 判断 7 天冷却，并在运行日志注明「本次回退」。**不要为补齐字段改写存量行。**
 
 | 字段 | 含义 |
 |---|---|
 | `first_seen` / `last_seen` | 首次收录 / 最近出现日期 |
-| `recommended` | 是否进过日报推荐区（决定 30 天冷却） |
+| `recommended` | 是否进过日报推荐区（决定 7 天冷却） |
 | `recommend_count` | 被推荐次数 |
-| `status` | 状态白名单（**生命周期**，见下表） |
-| `last_recommended` | 最近一次进日报推荐区的日期，30 天冷却的唯一依据；**存量行没有此字段**，读不到时回退用 `last_seen` 并在运行日志注明回退 |
+| `status` | 状态白名单（**当前状态**，见下表） |
+| `last_recommended` | 最近一次进日报推荐区的日期，7 天冷却的唯一依据；**存量行没有此字段**，读不到时回退用 `last_seen` 并在运行日志注明回退 |
 | `drop_reason` | 淘汰原因（仅 `status: dropped` 时写） |
 | `first_stars` / `last_stars` | 首次与最近记录的星数，用于快速算增速 |
 | `note` | 一句话判断，供下次快速回忆 |
@@ -27,10 +27,10 @@
 |---|---|---|
 | `active` | 已收录、未处置 | 首日即有 |
 | `using` | **我正在使用**（唯一需要跨会话记住的个人状态，GPT 评审 2026-10-13 拍板只加这一个） | 2026-10-13 新增 |
-| `watching` | B 档观察中（对应 `RUBRIC.md` 第 3 节 B 档）｜也用于「我关注它的发展」 | 首日即有 |
+| `watching` | B/C 档观察中（对应 `RUBRIC.md` 第 3 节）｜也用于「我关注它的发展」 | 首日即有 |
 | `saved` | **遗留值：不要再写**。曾用于「用户收藏」，2026-10-13 当天先迁到 `data/user-library.jsonl`、**同日晚间整个收藏功能被撤销（用户决定：太麻烦繁琐）**，该文件与 `tools/favorite.ps1` 均已删除 | 2026-10-11 引入，2026-10-13 废弃 |
 | `researching` | 用户研究中 | 2026-10-11 起新增，可选 |
-| `dropped` | 已放弃，90 天冷却（**软删除**；个人知识库最怕误删，不提供物理删除） | 首日即有 |
+| `dropped` | 不再看，90 天冷却（记录保留，不提供物理删除） | 首日即有 |
 
 > **不要再加"收藏 / 喜欢 / 待测试 / 想用 / 关注"这类标记**（GPT 评审原话：*这些都会重新变垃圾*）。个人状态只用上表这一个 `using`。
 
@@ -47,33 +47,43 @@
 
 **不要把评分、风险等级、淘汰原因写进快照**，那会让这个文件变成大杂烩，污染增速基线；这些内容放 `picks/`（见下）。
 
+**同日多轮的唯一键是 `date+full_name+round`（2026-10-19 起）**：同一天同一仓库再次采集时写 `round: 2`、`3`……，`round` 从 1 起、按采集轮次递增；这样「合法多轮」与「失败重试重复追加」才分得开。存量 534 行已迁移（`tools/migrate-snapshots-round.ps1`，幂等），`tools/validate-lib.ps1` 会校验 `round` 必填且唯一。
+
 `captured_at` 格式统一为带 **`+08:00` 偏移**的 ISO 8601（如 `2026-10-11T09:03:00+08:00`）。存量行没有该字段 → 用**文件日期补齐**即可，不作为硬校验。
 
 ## picks/YYYY-MM-DD.jsonl — 机器可读的推荐档案
 
-与 `reports/YYYY-MM-DD.md` 同源的机器可读版，一行一个条目（推荐与淘汰都记）：
+与 `reports/YYYY-MM-DD.md` 同源的机器可读版，一行一个条目（**S/A/B/C/D 全部记**，不只推荐与淘汰）：
 
 ```json
-{"date":"2026-10-12","full_name":"owner/repo","tier":"S","score":86,"risk":"低","source":"Q1","action":"saved","captured_at":"2026-10-12T09:03:00+08:00"}
+{"date":"2026-10-12","full_name":"owner/repo","tier":"S","score":86,"risk":"低","source":"Q1","action":"saved","captured_at":"2026-10-12T09:03:00+08:00","recommend_count":1,"repeat":false,"prev_tier":null,"tier_changed":false}
 ```
 
 | 字段 | 含义 |
 |---|---|
 | `date` | 归属日期，与文件名一致 |
 | `full_name` | 主键，与 `seen.jsonl` 对齐 |
-| `tier` | `S` / `A`（推荐档位）；淘汰项写 `dropped` |
+| `tier` | `S` / `A` / `B` / `C` / `D`（D=淘汰）；旧数据里的 `dropped` 是 D 的旧写法 |
 | `score` | 按 `RUBRIC.md` 的 100 分制得分 |
 | `risk` | `低` / `中` / `高` |
 | `source` | 来自哪个检索式（`Q1`–`Q5`、`Q3b`、`老朋友`、`方向匹配`） |
-| `action` | 行动建议：`试玩` / `收藏` / `研究` / `放弃`（对应用户侧的 `saved` / `researching` / `dropped`） |
+| `action` | 行动建议：`试玩` / `收藏` / `研究` / `放弃`；B/C 用 `观察` / `继续观察` |
 | `captured_at` | 采集时刻（带时区） |
-| `drop_reason` | 仅淘汰项写，与 `seen.jsonl` 一致 |
+| `recommend_count` | 本次之后的累计推荐次数（B/C/D 为 0） |
+| `repeat` | 是否二次及以后进推荐区 |
+| `prev_tier` | 上次进推荐区时的档位；首次为 `null` |
+| `tier_changed` | 二次推荐时档位是否变化 |
+| `daily_status` | `published`（默认）/ `over_quota`（达线但满额未刊）；over_quota 不算推荐、不启动冷却 |
+| `quota_block` | 满额原因：`s_cap` / `total_cap` |
+| `drop_reason` | 仅 D/淘汰项写，与 `seen.jsonl` 一致 |
 
 用途：画趋势图、统计方向分布、核对"某天为什么没推荐某仓库"。**它是派生产物，丢了不影响日报**；`seen.jsonl` 与 `snapshots/` 才是不可再生的原始数据。
 
+**契约与写前唯一键（2026-10-19）**：本文件已登记进 `data/schema.json`（`data/picks/<date>.jsonl`，唯一键 `date+full_name`，`date` 必须等于文件名）；`tools/validate-lib.ps1` 会校验必填字段、枚举取值、日期一致与重复键。**写入统一走 `tools\add-rows.ps1 -Target picks -Date <date> -From <rows.jsonl>`**：写入前自动校验 + 判重，已存在默认拒绝，`-Update` 才改写旧行（同日重跑/重试最容易撞）。`recommend-log.csv` 同理：`-Target csv -From <rows.jsonl>`，唯一键是 `仓库`。
+
 ## runs/YYYY-MM-DD.md — 运行日志
 
-每次运行一条，必须写：执行的查询、成功/失败、实际 API 调用次数、候选数、异常与建议调整项。
+每次运行一条，必须写：执行的查询、成功/失败、实际 API 调用次数、检索结果数、异常与建议调整项。
 
 **判断任务是否健康的最快方式**：看最近 7 天 `runs/` 里有几天是成功的。
 
@@ -90,7 +100,7 @@
 >       │  tools/sync-projects.ps1（幂等，可反复全量重建）
 >       ▼
 > 投影（当前状态视图，可重建，**禁止手工编辑**）
->   projects.jsonl（当前状态投影） · events.jsonl（生命周期事件）
+>   projects.jsonl（当前状态投影） · events.jsonl（项目事件）
 >       │
 >       │  tools/build-overview.ps1
 >       ▼
@@ -112,20 +122,30 @@
 | 字段 | 含义 |
 |---|---|
 | `id` / `url` / `owner` / `name` | 身份。`id` 即 `full_name`，是唯一标识与去重依据 |
-| `description` / `license` / `topics` / `archived` / `pushed_at` | **GitHub 远端元数据**。可能缺失，用 `description_source` 标明：`api`=来自 API，`missing`=**历史数据缺失** |
-| `first_seen` / `last_seen` | 首次收录 / 最近一次出现在候选里的日期 |
-| `recommended` / `recommend_count` / `last_recommended` | 推荐记录（冷却期依据） |
-| `tier` / `score` / `risk` / `source` / `action` | 最近一次推荐决策。未进过推荐区则为 `null` |
-| `status` | 五态白名单同台账：`active`/`watching`/`saved`/`researching`/`dropped` |
+| `description` / `license` / `topics` / `archived` / `pushed_at` / `language` | **GitHub 远端元数据**。可能缺失，用 `description_source` 标明：`api`=来自 API，`missing`=**历史数据缺失** |
+| `first_seen` / `last_seen` | 入库日期 / 最近一次出现的日期 |
+| `recommended` / `recommend_count` / `last_recommended` | 主推荐记录（冷却期依据；不含特别栏目/用户自推） |
+| `tier` / `score` / `risk` / `source` / `action` | 库内档位 S/A/B/C/D；`score` 是最近规则分，可为空；`tier=dropped` 是旧写法，迁移为 D |
+| `origin` / `origin_note` | 谁把它引入库：`user`=用户自推（也必须 SABCD，默认进老朋友动态，不占主推荐）/ `auto`=流程自动发现；`origin_note` 是它的中文说明 |
+| `status` | 五态白名单同台账：`active`/`using`/`watching`/`researching`/`dropped`（`saved` 已于 2026-10-13 废弃） |
+| `drop_reason` | 淘汰原因。**2026-10-16 起投影进投影层**（此前只写在台账/`picks`，页面上看不到；见那一日运行日志的建议项 13） |
 | `tags` | 六维分类（与 `TEMPLATES/daily.md` 同枚举）。**自动推断**，见 `tags_confidence` |
 | `tags_confidence` | `inferred`（按关键词推断）/ `api`（依据 API 字段）/ `unknown`（信息不足） |
-| `stars` | `current` / `first` / `delta_total` / `delta_7d` / `last_snapshot` / `snapshots`(快照次数) / **`github`**（API 实测值） / **`github_at`**（实测时刻）。快照值可审计、用于算增速；实测值更新但不可审计，**两者分别标注，不混为一谈** |
+| `function_tags_l1` | 功能标签**归到一级方向**（按 `data/tags-vocabulary.json` 的 `parent` 映射；P1-6；无映射则为空数组） |
+| `stars` | `current` / `first` / `delta_total` / `delta_7d` / `last_snapshot` / `snapshots`(快照次数) / **`github`**（API 实测值） / **`github_at`**（实测时刻）。快照值可审计、用于算增速；实测值更新但不可审计，**两者分别标注，不混为一谈** | / **`forks`** / **`created_at`** / **`open_issues`**（快照暂缺 → 老实话 null）/ **`delta_7d_window_days`**（真实窗口天数）/ **`delta_7d_valid`**（窗口 <5 天或快照 <2 → false，此时 `delta_7d` 只作参考）
+| `kind` / `kind_basis` | **实体类型**（library / tool / plugin-skill / model / dataset / resource-list / learning / infra / channel / unknown）+ 判定依据；无证据时老实记 `unknown`（P1-1）|
+| `owner_class` / `owner_label` | `official`（命中 `data/owner-whitelist.json` 的 30 组织）/ `community`；白名单只降验证成本、**不加分**（P1-2；规则见 `RUBRIC.md` §8）|
 | `events_count` | 该项目在 `events.jsonl` 中的事件条数 |
 | `note` | 一句话判断。**派生自台账，不要在此手工编辑** |
+| `category` | 两级分类 `{l1, l2}`，取值只能来自 `data/taxonomy.json`（见 `CONTEXT.md` §6） |
+| `experience` | 使用体验五星 `{stars, score, parts}`。**独立于 S/A/B 推荐档，不看 star 数** |
+| `human` | 人话层：`status`（`complete`/`partial`/`missing`）+ 一句话 / 它解决什么 / 举个例子 / 功能说明 / **适合谁 `audience`（P1-13，可选；推荐过的条目必须有）** 五项（见下一节） |
+| `user_notes` | 用户备注（原始层在 `data/user-notes.jsonl`）。属个人数据，**不要在此手工编辑** |
+| `updated_at` | 本条投影的生成时刻（`sync-projects.ps1` 每次重建时刷新） |
 
 **纪律**：本文件由 `tools/sync-projects.ps1` **全量重建**，**禁止手工编辑**。要改内容，改流水或改脚本；手工改会在下次同步时被覆盖。
 
-## events.jsonl — 项目生命周期事件（派生视图）
+## events.jsonl — 项目事件（派生视图）
 
 一行一个事件，**只记有意义的变化**，不记每天的例行扫描。按 `date` 升序。
 
@@ -135,7 +155,7 @@
 
 | `type` | 触发条件 | `detail` 示例 |
 |---|---|---|
-| `discovered` | 首次出现在候选里 | `首次收录，来源 Q1` |
+| `discovered` | 首次出现 | `首次收录，来源 Q1` |
 | `recommended` | 首次进推荐区 | `S 档 · 80 分 · 行动：试玩` |
 | `re_recommended` | 第 2 次及以后进推荐区 | `第 2 次推荐，A 档 · 71 分` |
 | `stars_up` | 与上一份快照相比**涨幅 ≥ 阈值**（默认 +30） | `+120 星（间隔 1 天）` |
@@ -186,7 +206,7 @@
 
 | 文件 | 作用 | 谁写 |
 |---|---|---|
-| `data/human/repo-intro.jsonl` | 项目介绍：一句话 / 痛点 / 使用场景 / 功能备注 | 人工或 Agent 撰写，**不在日常流程里自动改** |
+| `data/human/repo-intro.jsonl` | 项目介绍：一句话 / 痛点 / 使用场景 / 功能备注 / **适合谁（`audience` + `audience_source`，P1-13）** | 人工或 Agent 撰写，**不在日常流程里自动改** |
 | `data/human/function-tags.jsonl` | 功能标签与用户搜索词（含同义词） | 同上 |
 | `data/human/search-synonyms.jsonl` | 全局同义词表（如「画图=绘画=文生图」） | 同上 |
 

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>本地开源项目 · 档案站</title>
+<style>
+@font-face{font-family:"Big";src:url("../../assets/anton-latin.woff2") format("woff2");font-display:swap}
+:root{--ink:#0a0a0a;--paper:#f4f1e4;--fluoro:#e9ff2e;--magenta:#ff1f6b;--mono:SFMono-Regular,Consolas,monospace}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#080807;color:var(--paper);font:14px/1.5 "Noto Sans SC","Microsoft YaHei UI",system-ui,sans-serif;overflow:hidden}
+#view{position:fixed;inset:0;width:100%;height:100%;border:0;background:#080807}
+
+/* 底部游戏式导航坞 */
+.dock{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:50;display:flex;align-items:stretch;gap:2px;
+  background:#0c0c0b;border:3px solid var(--paper);box-shadow:8px 8px 0 rgba(233,255,46,.28);padding:4px}
+.dock a{display:flex;align-items:baseline;gap:8px;text-decoration:none;color:var(--paper);
+  font:700 11px/1 var(--mono);letter-spacing:.14em;padding:10px 14px;border:2px solid transparent;white-space:nowrap;cursor:pointer;
+  transition:background .12s,color .12s,border-color .12s}
+.dock a .n{font:400 18px/1 "Big",Impact,sans-serif;color:var(--fluoro)}
+.dock a:hover{border-color:var(--paper)}
+.dock a.on{background:var(--fluoro);color:#0a0a0a;border-color:var(--fluoro)}
+.dock a.on .n{color:#0a0a0a}
+.dock .k{margin-left:6px;padding:10px 8px;font:700 9px/1.6 var(--mono);letter-spacing:.14em;color:#6a6a60;border-left:1px solid #2a2a26;display:flex;align-items:center;gap:4px}
+.dock .k b{color:var(--fluoro);border:1.5px solid #3a3a36;padding:2px 4px;font-weight:700}
+.dock .k b:last-child{margin-right:0}
+
+/* 左上角状态 */
+.status{position:fixed;left:16px;bottom:18px;z-index:50;font:700 9px/1.6 var(--mono);letter-spacing:.18em;color:#6a6a60;
+  border-left:3px solid var(--fluoro);padding-left:10px;pointer-events:none;text-transform:uppercase}
+.status b{display:block;font:400 22px/1 "Big",Impact,sans-serif;color:var(--paper);letter-spacing:0}
+.status i{font-style:normal;color:var(--fluoro)}
+.status .dot{color:var(--magenta)}
+
+/* ============================================================================
+   图例小窗：斜切多边形 + 进场动画 + 每类不同表现
+   ============================================================================ */
+.lbtn{position:fixed;right:18px;bottom:18px;z-index:70;width:46px;height:46px;background:var(--fluoro);color:#0a0a0a;
+  border:3px solid #0a0a0a;font:700 20px/1 "Big",Impact,sans-serif;cursor:pointer;
+  clip-path:polygon(0 10px,10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%);
+  box-shadow:4px 4px 0 var(--magenta);transition:transform .12s}
+.lbtn:hover{transform:translate(-2px,-2px)}
+.lbtn.on{background:var(--magenta);color:#fff;box-shadow:4px 4px 0 var(--fluoro)}
+
+.legend{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;padding:26px}
+.legend.on{display:flex}
+.legend .mask{position:absolute;inset:0;background:rgba(6,6,5,.62);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.legend .frame{position:relative;width:min(940px,94vw);max-height:86vh;padding:3px;background:var(--fluoro);
+  clip-path:polygon(0 18px,18px 0,calc(100% - 58px) 0,100% 58px,100% calc(100% - 18px),calc(100% - 18px) 100%,58px 100%,0 calc(100% - 58px));
+  animation:lgIn .34s cubic-bezier(.2,.85,.2,1) both}
+@keyframes lgIn{from{opacity:0;transform:translateY(26px) rotate(-.8deg) scale(.97)}to{opacity:1;transform:none}}
+.legend .panel{position:relative;background:#0b0b0a;color:var(--paper);padding:24px 26px 20px;overflow-y:auto;overflow-x:hidden;max-height:calc(86vh - 6px);
+  clip-path:polygon(0 17px,17px 0,calc(100% - 56px) 0,100% 56px,100% calc(100% - 17px),calc(100% - 17px) 100%,56px 100%,0 calc(100% - 56px))}
+.legend .panel::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(115deg,transparent 0 40%,rgba(233,255,46,.06) 46%,transparent 52%);
+  animation:lgSweep 2.6s linear infinite}
+@keyframes lgSweep{from{transform:translateX(-60%)}to{transform:translateX(60%)}}
+.legend h3{margin:0 0 2px;font:400 34px/1 "Big",Impact,sans-serif;color:var(--paper);letter-spacing:.01em}
+.legend h3 i{font-style:normal;color:var(--fluoro)}
+.legend .sub{margin:0 0 16px;font:700 9px/1.6 var(--mono);letter-spacing:.22em;color:var(--grey);text-transform:uppercase}
+.legend .x{position:absolute;right:16px;top:14px;width:34px;height:34px;background:none;border:2px solid var(--paper);color:var(--paper);font:400 18px/1 var(--mono);cursor:pointer;z-index:3}
+.legend .x:hover{background:var(--magenta);border-color:var(--magenta)}
+
+.lgrid{display:grid;grid-template-columns:1fr 1fr;gap:20px 26px}
+@media (max-width:820px){.lgrid{grid-template-columns:1fr}}
+.lbox.wide{grid-column:1/-1}
+.lbox{border-top:2px solid #2a2a26;padding-top:12px;opacity:0;animation:lgUp .38s ease forwards}
+.lbox:nth-child(1){animation-delay:.06s}.lbox:nth-child(2){animation-delay:.12s}.lbox:nth-child(3){animation-delay:.18s}
+.lbox:nth-child(4){animation-delay:.24s}.lbox:nth-child(5){animation-delay:.3s}.lbox:nth-child(6){animation-delay:.36s}
+@keyframes lgUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.lbox h4{margin:0 0 10px;font:700 10.5px/1 var(--mono);letter-spacing:.2em;color:var(--grey);text-transform:uppercase;display:flex;justify-content:space-between}
+.lbox h4 i{font-style:normal;color:var(--fluoro)}
+
+/* 档位：大字母块 + 一行解释 */
+.tiers{display:flex;gap:6px}
+.tiers .t{flex:1;min-width:0;background:#151513;padding:9px 9px 8px;border:2px solid #2d2d29}
+.tiers .t b{display:block;font:400 34px/1 "Big",Impact,sans-serif;color:var(--fluoro)}
+.tiers .t.s b{color:var(--magenta)}
+.tiers .t span{display:block;margin-top:6px;font:700 10px/1.4 var(--mono);letter-spacing:.1em;color:var(--paper)}
+.tiers .t i{display:block;margin-top:2px;font:400 11.5px/1.5 "Noto Serif SC",serif;color:#a8a394;font-style:normal}
+.tiers .t:hover{border-color:var(--fluoro);transform:translateY(-2px);transition:.12s}
+
+/* 状态：脉冲点 */
+.stats{display:flex;flex-direction:column;gap:7px}
+.stats .s{display:flex;align-items:center;gap:10px;font:700 11.5px/1.5 var(--mono);color:#cfc9b8}
+.stats .s em{font-style:normal;width:9px;height:9px;border-radius:50%;background:#3a3a36;flex:0 0 9px}
+.stats .s.on em{background:var(--fluoro);box-shadow:0 0 0 0 rgba(233,255,46,.5);animation:pulse 1.8s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(233,255,46,.45)}70%{box-shadow:0 0 0 9px rgba(233,255,46,0)}100%{box-shadow:0 0 0 0 rgba(233,255,46,0)}}
+.stats .s span{color:#8f8b7f;font-weight:600}
+
+/* 风险：分段条 */
+.risk{display:flex;gap:4px;margin-bottom:6px}
+.risk i{height:10px;flex:1;background:#1c1c19;border:1px solid #2d2d29}
+.risk i.l{background:#4a7a3a}.risk i.m{background:#e0a92e}.risk i.h{background:var(--magenta)}
+.risk i.r{border-color:#ff1f6b;background:repeating-linear-gradient(45deg,#ff1f6b 0 4px,#0b0b0a 4px 8px);animation:blink 1.4s steps(2) infinite}
+@keyframes blink{50%{opacity:.45}}
+.riskleg{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;font:600 8.5px/1.4 var(--mono);letter-spacing:.08em;color:#8f8b7f}
+
+/* 徽章：邮戳 */
+.badges{display:flex;flex-wrap:wrap;gap:6px}
+.badges span{font:700 9.5px/1.2 var(--mono);letter-spacing:.1em;border:2px solid var(--paper);padding:6px 7px;transform:rotate(-2deg)}
+.badges span:nth-child(even){transform:rotate(2deg)}
+.badges span b{color:var(--fluoro)}
+
+/* 评分：动画条 */
+.score .row{display:grid;grid-template-columns:72px 1fr 36px;gap:8px;align-items:center;margin-bottom:6px;font:600 10px/1 var(--mono);color:#a8a394}
+.score .row i{height:7px;background:#1c1c19;position:relative}
+.score .row i b{position:absolute;left:0;top:0;bottom:0;background:var(--fluoro);width:0;animation:barGrow 1s cubic-bezier(.2,.8,.2,1) forwards}
+.score .row:nth-child(2) i b{animation-delay:.1s}.score .row:nth-child(3) i b{animation-delay:.15s}
+.score .row:nth-child(4) i b{animation-delay:.2s}.score .row:nth-child(5) i b{animation-delay:.25s}
+@keyframes barGrow{to{width:var(--w)}}
+
+/* 操作说明 */
+.keys{display:flex;flex-direction:column;gap:7px;font:600 11px/1.5 var(--mono);color:#b8b3a4}
+.keys b{display:inline-block;min-width:26px;text-align:center;border:1.5px solid #3a3a36;color:var(--fluoro);padding:2px 5px;margin-right:6px}
+/* 加载遮罩 */
+.load{position:fixed;inset:0;z-index:60;background:#080807;display:flex;align-items:center;justify-content:center;
+  font:400 42px/1 "Big",Impact,sans-serif;color:var(--fluoro);letter-spacing:.04em;transition:opacity .25s}
+.load.off{opacity:0;pointer-events:none}
+
+/* 换骨：只在每日精选显示（当前启用 C/D；A/B 实验骨架暂不接入） */
+.skel{position:fixed;left:16px;bottom:14px;z-index:60;display:none;align-items:center;gap:4px;padding:4px;
+  background:#0c0c0b;border:2px solid var(--paper);box-shadow:5px 5px 0 rgba(255,31,107,.35);
+  font:700 9px/1 var(--mono);letter-spacing:.14em}
+.skel.on{display:flex}
+.skel b{color:#6a6a60;padding:6px 5px}
+.skel a{color:var(--paper);text-decoration:none;padding:6px 9px;border:1.5px solid #3a3a36;cursor:pointer}
+.skel a:hover{border-color:var(--paper)}
+.skel a.on{background:var(--fluoro);color:#0a0a0a;border-color:var(--fluoro)}
+
+@media (max-width:720px){
+  .dock a{padding:9px 10px;font-size:9px}
+  .dock a .n{font-size:15px}
+  .dock .k{display:none}
+}
+</style>
+</head>
+<body>
+<div class="load" id="load">ARCHIVE<span style="color:var(--magenta)">//</span>LOADING</div>
+
+<div class="status" hidden>
+  <b>ARCHIVE<i>//</i>/*__TOTAL__*/0</b>
+  <span>LOCAL · OFFLINE · <span class="dot">●</span> ONLINE</span>
+</div>
+
+<iframe id="view" title="页面"></iframe>
+
+<nav class="dock" id="dock" aria-label="主菜单">
+  <a data-r="home"><span class="n">01</span>首页</a>
+  <a data-r="daily"><span class="n">02</span>每日精选</a>
+  <a data-r="library"><span class="n">03</span>全库</a>
+  <a data-r="plans"><span class="n">04</span>计划与工作区</a>
+  <span class="k"><b>1</b><b>2</b><b>3</b><b>4</b> 切换</span>
+</nav>
+<button class="lbtn" id="lbtn" title="图例（G）" aria-label="打开图例">?</button>
+<div class="skel" id="skel" aria-label="换骨">
+  <b>换骨</b>
+  <a data-l="c" href="#/daily">结构轴版</a>
+</div>
+
+<div class="legend" id="legend" role="dialog" aria-modal="true" aria-label="图例">
+  <div class="mask" id="lgMask"></div>
+  <div class="frame">
+    <div class="panel">
+      <button class="x" id="lgX" aria-label="关闭">×</button>
+      <h3>图例<i>//</i>LEGEND</h3>
+      <p class="sub">ARCHIVE 的读法 · TIER / STATUS / RISK / BADGE / SCORE</p>
+
+      <div class="lgrid">
+        <div class="lbox">
+          <h4>档位 · TIER <i>进不进每日精选看这个</i></h4>
+          <div class="tiers">
+            <div class="t s"><b>S</b><span>立刻能用</span><i>当天就想装来试</i></div>
+            <div class="t"><b>A</b><span>值得一试</span><i>有明确用途，值得花时间</i></div>
+            <div class="t"><b>B</b><span>备用</span><i>特定场景才想起来</i></div>
+            <div class="t"><b>C</b><span>档案</span><i>不推荐，留档观察</i></div>
+            <div class="t"><b>D</b><span>不推荐</span><i>质量不足，仍在库</i></div>
+            <div class="t"><b>×</b><span>不再看</span><i>状态为 dropped，记录保留</i></div>
+          </div>
+        </div>
+
+        <div class="lbox">
+          <h4>状态 · STATUS <i>我对它的态度</i></h4>
+          <div class="stats">
+            <div class="s"><em></em>观望 <span>WATCHING · 先收着，还没用</span></div>
+            <div class="s on"><em></em>活跃 <span>ACTIVE · 正在用 / 跟进</span></div>
+            <div class="s"><em></em>已弃 <span>DROPPED · 用过但不合适（≠ 退稿）</span></div>
+          </div>
+        </div>
+
+        <div class="lbox">
+          <h4>风险 · RISK <i>装之前先看这栏</i></h4>
+          <div class="risk"><i class="l"></i><i class="m"></i><i class="h"></i><i class="r"></i></div>
+          <div class="riskleg"><span>低 · 无副作用</span><span>中 · 要授权/配置</span><span>高 · 碰权限或数据</span><span>红线 · 一律不收录</span></div>
+        </div>
+
+        <div class="lbox">
+          <h4>徽章 · BADGE <i>额外的信号</i></h4>
+          <div class="badges">
+            <span>★ <b>推荐过</b>（PICKED 印章）</span>
+            <span>🏢 <b>官方出品</b></span>
+          </div>
+        </div>
+
+        <div class="lbox score">
+          <h4>评分 · SCORE <i>五项各 20 分 · 合计 100</i></h4>
+          <div class="row"><span>易用性</span><i><b style="--w:90%"></b></i><span>18/20</span></div>
+          <div class="row"><span>文档</span><i><b style="--w:80%"></b></i><span>16/20</span></div>
+          <div class="row"><span>成熟度</span><i><b style="--w:90%"></b></i><span>18/20</span></div>
+          <div class="row"><span>维护</span><i><b style="--w:75%"></b></i><span>15/20</span></div>
+          <div class="row"><span>风险</span><i><b style="--w:50%"></b></i><span>10/20</span></div>
+        </div>
+
+        <div class="lbox">
+          <h4>操作 · KEYS <i>不只是鼠标</i></h4>
+          <div class="keys">
+            <div><b>1</b><b>2</b><b>3</b><b>4</b> 切换 首页 / 每日精选 / 全库 / 计划与工作区</div>
+            <div><b>G</b> 打开这个图例 · <b>ESC</b> 关闭</div>
+            <div><b>点卡片</b> 看完整档案（背景会虚化）</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var PAGES = {
+    home: 'home-brutal-token.generated.html',
+    daily: 'daily-layout-c-finsara.generated.html',
+    library: 'library-notebook.generated.html',
+    plans: 'plans-shelf.generated.html'
+  };
+  var view = document.getElementById('view'), dock = document.getElementById('dock'), load = document.getElementById('load');
+  var cur = null, first = true;
+
+  function parse() {
+    var h = (location.hash || '#/home').replace('#/', '');
+    var parts = h.split('/');
+    if (parts[0] === 'all') { parts[0] = 'library'; }
+    return { route: PAGES[parts[0]] ? parts[0] : 'home', sub: parts[1] || '' };
+  }
+  function urlFor(route, sub) {
+    var base = PAGES[route] || PAGES.home;
+    if (route === 'library' && sub === 'wall') { base = base + '?view=wall'; }
+    return base;
+  }
+  function render() {
+    var p = parse();
+    var src = urlFor(p.route, p.sub);
+    if (view.getAttribute('data-src') !== src) {
+      view.setAttribute('data-src', src);
+      view.src = src;
+    }
+    [].forEach.call(dock.querySelectorAll('a'), function (a) {
+      a.classList.toggle('on', a.getAttribute('data-r') === p.route);
+    });
+    var skel = document.getElementById('skel');
+    if (skel) {
+      skel.classList.toggle('on', p.route === 'daily');
+      var curL = p.sub || 'c';
+      [].forEach.call(skel.querySelectorAll('a'), function (a) {
+        a.classList.toggle('on', p.route === 'daily' && a.getAttribute('data-l') === curL);
+      });
+    }
+    document.title = '档案站 · ' + ({ home: '首页', daily: '每日精选', library: '全库', plans: '计划' }[p.route]);
+  }
+  window.addEventListener('hashchange', render);
+  [].forEach.call(dock.querySelectorAll('a'), function (a) {
+    a.addEventListener('click', function () {
+      location.hash = '#/' + a.getAttribute('data-r');
+      render();
+    });
+  });
+  var lg = document.getElementById('legend'), lbtn = document.getElementById('lbtn');
+  function openLg() { lg.classList.add('on'); lbtn.classList.add('on'); document.body.style.overflow = 'hidden'; }
+  function closeLg() { lg.classList.remove('on'); lbtn.classList.remove('on'); document.body.style.overflow = ''; }
+  lbtn.addEventListener('click', openLg);
+  document.getElementById('lgMask').addEventListener('click', closeLg);
+  document.getElementById('lgX').addEventListener('click', closeLg);
+  function handleKey(k) {
+    if (k === 'g' || k === 'G') { lg.classList.contains('on') ? closeLg() : openLg(); }
+    if (k === 'Escape') { closeLg(); }
+    if (k === '1') { location.hash = '#/home'; }
+    if (k === '2') { location.hash = '#/daily'; }
+    if (k === '3') { location.hash = '#/library'; }
+    if (k === '4') { location.hash = '#/plans'; }
+  }
+  document.addEventListener('keydown', function (e) {
+    /* 在输入框里打字时不要抢键 */
+    var t = e.target;
+    if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+    handleKey(e.key);
+  });
+  /* iframe 里的页面把 1–4 / G / ESC 转发上来（站内打开时，焦点在页面里也生效） */
+  window.addEventListener('message', function (ev) {
+    if (ev.source !== view.contentWindow) return;
+    var d = ev.data || {};
+    if (d.__archiveRoute) {
+      var h = String(d.__archiveRoute || '');
+      if (h === '#/picks') h = '#/daily';
+      if (h.indexOf('#/legend') === 0) { openLg(); return; }
+      if (h.indexOf('#/') === 0) location.hash = h.slice(1);
+      return;
+    }
+    if (d.__archiveKey) handleKey(d.__archiveKey);
+  });
+
+  /* 页面内部的锚点（#/daily、#/all、#/plans…）转成站点路由 */
+  view.addEventListener('load', function () {
+    if (load && !load.classList.contains('off')) { setTimeout(function () { load.classList.add('off'); }, 120); }
+    try {
+      var w = view.contentWindow, d = view.contentDocument;
+      w.addEventListener('hashchange', function () {
+        var h = w.location.hash.replace('#/', '');
+        var map = { daily: 'daily', all: 'library', library: 'library', plans: 'plans', home: 'home', picks: 'daily' };
+        if (h.indexOf('legend') === 0) { openLg(); return; }
+        var key = map[h.split('/')[0]];
+        if (key) { location.hash = '#/' + key; }
+      });
+      /* 页面里的外链改成新窗口，别把 iframe 带走 */
+      [].forEach.call(d.querySelectorAll('a[href^="http"]'), function (a) { a.target = '_blank'; a.rel = 'noopener'; });
+    } catch (e) { /* file:// 下拿不到 contentWindow 时忽略 */ }
+  });
+
+  render();
+  if ((location.hash || '').indexOf('legend') >= 0) { setTimeout(openLg, 260); }
+})();
+</script>
+</body>
+</html>

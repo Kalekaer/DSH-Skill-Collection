@@ -1,4 +1,4 @@
-# daily-questions.ps1 — 跑完日报后，生成「该问用户的几个问题」
+﻿# daily-questions.ps1 — 跑完日报后，生成「该问用户的几个问题」
 #
 # 用户要的效果：自动化跑完后，不要只丢一份日报，而是**主动问几件需要他决定的事**。
 # 本脚本扫描当天的产物与待办，输出 3–6 条具体问题（每条都带数据依据）——不猜、不空问。
@@ -29,7 +29,7 @@ if (Test-Path $picksPath) {
   $picks = @()
   foreach ($l in (Get-Content $picksPath -Encoding UTF8)) {
     if (-not $l.Trim()) { continue }
-    try { $picks += ($l | ConvertFrom-Json) } catch {}
+    try { $picks += ($l | ConvertFrom-Json) } catch { $null = $_ }
   }
   $sa = @($picks | Where-Object { $_.tier -in @('S','A') })
   $high = @($sa | Where-Object { $_.risk -eq '高' })
@@ -45,7 +45,7 @@ $proj = @()
 if (Test-Path $projPath) {
   foreach ($l in (Get-Content $projPath -Encoding UTF8)) {
     if (-not $l.Trim()) { continue }
-    try { $proj += ($l | ConvertFrom-Json) } catch {}
+    try { $proj += ($l | ConvertFrom-Json) } catch { $null = $_ }
   }
 }
 $partial = @($proj | Where-Object { $_.human.status -eq 'partial' })

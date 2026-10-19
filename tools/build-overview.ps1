@@ -1,4 +1,4 @@
-# build-overview.ps1 — 生成 overview.html（「我的开源工具库」）
+# build-overview.ps1 — 生成旧版工具库 legacy/overview-v5.html（「我的开源工具库」v5）
 #
 # 设计（按 2026-10-13 产品决策）：
 #   1. **单文件、全部内嵌**：双击即可用，不需要服务器、不需要 Python、不需要任何参数。
@@ -75,8 +75,11 @@ foreach ($l in Get-Content $projPath -Encoding UTF8) {
       tier   = $p.tier
       risk   = $p.risk
       status = $p.status
+      dr     = $p.drop_reason   # 淘汰原因（2026-10-16 新增投影；建议调整项 13）
       origin = $p.origin
       oder   = $p.origin_note
+  oc     = $p.owner_class   # $/all 与 $/picks 的官方标记（P1-2 校订后才有 official-bigtech）
+  ol     = $p.owner_label
       l1     = $p.category.l1
       l2     = $p.category.l2
       exp    = $p.experience.stars          # 体验五星（可能为 null）
@@ -85,6 +88,7 @@ foreach ($l in Get-Content $projPath -Encoding UTF8) {
       t      = @($p.tags.'领域', $p.tags.'形态', $p.tags.'用途', $p.tags.'成熟度', $p.tags.'上手难度', $p.tags.'风险等级')
       hs     = if ($h) { $h.status } else { 'missing' }
       one    = if ($h) { $h.one_liner } else { $null }
+      aud    = if ($h) { $h.audience } else { $null }   # P1-13：适合谁（推荐过的条目才有；页面在 #/picks 头条与详情显示）
       # v3.1 验收要求「它解决什么问题」与「比如」必须可见，故重新内嵌（约 +60 B/条）
       prob   = if ($h) { $h.problem } else { $null }
       ex     = if ($h) { $h.example } else { $null }
@@ -109,7 +113,7 @@ if (Test-Path $evPath) {
       $e = $l | ConvertFrom-Json
       if (-not $evMap.ContainsKey($e.id)) { $evMap[$e.id] = @() }
       $evMap[$e.id] += [pscustomobject]@{ d = $e.date; t = $e.type; x = $e.detail }
-    } catch {}
+    } catch { $null = $_ }
   }
 }
 
@@ -167,7 +171,7 @@ if (Test-Path $wsPath) {
     $wsl = @()
     foreach ($l in (Get-Content $wsPath -Encoding UTF8)) {
       if ([string]::IsNullOrWhiteSpace($l)) { continue }
-      try { $wsl += ($l | ConvertFrom-Json) } catch {}
+      try { $wsl += ($l | ConvertFrom-Json) } catch { $null = $_ }
     }
     if ($wsl.Count) { $wsJson = ConvertTo-Json -InputObject @($wsl) -Depth 8 -Compress }
   } catch { Write-Warning "workspaces.jsonl 解析失败：$($_.Exception.Message)" }
@@ -178,15 +182,196 @@ if (-not $wsJson) { $wsJson = '[]' }
 $genTime = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')
 $today   = (Get-Date).ToString('yyyy-MM-dd')
 $totalN  = $rows.Count
-$recN    = ($rows | Where-Object { $_.rec }).Count
-$savedN  = ($rows | Where-Object { $_.status -eq 'saved' }).Count
-$descN   = ($rows | Where-Object { $_.desc -or $_.one }).Count
 $ratedN  = ($rows | Where-Object { $null -ne $_.exp }).Count
 $todayNew= ($rows | Where-Object { $_.first -eq $today }).Count
 # 一级分类（按数量排序，只保留非空）
-$l1Groups = $rows | Group-Object { $_.l1 } | Sort-Object Count -Descending
 # 近 7 天有提交的
 $recentN = ($rows | Where-Object { $_.pushed -and (([datetime]::Now) - [datetime]$_.pushed).Days -le 7 }).Count
+
+# --- P1-14 build stamp（2026-10-17）：算在字面量**之前**（字面量里只能写变量 ✓）---
+$buildAt = (Get-Date).ToString('yyyy-MM-dd HH:mm')
+$sigFile2 = Join-Path $root 'data\.projects-signature'
+$sigShort = if (Test-Path $sigFile2) { (Get-Content $sigFile2 -Raw).Trim().Substring(0,12) } else { 'nosig' }
+$projCount = @(Get-Content (Join-Path $root 'data\projects.jsonl') -Encoding UTF8 | Where-Object { $_.Trim() }).Count
+$buildStamp = "build $buildAt ｜ 数据指纹 $sigShort ｜ $projCount 条"
+
+# --- P2-12 字体内嵌（2026-10-16）：Anton **拉丁 WOFF2 子集** base64 内嵌 ---
+# 为什么：设计 §10.2 要 Anton 做拉丁刊头；内嵌后**依然 0 外部请求**（单文件离线 ✓）。
+# 许可：SIL OFL 1.1 —— 允许嵌入/随软件分发，**条件 2 要求随附版权声明与许可文本** →
+#       根目录 `THIRD-PARTY.md` 存 OFL 全文；audit 有一条检查盯这个配对 ✓
+# 缺失时不报错、自动降级（@font-face 不输出，刊头回落到等宽栈）—— 不让缺一个字体把页面搞挂 ✓
+$antonPath = Join-Path $root 'assets\anton-latin.woff2'
+$antonB64 = ''
+$antonNote = '（未内嵌：找不到 assets\anton-latin.woff2）'
+if (Test-Path $antonPath) {
+  $antonBytes = [System.IO.File]::ReadAllBytes($antonPath)
+  $antonB64 = [Convert]::ToBase64String($antonBytes)
+  $antonNote = "（已内嵌 $([math]::Round($antonBytes.Length/1KB,1)) KB WOFF2 子集 ｜ OFL 1.1 ｜ 版权见 THIRD-PARTY.md）"
+}
+$antonFontFace = if ($antonB64) {
+  "@font-face{font-family:'Anton';font-style:normal;font-weight:400;font-display:swap;src:url(data:font/woff2;base64,$antonB64) format('woff2')}"
+} else { '/* Anton 未内嵌（assets\anton-latin.woff2 缺失）→ 刊头回落等宽栈 */' }
+
+# --- P2-3 后半（2026-10-16）：模板拆分 —— CSS/JS 从生成器里拆出去 ---
+# 为什么：这段字面量已涨到 ~1200 行，改一行 CSS 得在整坨 here-string 里翻 ✗；拆成**真文件**后
+# 可用编辑器/语法高亮，而且**插值风险只剩骨架**（CSS/JS 现在是纯文本，反引号/`$` 不再被 PS 吃掉 ✓）。
+# 产物仍是**单文件** legacy\overview-v5.html ✓（模板只是构建期输入，不改变交付形态）。
+$tplDir = Join-Path $root 'tools\templates'
+$cssTplPath = Join-Path $tplDir 'overview.css'
+$jsTplPath  = Join-Path $tplDir 'overview.js'
+foreach ($tplPath in @($cssTplPath, $jsTplPath)) {
+  if (-not (Test-Path $tplPath)) { Write-Host "缺少模板文件：$tplPath（模板是生成器的输入，必须随 tools\ 一起走）" -ForegroundColor Red; exit 1 }
+}
+$cssBlock = (Get-Content $cssTplPath -Raw -Encoding UTF8).Replace('{{FONT_FACE}}', $antonFontFace)
+$jsBlock  = Get-Content $jsTplPath -Raw -Encoding UTF8
+foreach ($pair in @(@('{{EV}}', $evJsonStr), @('{{PLANS}}', $plansJson), @('{{SYN}}', $synJson), @('{{WS}}', $wsJson), @('{{JSON}}', $json))) {
+  if ($jsBlock.IndexOf($pair[0]) -lt 0) { Write-Host "JS 模板缺少占位符 $($pair[0])" -ForegroundColor Red; exit 1 }
+  $jsBlock = $jsBlock.Replace($pair[0], $pair[1])   # 字面替换（.Replace 不是正则 ✓ JSON 里的 $ 和 \ 安全）
+}
+# ================= 批次 6 · #/home（杂志封面 + 目录）=================
+# 设计依据：`页面分级设计` §10.5（home = 杂志封面 + 目录）、§12-①②③（库总览 / 探索地图 / 最近变化）
+# **所有数字在构建期算完**（设计 §0-5：页面打开即出图，不依赖运行时聚合；229 条 <10ms ✓）
+# 视觉纪律：荧光黄**≤8% 且只做底/块/线**、警示红只做警示、颜色不做唯一信息手段（每个图都有文字摘要 + aria）✓
+$nTotal  = $rows.Count
+$nRec    = @($rows | Where-Object { $_.rec -eq $true }).Count
+$nActive = @($rows | Where-Object { $_.status -eq 'active' }).Count
+$nWatch  = @($rows | Where-Object { $_.status -eq 'watching' }).Count
+$nUsing  = @($rows | Where-Object { $_.status -eq 'using' }).Count
+$nRes    = @($rows | Where-Object { $_.status -eq 'researching' }).Count
+$nDrop   = @($rows | Where-Object { $_.status -eq 'dropped' }).Count
+$nS      = @($rows | Where-Object { $_.tier -eq 'S' }).Count
+$nA      = @($rows | Where-Object { $_.tier -eq 'A' }).Count
+$nB      = @($rows | Where-Object { $_.tier -eq 'B' }).Count
+$nDropT  = @($rows | Where-Object { $_.tier -eq 'dropped' }).Count
+$nUnrated= @($rows | Where-Object { $_.tier -ne 'S' -and $_.tier -ne 'A' -and $_.tier -ne 'B' -and $_.tier -ne 'dropped' }).Count
+$nLow    = @($rows | Where-Object { $_.risk -eq '低' }).Count
+$nMid    = @($rows | Where-Object { $_.risk -eq '中' }).Count
+$nHigh   = @($rows | Where-Object { $_.risk -eq '高' }).Count
+$nNoRisk = @($rows | Where-Object { -not $_.risk }).Count
+$nUser   = @($rows | Where-Object { $_.origin -eq 'user' }).Count
+$d7 = (Get-Date).AddDays(-6).ToString('yyyy-MM-dd')
+$nNew7 = @($rows | Where-Object { $_.first -and ([string]$_.first) -ge $d7 }).Count
+$pctOf = { param($n, $tot) if ($tot -gt 0) { (100.0 * $n / $tot).ToString('0.0', [Globalization.CultureInfo]::InvariantCulture) } else { '0.0' } }
+
+# 堆叠条 + 明细行（状态/档位/风险共用；黄只给"警示/强调"两处，其余走灰阶 ✓）
+function Home-Bar($items, $tot) {
+  $bar = ''; $rowsHtml = ''
+  foreach ($it in $items) {
+    $ps = & $pctOf $it.n $tot
+    if ($it.n -gt 0) { $bar += '<span class="seg ' + $it.cls + '" style="width:' + $ps + '%"></span>' }
+    $rowsHtml += '<li><span class="rl">' + $it.label + '</span><span class="rn mono">' + $it.n + '</span><span class="rp mono">' + $ps + '%</span></li>'
+  }
+  return @{ bar = $bar; rows = $rowsHtml }
+}
+$stItems = @(
+  [pscustomobject]@{ label = '观察中';   n = $nWatch;  cls = 'sg-gray' },
+  [pscustomobject]@{ label = '已收录';   n = $nActive; cls = 'sg-white' },
+  [pscustomobject]@{ label = '正在使用'; n = $nUsing;  cls = 'sg-white' },
+  [pscustomobject]@{ label = '研究中';   n = $nRes;    cls = 'sg-gray' },
+  [pscustomobject]@{ label = '已放弃';   n = $nDrop;   cls = 'sg-red' }
+)
+$tierItems = @(
+  [pscustomobject]@{ label = 'S 档';    n = $nS;       cls = 'sg-yellow' },
+  [pscustomobject]@{ label = 'A 档';    n = $nA;       cls = 'sg-white' },
+  [pscustomobject]@{ label = 'B 档';    n = $nB;       cls = 'sg-gray' },
+  [pscustomobject]@{ label = '已淘汰';  n = $nDropT;   cls = 'sg-red' }
+)
+$riskItems = @(
+  [pscustomobject]@{ label = '低';   n = $nLow;    cls = 'sg-white' },
+  [pscustomobject]@{ label = '中';   n = $nMid;    cls = 'sg-gray' },
+  [pscustomobject]@{ label = '高';   n = $nHigh;   cls = 'sg-red' },
+  [pscustomobject]@{ label = '未评'; n = $nNoRisk; cls = 'sg-gray' }
+)
+$stBar = Home-Bar $stItems $nTotal
+$tierBar = Home-Bar $tierItems $nTotal
+$riskBar = Home-Bar $riskItems $nTotal
+
+$libDays = ((Get-Date) - [datetime](($rows | Measure-Object first -Minimum).Minimum)).Days
+$nTierUnratedWord = @($rows | Where-Object { $_.tier -eq 'unrated' }).Count
+$nTierEmpty = @($rows | Where-Object { -not $_.tier }).Count
+$new7Note = if ($nNew7 -ge $nTotal) { "库只有 $libDays 天历史 · 全部都在窗口内" } else { '首次收录进台账' }# KPI 4 卡（只有"推荐过"用黄块 —— 黄是稀缺资源 ✓）
+$kpiHtml = (@(
+  @{ n = $nTotal;     label = '库内项目';     note = '全部本地 · 可全量重建';     cls = '' },
+  @{ n = $nRec;       label = '推荐过';       note = "S 档 $nS · A 档 $nA";        cls = 'is-yellow' },
+  @{ n = $nNew7;      label = '近 7 天新增';  note = $new7Note;                   cls = '' },
+  @{ n = ($nWatch + $nActive + $nUsing); label = '在跟 + 在用'; note = "观察中 $nWatch · 已收录 $nActive" ; cls = '' }
+) | ForEach-Object {
+  '<div class="kpi ' + $_.cls + '"><b class="mono">' + $_.n + '</b><span>' + $_.label + '</span><em>' + $_.note + '</em></div>'
+}) -join ''
+
+# 类别分布（一级横条，可点 → 跳到全库并按该大类筛选）
+$l1Groups = @($rows | Group-Object { $_.l1 } | Sort-Object Count -Descending)
+$l1Max = if ($l1Groups.Count) { $l1Groups[0].Count } else { 1 }
+$catRows = ''
+foreach ($g in $l1Groups) {
+  if (-not $g.Name) { continue }
+  $ps = & $pctOf $g.Count $nTotal
+  $w = if ($l1Max -gt 0) { [math]::Round(100.0 * $g.Count / $l1Max, 1).ToString('0.0', [Globalization.CultureInfo]::InvariantCulture) } else { '0' }
+  $catRows += "<button type=""button"" class=""catrow"" onclick=""jumpL1('$($g.Name)')""><span class=""cl"">$($g.Name)</span><span class=""cbar""><i style=""width:$w%""></i></span><span class=""cn mono"">$($g.Count)</span><span class=""cp mono"">$ps%</span></button>"
+}
+$l2Count = @($rows | Group-Object { $_.l2 }).Count
+
+# 探索缺口（② 探索地图）：用 taxonomy 的全量类目去比"数据里有没有"，缺口才算得准 ✓
+$taxPath = Join-Path $root 'data\taxonomy.json'
+$gapEmpty = @(); $gapNoRec = @()
+if (Test-Path $taxPath) {
+  $tx = Get-Content $taxPath -Raw -Encoding UTF8 | ConvertFrom-Json
+  $presentL2 = @{}; foreach ($g in ($rows | Group-Object { $_.l2 })) { if ($g.Name) { $presentL2[$g.Name] = $g.Count } }
+  $recL2 = @{}; foreach ($g in ($rows | Where-Object { $_.rec -eq $true } | Group-Object { $_.l2 })) { if ($g.Name) { $recL2[$g.Name] = $g.Count } }
+  foreach ($p1 in $tx.'一级分类'.PSObject.Properties) {
+    if (-not $p1.Value.children) { continue }
+    foreach ($p2 in $p1.Value.children.PSObject.Properties) {
+      $l2n = $p2.Name
+      $cnt = if ($presentL2.ContainsKey($l2n)) { [int]$presentL2[$l2n] } else { 0 }
+      if ($cnt -eq 0) { $gapEmpty += "$($p1.Name) / $l2n" }
+      elseif (-not $recL2.ContainsKey($l2n)) { $gapNoRec += "$($p1.Name) / $l2n（$cnt 条）" }
+    }
+  }
+}
+$gapStale = @($rows | Group-Object { $_.l2 } | Where-Object { ($_.Group | Measure-Object first -Maximum).Maximum -lt (Get-Date).AddDays(-30).ToString('yyyy-MM-dd') })
+$gapHtml = ''
+$gapHtml += '<div class="gap"><h4>① 还没有任何项目的类目 <b class="mono">' + $gapEmpty.Count + '</b></h4>'
+$gapHtml += if ($gapEmpty.Count) { ($gapEmpty | ForEach-Object { '<span class="tagx">' + $_ + '</span>' }) -join ' ' } else { '<p class="none">无：每个类目都至少有 1 条 ✓</p>' }
+$gapHtml += '</div><div class="gap"><h4>② 有项目但一条都没推荐过 <b class="mono">' + $gapNoRec.Count + '</b></h4>'
+$gapHtml += if ($gapNoRec.Count) { ($gapNoRec | Select-Object -First 18 | ForEach-Object { '<span class="tagx">' + $_ + '</span>' }) -join ' ' } else { '<p class="none">无 ✓</p>' }
+$gapHtml += '</div><div class="gap"><h4>③ 超过 30 天没有新增 <b class="mono">' + @($gapStale).Count + '</b></h4>'
+$gapHtml += if (@($gapStale).Count) { (@($gapStale) | ForEach-Object { '<span class="tagx">' + $_.Name + '</span>' }) -join ' ' } else { '<p class="none">无 —— 库本身才 ' + ((Get-Date) - [datetime]($rows | Measure-Object first -Minimum).Minimum).Days + ' 天历史，全部类目都还"新" ✓（等库老了这条才有意义）</p>' }
+$gapHtml += '</div>'
+
+# 最近变化（③）：近 7 天每日事件数 + 事件类型（等宽方括号徽章，design §10.5 终端日志性格）
+$dayList = @(); for ($i = 6; $i -ge 0; $i--) { $dayList += (Get-Date).AddDays(-$i).ToString('yyyy-MM-dd') }
+$evPerDay = @{}; foreach ($d in $dayList) { $evPerDay[$d] = 0 }
+$evType7 = @{}
+foreach ($k in $evMap.Keys) {
+  foreach ($e in $evMap[$k]) {
+    $d = [string]$e.d
+    if ($evPerDay.ContainsKey($d)) { $evPerDay[$d]++; $t = [string]$e.t; $evType7[$t] = 1 + ([int]$evType7[$t]) }
+  }
+}
+$evMax = 0; foreach ($v in $evPerDay.Values) { if ($v -gt $evMax) { $evMax = $v } }
+$spark = ''
+foreach ($d in $dayList) {
+  $c = [int]$evPerDay[$d]
+  $h = if ($evMax -gt 0) { [math]::Round(100.0 * $c / $evMax, 0) } else { 0 }
+  $spark += "<div class=""spark-col"" title=""$d：$c 条事件""><i style=""height:$h%""></i><b class=""mono"">$c</b><span class=""mono"">$($d.Substring(5))</span></div>"
+}
+$typeLabel = @{ discovered = 'NEW'; stars_up = 'STAR'; recommended = 'PICK'; release_detected = 'REL'; status_changed = 'STAT'; metadata_updated = 'META'; push_activity = 'PUSH'; stars_drop = 'DROP'; category_changed = 'CAT'; license_changed = 'LIC' }
+$typeZh = @{ discovered = '首次收录'; stars_up = '星数上涨'; recommended = '进推荐'; release_detected = '有新版本'; status_changed = '状态变更'; metadata_updated = '元数据更新'; push_activity = '提交活动'; stars_drop = '星数下降'; category_changed = '分类变更'; license_changed = '许可变更' }
+$typeBadges = ''
+foreach ($k in ($evType7.Keys | Sort-Object { -[int]$evType7[$_] })) {
+  $lb = if ($typeLabel.ContainsKey($k)) { $typeLabel[$k] } else { $k.ToUpper() }
+  $zh = if ($typeZh.ContainsKey($k)) { $typeZh[$k] } else { '' }
+  $typeBadges += '<span class="tagx mono">[' + $lb + ']</span><span class="zh">' + $zh + ' <b class="mono">' + $evType7[$k] + '</b></span> '
+}
+$evTotal7 = 0; foreach ($v in $evPerDay.Values) { $evTotal7 += $v }
+$homeSummary = "库内 $nTotal 个项目：推荐过 $nRec 个，观察中 $nWatch、已收录 $nActive、已放弃 $nDrop；风险已评 $($nLow + $nMid + $nHigh) 个（低 $nLow / 中 $nMid / 高 $nHigh），其余 $nNoRisk 个未评：未评不等于安全。近 7 天共 $evTotal7 条变化。"
+# 图例里的白名单数字**实时算**，不写死（2026-10-18）
+$offCount = @($rows | Where-Object { $_.oc -eq 'official' }).Count
+$wlCount = 0
+try {
+  $wlRaw = Get-Content (P 'data\owner-whitelist.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+  $wlCount = @($wlRaw.orgs.PSObject.Properties).Count
+} catch { $null = $_ }
 
 $html = @"
 <!DOCTYPE html>
@@ -195,114 +380,44 @@ $html = @"
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>我的开源工具库</title>
+<style>$cssBlock</style>
 <style>
-:root{--bg:#0e1014;--panel:#151922;--card:#1a1f29;--line:#262c37;--fg:#e7e9ee;--dim:#98a2b3;--acc:#4f8cff;--gold:#e8b93a}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
-a{color:var(--acc);text-decoration:none}
-header{padding:16px 22px 12px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(14,16,20,.97);backdrop-filter:blur(8px);z-index:9}
-h1{margin:0 0 4px;font-size:19px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-h1 small{font-weight:400;color:var(--dim);font-size:12px}
-#q{width:100%;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:12px 15px;font-size:14.5px;margin-top:9px}
-#q:focus{outline:none;border-color:var(--acc)}
-.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px;align-items:center}
-select{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:12.5px}
-.chip{cursor:pointer;border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:12.5px;color:var(--dim);background:var(--panel);display:inline-block}
-.chip:hover{border-color:var(--acc);color:var(--fg)}
-.chip.on{background:#243149;border-color:var(--acc);color:#cfe0ff}
-.wrap{padding:16px 22px 30px;max-width:1560px}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(126px,1fr));gap:10px;margin-bottom:16px}
-.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 13px;cursor:pointer}
-.stat:hover{border-color:#3c4a63}
-.stat b{display:block;font-size:21px;line-height:1.25}
-.stat span{color:var(--dim);font-size:12px}
-section{margin-bottom:20px}
-h2{font-size:14.5px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
-h2 em{font-style:normal;color:var(--dim);font-weight:400;font-size:12px}
-.row-scroll{display:flex;gap:9px;overflow-x:auto;padding-bottom:5px}
-.mini{flex:0 0 218px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer}
-.mini:hover{border-color:#3c4a63}
-.mini .n{font-size:13px;font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mini .d{color:var(--dim);font-size:11.5px;height:32px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-.mini .m{color:var(--dim);font-size:11px;margin-top:6px;display:flex;justify-content:space-between}
-.catgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:9px}
-.catbox{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
-.catbox h3{margin:0 0 8px;font-size:13px;color:var(--fg);font-weight:600}
-.catbox .items{display:flex;flex-wrap:wrap;gap:5px}
-#list{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(350px,1fr))}
-.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:13px;cursor:pointer}
-.card:hover{border-color:#3c4a63}
-.card h3{margin:0 0 7px;font-size:14.5px;display:flex;gap:7px;align-items:center;flex-wrap:wrap}
-.card h3 a{color:var(--fg)}
-.card h3 a:hover{color:var(--acc)}
-.stars5{color:var(--gold);font-size:13px;letter-spacing:1px}
-.stars5 small{color:var(--dim);font-size:11px;letter-spacing:0}
-.one{color:var(--fg);font-size:13px;margin:0 0 8px;min-height:36px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;opacity:.92}
-.one.none{color:var(--dim);font-style:italic}
-/* 待补全的条目：**不隐藏、但降低视觉权重**（GPT 建议）——让库看起来还在长，而不是"就这么点东西" */
-.card.thin{opacity:.82;border-style:dashed}
-.card.thin:hover{opacity:1}
-.soon{font-size:11.5px;color:#ffd88a;border-left:2px solid #8a6d3a;padding-left:7px;margin:0 0 8px}
-.pill{border-radius:999px;padding:1px 8px;font-size:11px;border:1px solid var(--line);color:var(--dim);white-space:nowrap}
-.pill-fn{border-color:#3a5f8a;color:#9cc4ff}
-.pill-todo{border-color:#8a6d3a;color:#ffd88a}
-.tier-S,.r-low{border-color:#2e7d5b;color:#7ee2b8}
-.tier-A{border-color:#3a5f8a;color:#9cc4ff}
-.tier-unrated{border-color:#6a4f8a;color:#c9a9f5}
-.r-mid{border-color:#8a6d3a;color:#ffd88a}
-.r-high{border-color:#8a3a3a;color:#ff9d9d}
-.s-saved{border-color:#4f8cff;color:#9cc4ff}
-.s-using{border-color:#2f8f5b;color:#8ee7b0}
-.s-watching{border-color:#8a6d3a;color:#ffd88a}
-.s-researching{border-color:#6a4f8a;color:#c9a9f5}
-.s-dropped{border-color:#8a3a3a;color:#ff9d9d}
-.meta{color:var(--dim);font-size:11.5px;margin-top:7px;display:flex;justify-content:space-between;gap:8px}
-.empty{grid-column:1/-1;text-align:center;color:var(--dim);padding:50px}
-#panel{position:fixed;inset:0 0 0 auto;width:min(660px,95vw);background:var(--panel);border-left:1px solid var(--line);padding:22px;overflow:auto;transform:translateX(105%);transition:transform .18s;z-index:20;box-shadow:-20px 0 40px rgba(0,0,0,.45)}
-#panel.open{transform:none}
-#panel h2{margin:0 0 6px;font-size:19px;display:block}
-#panel .close{position:absolute;top:14px;right:16px;cursor:pointer;color:var(--dim);font-size:22px;line-height:1}
-.sec-h{font-size:12px;color:var(--dim);font-weight:600;margin:16px 0 7px;padding-bottom:5px;border-bottom:1px solid var(--line)}
-.hbody{font-size:13.5px;line-height:1.75;background:#1c222c;border-left:3px solid var(--acc);border-radius:0 8px 8px 0;padding:10px 13px;margin-bottom:4px}
-.fnrow{display:flex;gap:10px;font-size:13px;margin:6px 0;line-height:1.7}
-.fnrow b{color:var(--dim);font-weight:500;min-width:92px;flex:0 0 auto}
-.todo-box{background:#2a2418;border:1px solid #5c4a24;border-radius:8px;padding:10px 13px;font-size:12.5px;line-height:1.8;color:#ffd88a;margin-top:10px}
-.kv{margin:12px 0;padding-top:10px;border-top:1px solid var(--line)}
-.kv div{margin:5px 0;font-size:13px}
-.kv b{color:var(--dim);font-weight:500;display:inline-block;min-width:84px}
-.ev{font-size:12.5px;margin:4px 0;display:flex;gap:8px}
-.ev time{color:var(--dim);white-space:nowrap}
-.foot{padding:0 22px 26px;color:var(--dim);font-size:12px;line-height:1.9;max-width:1560px}
-code{background:#222733;padding:1px 5px;border-radius:4px;font-size:12px}
-/* —— 项目对比（页内，纯前端；数据已内嵌，不调 API）—— */
-.cmp{cursor:pointer;border:1px solid var(--line);border-radius:6px;padding:1px 8px;font-size:11px;color:var(--dim);background:transparent;white-space:nowrap;margin-left:auto}
-.cmp:hover{border-color:var(--acc);color:var(--fg)}
-.cmp.on{background:#243149;border-color:var(--acc);color:#cfe0ff}
-#cmpBar{position:fixed;bottom:18px;right:18px;background:var(--panel);border:1px solid var(--acc);border-radius:10px;padding:10px 14px;display:none;gap:10px;align-items:center;z-index:15;box-shadow:0 8px 24px rgba(0,0,0,.45);font-size:12.5px}
-#cmpBar.on{display:flex}
-table.cmpt{border-collapse:collapse;width:100%;font-size:12.5px;margin-top:8px}
-table.cmpt th,table.cmpt td{border:1px solid var(--line);padding:6px 8px;vertical-align:top;text-align:left;line-height:1.6}
-table.cmpt th{background:#1c222c;color:var(--dim);font-weight:500;white-space:nowrap}
-table.cmpt td:first-child{color:var(--dim);white-space:nowrap;background:#181d26}
-.cmpnote{color:var(--dim);font-size:12px;margin-top:8px;line-height:1.7}
-.grpNote{grid-column:1/-1;color:var(--dim);font-size:12.5px;line-height:1.7;margin-bottom:2px}
-.grpHead{grid-column:1/-1;font-size:13px;font-weight:600;color:var(--fg);border-bottom:1px solid var(--line);padding:6px 0 5px;margin-top:6px}
-.grpHead em{font-style:normal;color:var(--dim);font-weight:400;font-size:11.5px;margin-left:7px}
-@media(max-width:700px){.wrap{padding:12px}}
+/* ⑤ 档案站：新视觉六页（外壳 + 首页 + 日报 C/D + 全库 + 计划与工作区） */
+#view-site{padding:0}
+#view-site .site-head{padding:20px 0 6px}
+#view-site .site-head h2{margin:0 0 6px;font-size:22px}
+#view-site .site-head p{margin:0 0 6px;color:var(--dim);font-size:13px;line-height:1.75}
+#view-site .site-links{font-size:12px}
+#view-site .site-links a{margin:0 3px;border-bottom:1px solid currentColor}
+#view-site iframe{display:block;width:100%;height:calc(100vh - 215px);min-height:620px;
+  border:2px solid #0a0a0a;background:#080807;margin:10px 0 24px}
 </style>
 </head>
 <body>
 <header>
   <h1>🧰 我的开源工具库 <small>共 $totalN 个工具 ｜ 已评分 $ratedN ｜ 近 7 天有更新 $recentN ｜ 生成于 $genTime</small></h1>
-  <input id="q" placeholder="想干什么？直接说需求，例如：画图 / 做PPT / 替代PS / 聊天机器人 / 本地运行AI（按 / 聚焦）" oninput="render()">
-  <div class="toolbar">
-    <select id="sort" onchange="render()">
+  <input id="q" placeholder="想干什么？直接说需求，例如：画图 / 做PPT / 替代PS / 聊天机器人 / 本地运行AI（按 / 聚焦）" oninput="render();ensureAllView()">
+  <nav id="nav">
+    <!-- 一级导航用**真链接**（`<a href="#/…">`），不用 `<span onclick>`：
+         ① 可 Tab 聚焦、回车即开（设计 §5「全键盘可达」）；
+         ② 可右键「复制链接 / 在新标签打开」——这才叫可分享；
+         ③ 真机探针（tools\history-probe-cdp.js）按 `href` 找目标 → 改前是 span，它按定义找不到 ✗
+         点击后由 hashchange → route() 统一渲染，不需要额外的 onclick ✓ -->
+    <a class="navlink" id="nav-home" href="#/home">① 总览</a>
+    <a class="navlink" id="nav-picks" href="#/picks">② 发现</a>
+    <a class="navlink" id="nav-all" href="#/all">③ 全库</a>
+    <a class="navlink" id="nav-plans" href="#/plans">④ 方案与工作区</a>
+    <a class="navlink" id="nav-site" href="#/site">⑤ 档案站</a>
+    <a class="navlink" id="nav-legend" href="#/legend" title="档位 / 状态 / 风险 / 徽章是什么意思">📖 图例与标准</a>
+  </nav>
+  <div class="toolbar" id="toolbar">
+    <select id="sort" onchange="render();syncURL()">
       <option value="stars">按体验评分</option>
       <option value="gh">按星数</option>
       <option value="recent">按最近提交</option>
       <option value="name">按名称</option>
     </select>
-    <select id="fs" onchange="render()">
+    <select id="fs" onchange="render();syncURL()">
       <option value="">全部状态</option>
       
       <option value="active">已收录</option>
@@ -311,18 +426,22 @@ table.cmpt td:first-child{color:var(--dim);white-space:nowrap;background:#181d26
       <option value="researching">研究中</option>
       <option value="dropped">已放弃</option>
     </select>
-    <select id="fr" onchange="render()">
+    <select id="fb" onchange="render();syncURL()">
+  <option value="">全部徽章</option>
+  <option value="org">🏢 官方</option><option value="new">🌱 新星</option><option value="gem">🧊 冷门</option>
+  <option value="ever">🧱 常青</option><option value="watch">🧪 待观察</option>
+  </select>  <select id="fr" onchange="render();syncURL()">
       <option value="">全部风险</option><option>低</option><option>中</option><option>高</option>
     </select>
-    <select id="ft" onchange="render()">
+    <select id="ft" onchange="render();syncURL()">
       <option value="">全部档位</option><option>S</option><option>A</option><option value="unrated">未评档</option>
     </select>
-    <select id="f5" onchange="render()">
+    <select id="f5" onchange="render();syncURL()">
       <option value="">全部评分</option>
       <option value="5">五星</option><option value="4">四星以上</option><option value="3">三星以上</option>
       <option value="0">仅未评分</option>
     </select>
-    <select id="fa" onchange="render()">
+    <select id="fa" onchange="render();syncURL()">
       <option value="">全部活跃度</option>
       <option value="30">30 天内有提交</option>
       <option value="90">90 天内有提交</option>
@@ -334,692 +453,253 @@ table.cmpt td:first-child{color:var(--dim);white-space:nowrap;background:#181d26
   </div>
 </header>
 <div class="wrap">
-  <section id="hero">
-    <h2>👋 欢迎来到你的开源工具库 <em>$totalN 个项目 · $planCount 个工作方案 · 全部本地、双击即用</em></h2>
-    <div class="catbox">
-      <div class="items">
-        <span class="chip" onclick="document.getElementById('q').value='做视频';render();document.getElementById('q').scrollIntoView({block:'center'})">🔍 试试搜「做视频」</span>
-        <span class="chip" onclick="document.getElementById('q').value='AI绘画';render()">🔍 搜「AI绘画」</span>
-        <span class="chip" onclick="document.getElementById('q').value='找文件';render()">🔍 搜「找文件」</span>
-        <span class="chip" onclick="document.getElementById('planGrid').scrollIntoView({behavior:'smooth'})">🧩 按需求组方案</span>
-        <span class="chip" onclick="document.getElementById('wsSection').scrollIntoView({behavior:'smooth'})">📌 我的工作区</span>
-        <span class="chip" onclick="document.getElementById('catGrid').scrollIntoView({behavior:'smooth'})">🗂 浏览分类</span>
+  <div id="crumb"></div>
+
+  <!-- ① 总览：#/home -->
+  <section id="view-home" class="view">
+  <!-- § 封面（杂志刊头）：拉丁超大标题用内嵌 Anton，中文走系统栈，黄只做一条切割带 ✓ -->
+  <section id="hero" class="masthead">
+    <h2 class="mh-title"><span class="mh-lat">ARCHIVE</span><br><span class="mh-lat mh-hl">INDEX</span></h2>
+    <div class="mh-bar"><span class="mono">EST. 2026 · LOCAL ARCHIVE · 单文件离线 · 零依赖</span></div>
+    <p class="mh-cn">开源工具档案 · <em>$totalN 个项目</em> · $planCount 个工作方案</p>
+    <p class="mh-lede">本地只读档案：$nTotal 条项目，其中 $nUser 条是你自己推荐的。所有数字在构建期算好，双击即用、不联网。</p>
+    <div class="items mh-actions">
+      <span class="chip" onclick="searchFor('做视频')">试试搜「做视频」</span>
+      <span class="chip" onclick="searchFor('AI绘画')">搜「AI绘画」</span>
+      <span class="chip" onclick="searchFor('找文件')">搜「找文件」</span>
+      <span class="chip" onclick="go('plans')">按需求组方案</span>
+      <span class="chip" onclick="go('all')">浏览全部 $nTotal 条</span>
+      <span class="chip" onclick="go('picks')">今日新增</span>
+    </div>
+    <p class="mh-hint">不知道怎么用？<b>在搜索框里直接说你想干什么</b>（例如「我想做一个播客频道」），这里会从你自己的库里配一套工具给你。</p>
+  </section>
+
+  <!-- § 01 库总览（KPI） -->
+  <!-- § 00 中央几何导航（第一轮新增）：三个主入口 + 次级小入口。
+       用**真链接**（可 Tab 聚焦、可右键复制、可后退），路由不变：#/picks #/all #/plans ✓ -->
+  <nav id="hub" aria-label="主要入口">
+    <a class="hub-node hub-picks" href="#/picks">
+      <b class="hub-no">01</b>
+      <span class="hub-t">每日精选</span>
+      <span class="hub-d">日报与精选是同一件事：按天看新增，或按档位看精品。含来源说明与「适合谁」。</span>
+      <span class="hub-n mono">$($nS + $nA) 条已推荐 ｜ $recentN 条近 7 天有更新</span>
+    </a>
+    <a class="hub-node hub-all" href="#/all">
+      <b class="hub-no">02</b>
+      <span class="hub-t">完整项目库</span>
+      <span class="hub-d">全部 $nTotal 条档案：分类、标签、徽章、风险、成长记录都能筛，筛选条件写进链接可分享。</span>
+      <span class="hub-n mono">$nTotal 条 ｜ 其中你自己推荐 $nUser 条</span>
+    </a>
+    <a class="hub-node hub-plans" href="#/plans">
+      <b class="hub-no">03</b>
+      <span class="hub-t">计划与工作区</span>
+      <span class="hub-d">按需求配好的工具组合与工作区：谁干什么、还缺什么，一屏看完。</span>
+      <span class="hub-n mono">$planCount 个方案</span>
+    </a>
+    <div class="hub-meta">
+      <a class="hub-mini" href="#/legend" title="档位 / 状态 / 风险 / 徽章是什么意思">📖 图例与标准</a>
+      <a class="hub-mini" href="#/all?badge=gem">🧊 冷门优质</a>
+      <a class="hub-mini" href="#/all?badge=org">🏢 官方出品</a>
+      <a class="hub-mini" href="#/all?tier=S">S 档</a>
+      <span class="hub-mini" onclick="searchFor('本地运行AI')" style="cursor:pointer">试试搜「本地运行AI」</span>
+    </div>
+  </nav>
+  <section class="panel">
+    <h3 class="sec-h2"><span class="mono snum">§ 01</span> 库总览 <em>4 个数字说清这个库</em></h3>
+    <div class="kpis">$kpiHtml</div>
+    <p class="chart-note">$homeSummary</p>
+  </section>
+
+  <!-- § 02 结构分布（状态 / 档位 / 风险） -->
+  <section class="panel">
+    <h3 class="sec-h2"><span class="mono snum">§ 02</span> 结构分布 <em>状态 · 档位 · 风险</em></h3>
+    <div class="dist-grid">
+      <div class="dist">
+        <h4>状态</h4>
+        <div class="stack" role="img" aria-label="状态分布：观察中 $nWatch 条、已收录 $nActive 条、已放弃 $nDrop 条">$($stBar.bar)</div>
+        <ul class="legend">$($stBar.rows)</ul>
+        <p class="chart-note">「正在使用 / 研究中」现在是 0：这两态还没启用（待 P1-3），不是"没有问题"。</p>
+      </div>
+      <div class="dist">
+        <h4>档位</h4>
+        <div class="stack" role="img" aria-label="档位分布：S 档 $nS 条、A 档 $nA 条、B 档 $nB 条、未评 $nUnrated 条、已淘汰 $nDropT 条">$($tierBar.bar)</div>
+        <ul class="legend">$($tierBar.rows)</ul>
+        <p class="chart-note">日报每天最多 8 条，所以 S + A 只有 $($nS + $nA) 条：档位是<b>稀缺</b>的，未评只代表还没看（未评档 $nUnrated = 显式 unrated $nTierUnratedWord + tier 为空 $nTierEmpty，数据里两种写法同义）。</p>
+      </div>
+      <div class="dist">
+        <h4>风险</h4>
+        <div class="stack" role="img" aria-label="风险分布：低 $nLow 条、中 $nMid 条、高 $nHigh 条、未评 $nNoRisk 条">$($riskBar.bar)</div>
+        <ul class="legend">$($riskBar.rows)</ul>
+        <p class="chart-note">未评 $nNoRisk 条（$([math]::Round(100.0 * $nNoRisk / [Math]::Max($nTotal,1), 0))%）：<b>未评 ≠ 安全</b>，只表示还没评估过。</p>
       </div>
     </div>
-    <div style="color:var(--dim);font-size:12.5px;margin-top:8px">
-      不知道怎么用？<b>在搜索框里直接说你想干什么</b>（例如「我想做一个播客频道」），这里会从你自己的库里配一套工具给你。
-      想看整套搭配：点上面的「按需求组方案」。<span class="chip" style="margin-left:6px" onclick="this.closest('section').style.display='none';try{localStorage.setItem('dsh-lib-hero','off')}catch(e){}">知道了，收起</span>
-    </div>
+  </section>
+
+  <!-- § 03 类别分布 -->
+  <section class="panel">
+    <h3 class="sec-h2"><span class="mono snum">§ 03</span> 类别分布 <em>一级 $($l1Groups.Count) 类 · 二级 $l2Count 类在用</em></h3>
+    <div class="catrows">$catRows</div>
+    <p class="chart-note">点任一行 → 去全库按该大类筛选（筛选条件会写进链接，可分享、可后退）。</p>
+  </section>
+
+  <!-- § 04 探索缺口 -->
+  <section class="panel">
+    <h3 class="sec-h2"><span class="mono snum">§ 04</span> 探索缺口 <em>哪些地方还没被看过</em></h3>
+    <div class="gaps">$gapHtml</div>
+  </section>
+
+  <!-- § 05 最近变化 -->
+  <section class="panel">
+    <h3 class="sec-h2"><span class="mono snum">§ 05</span> 最近变化 <em>近 7 天 $evTotal7 条事件</em></h3>
+    <div class="spark" role="img" aria-label="近 7 天每日事件数（列下方数字即当日条数，合计 $evTotal7 条）">$spark</div>
+    <div class="typelegend">$typeBadges</div>
+    <p class="chart-note">事件来自 data/events.jsonl（可全量重建）。每行都能在「发现」区按日展开。</p>
+  </section>
+  </section>
+
+  <!-- ② 发现：#/picks（可深链到某天 #/picks/YYYY-MM-DD） -->
+  <section id="view-picks" class="view">
+  <section class="panel">
+    <h2><span class="mono ix">FEATURE</span> 今日新增 <em>每天进货的入口（链接可直接分享到某一天：#/picks/2026-10-16）</em></h2>
+    <div id="todayLead"></div>
+    <div id="todayRow"></div>
+  </section>
+  <section class="panel">
+    <h2><span class="mono ix">BY TIER</span> 按档位分栏 <em>同一天里，S 档先看</em></h2>
+    <div class="tcols" id="todayTiers"></div>
+  </section>
+  <section class="panel">
+    <h2><span class="mono ix">OFFICIAL</span> 官方动态 <em>属于已验证组织账号的条目</em></h2>
+    <div id="todayOff"></div>
+  </section>
+  </section>
+<!-- ③ 全库：#/all（分类浏览 + 全部工具） -->
+  <section id="view-all" class="view">
+  <section>
+    <h2><span class="mono ix">INDEX</span> 分类索引 <em>点大类或小类即筛选（筛选条件会写进链接，可分享）</em></h2>
+    <div class="catgrid" id="catGrid"></div>
   </section>
 
   <section>
-    <h2>🆕 今日新增 <em>每天进货的入口</em></h2>
-    <div class="row-scroll" id="todayRow"></div>
+    <h2><span class="mono ix">LIST</span> 全部条目 <em id="countHint"></em></h2>
+    <div id="list"></div>
+  </section>
   </section>
 
+  <!-- ④ 方案与工作区：#/plans -->
+  <section id="view-plans" class="view">
   <section>
-    <h2>🧩 按需求组方案 <em>点一个场景，看这套该怎么配（工具按用途自动匹配，不调 API）</em></h2>
-    <div class="catbox"><div class="items" id="planGrid"></div></div>
+    <h2><span class="mono ix">PLANS</span> 按需求组方案 <em>点一行看这套怎么配（工具按用途自动匹配，不调 API）</em></h2>
+    <div id="planGrid"></div>
   </section>
 
   <section id="wsSection">
     <h2>📌 我的工作区 <em>你正在做的事，和它用到的那套工具</em></h2>
     <div class="catbox"><div class="items" id="wsGrid"></div></div>
   </section>
-
-  <section>
-    <h2>🗂 分类浏览 <em>点大类或小类即筛选</em></h2>
-    <div class="catgrid" id="catGrid"></div>
   </section>
 
-  <section>
-    <h2>📋 全部工具 <em id="countHint"></em></h2>
-    <div id="list"></div>
+  <!-- ⑤ 档案站：#/site（2026-10-17 接入；iframe 嵌入新视觉站点） -->
+  <section id="view-site" class="view">
+    <div class="site-head">
+      <h2><span class="mono ix">SITE</span> 档案站 <em>新视觉五页 · 外壳 / 首页 / 每日精选 / 全库 / 计划与工作区</em></h2>
+      <p>下面嵌入的是新站点入口（底部导航坞、键盘 1–4、G 图例）。<b>用本地 http 服务打开时完整可用</b>；
+         直接双击时首屏可看，站内互跳可能被浏览器拦（file:// 不允许跨文档），可用下面的单页链接。</p>
+      <p class="site-links">单独打开：
+        <a href="data/_tmp/site-shell.generated.html" target="_blank">站点入口</a>
+        <a href="data/_tmp/home-brutal-token.generated.html" target="_blank">首页</a>
+        <a href="data/_tmp/daily-layout-c-finsara.generated.html" target="_blank">每日精选</a>
+        <a href="data/_tmp/library-notebook.generated.html" target="_blank">全库</a>
+        <a href="data/_tmp/plans-shelf.generated.html" target="_blank">计划与工作区</a>
+      </p>
+    </div>
+    <iframe src="data/_tmp/site-shell.generated.html#/home" title="档案站（新视觉）" loading="lazy"></iframe>
   </section>
 </div>
 <div id="panel"></div>
+<div id="legend">
+  <span class="close" onclick="closeLegend()">×</span>
+  <h2>SPEC · 图例与标准</h2>
+  <p class="spec-note">本档案自己的技术规范：标记含义、数字口径、链接用法。随时可查（Esc 或点 × 关闭；关闭后回到你刚才看的区）。</p>
+
+  <div class="spec-h">§ 01 / 推荐档位（满分 100，口径来自 RUBRIC.md）</div>
+  <table class="spec-tbl">
+    <tr><th>档位</th><th>分数</th><th>含义</th><th>上限</th></tr>
+    <tr><td class="mono">S</td><td class="mono">≥ 80</td><td>当天最值得看的</td><td class="mono">≤ 3 / 天</td></tr>
+    <tr><td class="mono">A</td><td class="mono">65–79</td><td>值得收藏</td><td class="mono">S + A ≤ 8 / 天</td></tr>
+    <tr><td class="mono">B</td><td class="mono">50–64</td><td>合格但不急</td><td class="mono">不限</td></tr>
+    <tr><td class="mono">未评档</td><td class="mono">未完</td><td>还没走到评分这一步：不代表不好，只代表还没看</td><td class="mono">不限</td></tr>
+    <tr><td class="mono">已淘汰</td><td class="mono">&lt; 50</td><td>或命中合规红线（注册机 / 破解 / 刷星迹象）</td><td class="mono">不推荐</td></tr>
+  </table>
+
+  <div class="spec-h">§ 02 / 状态（台账五态白名单）</div>
+  <dl class="spec-dl">
+    <div class="spec-row"><dt>观察中</dt><dd>已收录，先盯着看（默认态）</dd></div>
+    <div class="spec-row"><dt>已收录</dt><dd>确认可用</dd></div>
+    <div class="spec-row"><dt>正在使用</dt><dd>你自己已经在用（当前 0 条，这一态待启用）</dd></div>
+    <div class="spec-row"><dt>研究中</dt><dd>证据不足，待复核：既不判死也不推荐（当前 0 条，待 P1-3）</dd></div>
+    <div class="spec-row"><dt>已放弃</dt><dd>试过或评估过，不再跟</dd></div>
+  </dl>
+
+  <div class="spec-h">§ 03 / 风险等级</div>
+  <dl class="spec-dl">
+    <div class="spec-row"><dt>低</dt><dd>本地工具、不联网、许可清楚</dd></div>
+    <div class="spec-row"><dt>中</dt><dd>会读写你的文件 / 需要密钥 / 许可待核</dd></div>
+    <div class="spec-row"><dt>高</dt><dd>涉及账号权限、隐私数据、来源不明的可执行文件</dd></div>
+    <div class="spec-row"><dt>未评</dt><dd><b>未评 ≠ 安全</b>：只表示还没评估过（本库多数条目属此列）</dd></div>
+  </dl>
+
+  <div class="spec-h">§ 04 / 分层徽章（P2-2；规则可在数据上复算，不是贴上去的标签）</div>
+  <dl class="spec-dl">
+    <div class="spec-row"><dt>🏢 官方</dt><dd>仓库 owner 命中白名单 <code>data/owner-whitelist.json</code>（$wlCount 个组织）→ 标记带厂名；<b>只降低核实成本、不加分</b>。当前 $offCount 条</dd></div>
+    <div class="spec-row"><dt>🌱 新星</dt><dd>首次收录 ≤ <b>7</b> 天 <b>且</b>已评到 S/A 档（2026-10-17 收紧：原口径"≤14 天 + 质量信号"覆盖 74% 的条目，徽章失去区分度 ✗）。当前 <b>39</b> 条</dd></div>
+    <div class="spec-row"><dt>🧊 冷门</dt><dd>星数 &lt; 1000 <b>但</b>质量好（S/A 档或体验分 ≥ 4）：冷门优质；2026-10-16 按你的要求由 💎 改为 🧊。当前 65 条</dd></div>
+    <div class="spec-row"><dt>🧱 常青</dt><dd>库龄 &gt; 30 天 <b>且</b>近 7 天仍有提交。⚠️ 现在<b>恒为 0</b>：库本身只有 5 天历史，等库老了它才会出现（不假装有）</dd></div>
+    <div class="spec-row"><dt>🧪 待观察</dt><dd>档位未评 <b>且</b>风险未评：证据不足，既不判死也不推。当前 161 条</dd></div>
+    <div class="spec-row"><dt>👤 用户推荐</dt><dd>你主动提的项目：一律入库，但门禁未过会写明风险</dd></div>
+  </dl>
+  <p class="spec-note">🔥 与 💎 已停用（营销号观感；用户 2026-10-14 决定）：冷门一律 🧊，新星一律 🌱。徽章**排在其他标记第一位** ✓；徽章筛选已可用：筛选条里的「全部徽章」→ 会写进链接（例如 `#/all?badge=gem`，可分享、可后退）✓</p>
+  <div class="spec-h">§ 05 / 标签与来源（可信度不同）</div>
+  <dl class="spec-dl">
+    <div class="spec-row"><dt>技术标签</dt><dd>来自 GitHub topics 与语言：机器写入，只说"是什么技术"，不代表用途</dd></div>
+    <div class="spec-row"><dt>功能标签</dt><dd>人话层的"能干什么"：人工或 agent 撰写，搜索主要靠它</dd></div>
+    <div class="spec-row"><dt>用户搜索词</dt><dd>同义词表（人工维护）：你说"修图"也能搜到"图片编辑"</dd></div>
+  </dl>
+
+  <div class="spec-h">§ 06 / 数据与免责</div>
+  <dl class="spec-dl">
+    <div class="spec-row"><dt>分数</dt><dd>启发式打分，不是权威评测；档位稀缺（S + A 每天 ≤ 8）</dd></div>
+    <div class="spec-row"><dt>星数</dt><dd>采集时点的快照值，不是实时</dd></div>
+    <div class="spec-row"><dt>风险</dt><dd>未评 ≠ 安全；高风险条目请先看它的 README 与许可</dd></div>
+    <div class="spec-row"><dt>页面</dt><dd>只读单文件：数据全部内嵌、运行期外部请求 0、不写磁盘</dd></div>
+    <div class="spec-row"><dt>版本</dt><dd>$buildStamp</dd></div>
+    <div class="spec-row"><dt>更新</dt><dd>改完 data 后跑 sync-projects 再跑 build-overview（或双击根目录的刷新页面.cmd）</dd></div>
+  </dl>
+
+  <div class="spec-h">§ 07 / 链接与路由（可分享、可后退）</div>
+  <dl class="spec-dl">
+    <div class="spec-row"><dt>#/home</dt><dd>总览（封面 + § 01–§ 05 目录）</dd></div>
+    <div class="spec-row"><dt>#/picks</dt><dd>发现：可深链到某天，#/picks/2026-10-16</dd></div>
+    <div class="spec-row"><dt>#/all</dt><dd>全库：筛选写进链接，#/all?cat=AI/AI绘画&amp;tier=S（后退 = 撤销筛选）</dd></div>
+    <div class="spec-row"><dt>#/p/owner/repo</dt><dd>单个项目的详情</dd></div>
+    <div class="spec-row"><dt>#/plans</dt><dd>方案与工作区（也可 #/plans/id、#/ws/id）</dd></div>
+    <div class="spec-row"><dt>#/legend</dt><dd>本页（叠加层，不改变你当前所在的区）</dd></div>
+  </dl>
+</div>
 <div id="cmpBar"></div>
 <div class="foot">
   数据来自 <code>data/projects.jsonl</code> + <code>data/events.jsonl</code>（由原始来源派生，可全量重建）。<b>本页是只读视图，数据已全部内嵌，双击即可用。</b><br>
   改状态：编辑 <code>data/seen.jsonl</code> 的 <code>status</code>（白名单 active/using/watching/researching/dropped；saved 为遗留值）并在 <code>data/status-log.jsonl</code> 追加一行，然后跑 <code>sync-projects.ps1</code> 与 <code>build-overview.ps1</code>。<br>
-  改分类：只改 <code>data/taxonomy.json</code>（<b>分类不允许运行时自由创建</b>，新方向先写入 <code>taxonomy-suggestions.json</code> 等人工批准）。
+  改分类：只改 <code>data/taxonomy.json</code>（<b>分类不允许运行时自由创建</b>，新方向先写入 <code>taxonomy-suggestions.json</code> 等人工批准）。<br>
+  字体：拉丁刊头 <b>Anton</b> $antonNote —— 中文一律系统字体栈；页面<b>运行期外部请求 = 0</b>。
 </div>
-<script>
-const P = $json;
-const E = $evJsonStr;
-const PLANS = $plansJson;
-const SYN = $synJson;   // 同义词组：搜索时按「组内任一命中」算命中
-const WS = $wsJson;
-const DIMS = ['领域','形态','用途','成熟度','上手难度','风险等级'];
-const STA = {active:'已收录',using:'正在使用',watching:'观察中',researching:'研究中',dropped:'已放弃'};   // B14：saved 已废弃，不留死映射
-const f = {q:'', sort:'stars', status:'', risk:'', tier:'', five:'', active:'', l1:'', l2:'', tag:''};
-let cmpSel = [];   // 对比选择（最多 2 个，页内纯前端）
-let groupByUse = false;   // 按用途分组（把结果按二级分类聚合，便于按流程挑组合）
-
-function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
-function repoUrl(p){ return 'https://github.com/' + p.id; }
-function when(s){ return s ? String(s).slice(0,10) : '—'; }
-function daysAgo(s){ if(!s) return null; const d=new Date(String(s)); if(isNaN(d)) return null; return Math.floor((Date.now()-d)/86400000); }
-function stars5(n){ if(n===null||n===undefined) return '<span class="stars5" style="color:var(--dim)">未评分</span>'; return '<span class="stars5">'+'★'.repeat(n)+'☆'.repeat(5-n)+'</span>'; }
-function oneText(p){ return p.one || (p.desc ? p.desc : null); }function evCount(p){ const e=E[p.id]; return e? e.length : 0; }
-function hay(p){
-  return [p.id,p.desc||'',p.note||'',p.one||'',p.prob||'',p.ex||'',
-    (p.fn||[]).join(' '),(p.ft||[]).join(' '),(p.un||[]).map(x=>x&&x.note?x.note:'').join(' '),
-    p.t.join(' '),p.l1||'',p.l2||''].join(' ').toLowerCase();
-}
-// —— 搜索词处理：分词 + 错字容错（v3.1 第五节）——
-let CURTOK = [];
-let VOCAB = null;
-function buildVocab(){
-  if(VOCAB) return VOCAB;
-  const set=new Set();
-  P.forEach(p=>{
-    (p.ft||[]).forEach(x=>{ if(x) set.add(String(x).toLowerCase()); });
-    [p.l1,p.l2].forEach(x=>{ if(x) set.add(String(x).toLowerCase()); });
-    String(p.id||'').toLowerCase().split(/[\/\-_.]+/).forEach(x=>{ if(x.length>2) set.add(x); });
-  });
-  VOCAB=Array.from(set);
-  return VOCAB;
-}
-function lev(a,b){
-  const m=a.length,n=b.length; if(!m) return n; if(!n) return m;
-  let prev=[]; for(let j=0;j<=n;j++) prev[j]=j;
-  for(let i=1;i<=m;i++){
-    const cur=[i];
-    for(let j=1;j<=n;j++){
-      const cost=(a[i-1]===b[j-1])?0:1;
-      cur[j]=Math.min(cur[j-1]+1, prev[j]+1, prev[j-1]+cost);
-    }
-    prev=cur;
-  }
-  return prev[n];
-}
-function fuzzyFix(tok){
-  if(!tok || tok.length<3) return null;
-  const v=buildVocab().concat((SYN||[]).reduce(function(a,g){ return a.concat((g.terms||[]).map(function(x){ return String(x).toLowerCase(); })); },[]));   // 1a：把同义词表的词并进容错词表（原来库里没有 photoshop 这类词，photshop 修不到）
-  for(let i=0;i<v.length;i++){
-    const w=v[i];
-    if(Math.abs(w.length-tok.length)<=1 && lev(tok,w)<=1) return w;
-  }
-  return null;
-}
-// 同义词扩展（B2）：命中组内任一词 → 返回整组，搜索按「组内任一命中」判定
-function expandToken(t){
-  const tl=String(t).toLowerCase();
-  for(const g of (SYN||[])){
-    const terms=(g.terms||[]).map(x=>String(x).toLowerCase());
-    if(terms.indexOf(tl)>=0) return terms;
-  }
-  return [tl];
-}function parseQuery(q){
-  if(!q) return [];
-  let toks=q.split(/[\s,，、;；|]+/).filter(x=>x);
-  if(!toks.length) toks=[q];
-  // §2 修复（v5.1.0 测试发现）：中文整句没有空格 → 整句被当成**一个词**去匹配，必然 0 命中
-  // （实测「我想做PPT / 我要画图 / 我要写代码 / 我要找AI助手 / 我要管理文件」= 0/5）。
-  // 策略：剥掉意图前缀，对剩下的短词做同义词扩展；整句也保留（避免误伤正常搜索）。
-  const INTENT = /^(我想|我要|帮我|给我|想要|需要一个|需要|寻找|找找|有没有|求|想|要|找|做个|做)/;
-  return toks.map(function(t){
-    const tl0 = String(t).toLowerCase();
-    if (expandToken(tl0).length > 1) return expandToken(tl0);   // ① 精确命中同义词组 → 不要再容错改写（ppt 被 fuzzyFix 改写就是这个 bug）
-    const f = fuzzyFix(t) || t;   // ② 没命中才容错
-    let s = f; for (let k = 0; k < 2; k++) { s = s.replace(INTENT, ''); }   // 剥两层：「我要找AI助手」→ 我要 → 找 → ai助手
-    let parts = [];
-    if (s && s !== f) { parts = parts.concat(expandToken(s)); }
-    const full = expandToken(f);
-    for (const x of full) { if (parts.indexOf(x) < 0) parts.push(x); }
-    return parts;
-  });
-}
-
-function pass(p){
-  if(f.l1 && p.l1!==f.l1) return false;
-  if(f.l2 && p.l2!==f.l2) return false;
-  if(f.q){
-    // 分词 + 容错后，要求**所有词都命中**（多词查询更精确）；单词查询等价于原来的子串匹配
-    if(CURTOK.length){
-      const h=hay(p);
-      if(!CURTOK.every(set=>set.some(t=>h.indexOf(t)>=0))) return false;   // 词集：组内任一命中即可（B2）
-    }
-  }
-  if(f.tag && (p.ft||[]).indexOf(f.tag)<0) return false;
-  if(f.status && p.status!==f.status) return false;
-  if(f.risk && p.risk!==f.risk) return false;
-  if(f.tier){ if(f.tier==='unrated'){ if(p.tier && p.tier!=='unrated') return false; } else if(p.tier!==f.tier) return false; }
-  if(f.five){ if(+f.five===0){ if(p.exp!==null) return false; } else { if(p.exp===null || p.exp < +f.five) return false; } }
-  if(f.active){ const d=daysAgo(p.pushed); if(d===null || d> +f.active) return false; }
-  return true;
-}
-// 搜索优先级（v3.1 验收）：项目全名 > 简称 > 前缀 > GitHub ID > 功能标签 > 一句话 > 分类
-function matchScore(p,q){
-  if(!q) return 0;
-  const qq=q.toLowerCase();
-  const id=(p.id||'').toLowerCase();
-  const name=id.split('/')[1]||'';
-  if(id===qq) return 100;
-  if(name===qq) return 95;
-  if(name.indexOf(qq)===0) return 85;
-  if(id.indexOf(qq)>=0) return 80;
-  if((p.ft||[]).some(x=>String(x).toLowerCase().indexOf(qq)>=0)) return 65;
-  if((p.one||'').toLowerCase().indexOf(qq)>=0) return 50;
-  if((p.l1||'').toLowerCase()===qq||(p.l2||'').toLowerCase()===qq) return 45;
-  return 25;
-}
-function sorted(arr){
-  const r=arr.slice();
-  const bySort=(a,b)=>{
-    if(f.sort==='stars'){ const x=a.exp===null?-1:a.exp, y=b.exp===null?-1:b.exp; return y-x || (b.expSc||0)-(a.expSc||0) || b.stars-a.stars; }
-    if(f.sort==='gh') return b.stars-a.stars;
-    if(f.sort==='recent') return String(b.pushed||'').localeCompare(String(a.pushed||''));
-    return a.id.localeCompare(b.id);
-  };
-  r.sort((a,b)=>{
-    if(f.q){ const d=matchScore(b,f.q)-matchScore(a,f.q); if(d!==0) return d; }
-    return bySort(a,b);
-  });
-  return r;
-}
-function hasNote(p){ return !!(p.note || (p.un && p.un.filter(x=>x&&x.note).length)); }
-function cardHtml(p){
-  const flags=[];
-  if(p.tier==='S'||p.tier==='A') flags.push('<span class="pill tier-'+p.tier+'">'+p.tier+' 档</span>');
-  else if(p.tier==='dropped') flags.push('<span class="pill s-dropped">已淘汰</span>');
-  else flags.push('<span class="pill tier-unrated" title="未经日报评档">未评档</span>');
-  if(p.risk) flags.push('<span class="pill r-'+(p.risk==='低'?'low':p.risk==='高'?'high':'mid')+'">风险 '+p.risk+'</span>');
-  if(p.status!=='active') flags.push('<span class="pill s-'+p.status+'">'+(STA[p.status]||p.status)+'</span>');
-  if(p.origin==='user') flags.push('<span class="pill" style="border-color:#6a4f8a;color:#c9a9f5">用户推荐</span>');
-  const fts=(p.ft||[]).slice(0,2).map(x=>'<span class="pill pill-fn">'+esc(x)+'</span>').join('');
-  const one = oneText(p);
-  // 待补全条目**不隐藏、但降低视觉权重**（GPT 建议）：明确标出来，而不是让用户以为"就这么点东西"
-  const thin = (p.hs!=='complete');
-  // 卡片上没有任何"收藏"元素：收藏功能已整体撤销（用户 2026-10-13 决定：用起来太麻烦繁琐）
-  // 📝 备注标记（2026-10-15 用户要求，方案 A）：该条有台账备注或用户备注时，在标题旁给一个记号 ——
-  // 不用点进详情就知道"这条有备注"。备注**只在详情面板里显示**（页面是只读单文件，不能在页面里编辑）。
-  const noteMark = hasNote(p) ? '<span title="这条有备注（台账备注 / 用户备注）—— 点开卡片看详情" style="margin-left:6px;font-size:12px;color:var(--gold);cursor:help">📝</span>' : '';
-  return '<div class="card'+(thin?' thin':'')+'" onclick="detail(\''+p.id+'\')">'
-    +'<h3><a href="'+repoUrl(p)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">'+esc(p.id)+'</a>'+noteMark
-      +'<span class="cmp'+(cmpSel.indexOf(p.id)>=0?' on':'')+'" onclick="toggleCmp(event,\''+p.id+'\')">'+(cmpSel.indexOf(p.id)>=0?'✓ 已选对比':'对比')+'</span></h3>'
-    +'<div style="margin-bottom:6px">'+stars5(p.exp)+' <span class="pill">'+esc(p.l2)+'</span></div>'
-    +'<p class="one'+(one?'':' none')+'">'+esc(one||'（暂无中文介绍，仅有英文描述或台账备注）')+'</p>'
-    +(thin?'<div class="soon">📌 详细介绍待补全 —— 这个库在长，它还没轮到</div>':'')
-    +'<div class="row" style="display:flex;gap:5px;flex-wrap:wrap">'+fts+'</div>'
-    +'<div class="row" style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">'+flags.join('')+'</div>'
-    +'<div class="meta"><span>★ '+p.stars.toLocaleString()+' ｜ '+esc(p.lang||'')+' ｜ '+esc(p.lic||'许可未知')+'</span>'
-    +'<span title="最近提交">'+when(p.pushed)+'</span></div>'
-    +'</div>';
-}
-// ---------- 项目对比（页内，纯前端；数据已内嵌，不调 API） ----------
-function toggleCmp(ev, id){
-  if(ev && ev.stopPropagation) ev.stopPropagation();
-  const i=cmpSel.indexOf(id);
-  if(i>=0) cmpSel.splice(i,1);
-  else { if(cmpSel.length>=2) cmpSel.shift(); cmpSel.push(id); }
-  render(); renderCmpBar();
-}
-function clearCmp(){ cmpSel=[]; render(); renderCmpBar(); }
-function renderCmpBar(){
-  const bar=document.getElementById('cmpBar');
-  if(!cmpSel.length){ bar.className=''; bar.innerHTML=''; return; }
-  bar.className='on';
-  bar.innerHTML='<span>已选 <b>'+cmpSel.length+'/2</b>：'+cmpSel.map(esc).join('　vs　')+'</span>'
-    +(cmpSel.length===2?'<span class="chip on" onclick="showCompare()">查看对比</span>':'<span style="color:var(--dim)">再选一个</span>')
-    +'<span class="chip" onclick="clearCmp()">清空</span>';
-}
-function cmpCell(p, kind){
-  if(!p) return '';
-  if(kind==='one')   return oneText(p)||'';
-  if(kind==='what')  return (p.fn&&p.fn[0])||'';
-  if(kind==='core')  return (p.fn&&p.fn[1])||'';
-  if(kind==='use')   return (p.fn&&p.fn[2])||'';
-  if(kind==='case')  return (p.fn&&p.fn[3])||'';
-  if(kind==='no')    return (p.fn&&p.fn[4])||'';
-  if(kind==='ease')  return (p.t&&p.t[4])||'';
-  if(kind==='env')   return p.lang||'';
-  if(kind==='exp')   return (p.exp===null||p.exp===undefined)?'':('★'.repeat(p.exp)+'☆'.repeat(5-p.exp)+'（'+p.expSc+'/100）');
-  if(kind==='stars') return p.stars.toLocaleString();
-  if(kind==='pushed')return when(p.pushed);
-  if(kind==='lic')   return p.lic||'';
-  if(kind==='risk')  return p.risk||(p.t&&p.t[5])||'';
-  if(kind==='tier')  return (p.tier==='S'||p.tier==='A')?(p.tier+' 档'):(p.tier==='dropped'?'已淘汰':'未评档');
-  return '';
-}
-function cmpRow(A,B,label,kind){
-  const a=cmpCell(A,kind), b=cmpCell(B,kind);
-  const t=v=>v?esc(v):'<span style="color:var(--dim)">（待补全）</span>';
-  return '<tr><td>'+label+'</td><td>'+t(a)+'</td><td>'+t(b)+'</td></tr>';
-}
-function cmpSuggest(A,B){
-  const s=[];
-  if(A.exp!==null&&B.exp!==null&&A.exp!==undefined&&B.exp!==undefined&&A.exp!==B.exp)
-    s.push('体验评分更高：<b>'+(A.exp>B.exp?esc(A.id):esc(B.id))+'</b>（'+A.exp+'★ vs '+B.exp+'★）');
-  const ra=A.risk||(A.t&&A.t[5]), rb=B.risk||(B.t&&B.t[5]);
-  const rank={'低':1,'中':2,'高':3};
-  if(ra&&rb&&ra!==rb&&rank[ra]&&rank[rb]) s.push('风险更低：<b>'+(rank[ra]<rank[rb]?esc(A.id):esc(B.id))+'</b>（'+ra+' vs '+rb+'）');
-  const da=A.t&&A.t[4], db=B.t&&B.t[4];
-  const rank2={'开箱即用':1,'轻配置':2,'要编程':3,'要部署':4};
-  if(da&&db&&da!==db&&rank2[da]&&rank2[db]) s.push('更易上手：<b>'+(rank2[da]<rank2[db]?esc(A.id):esc(B.id))+'</b>（'+da+' vs '+db+'）');
-  if(!s.length) s.push('两者在评分 / 风险 / 上手难度上没拉开差距，建议按使用场景选（见上面「常见用途」行）');
-  return s;
-}
-function showCompare(){
-  if(cmpSel.length<2) return;
-  const A=P.find(x=>x.id===cmpSel[0]), B=P.find(x=>x.id===cmpSel[1]);
-  if(!A||!B) return;
-  const h='<span class="close" onclick="document.getElementById(\'panel\').classList.remove(\'open\')">×</span>'
-    +'<h2>对比：'+esc(A.id)+' vs '+esc(B.id)+'</h2>'
-    +'<div style="color:var(--dim);font-size:12.5px">数据来自本地知识库（页面已内嵌）｜ 未调用任何 API ｜ 缺失标「（待补全）」</div>'
-    +'<table class="cmpt"><tr><th>维度</th><th>'+esc(A.id)+'</th><th>'+esc(B.id)+'</th></tr>'
-    +cmpRow(A,B,'一句话定位','one')
-    +cmpRow(A,B,'是什么','what')
-    +cmpRow(A,B,'核心功能','core')
-    +cmpRow(A,B,'常见用途（适合谁）','use')
-    +cmpRow(A,B,'使用案例','case')
-    +cmpRow(A,B,'不适合','no')
-    +cmpRow(A,B,'学习成本（上手难度）','ease')
-    +cmpRow(A,B,'运行环境（语言）','env')
-    +cmpRow(A,B,'体验评分（不看 star）','exp')
-    +cmpRow(A,B,'星数','stars')
-    +cmpRow(A,B,'最近提交','pushed')
-    +cmpRow(A,B,'License','lic')
-    +cmpRow(A,B,'风险','risk')
-    +cmpRow(A,B,'档位','tier')
-    +'</table>'
-    +'<div class="sec-h">怎么选（自动判断，仅供参考）</div>'
-    +'<ul style="margin:4px 0 0;padding-left:20px;font-size:13px;line-height:1.8">'+cmpSuggest(A,B).map(x=>'<li>'+x+'</li>').join('')+'</ul>'
-    +'<div class="cmpnote">判断只基于本地数据（体验评分 / 风险 / 上手难度），不构成使用担保；用前请看各自仓库的 License 与最近维护状态。</div>'
-    +'<div class="kv"><a href="'+repoUrl(A)+'" target="_blank" rel="noopener">打开 '+esc(A.id)+' ↗</a>　'
-    +'<a href="'+repoUrl(B)+'" target="_blank" rel="noopener">打开 '+esc(B.id)+' ↗</a></div>';
-  document.getElementById('panel').innerHTML=h;
-  document.getElementById('panel').classList.add('open');
-}
-// ---------- 方案（v3.1 第八节）：需求 → 工具组合 + 为什么 ----------
-function planFor(q){
-  if(!q) return null;
-  const qq=q.toLowerCase();
-  return PLANS.find(function(pl){
-    return (pl.triggers||[]).some(function(t){
-      const tl=String(t).toLowerCase();
-      return qq.indexOf(tl)>=0 || tl.indexOf(qq)>=0;
-    });
-  }) || null;
-}
-function planRoleTools(role, max){
-  const out=[];
-  P.forEach(function(p){
-    if(p.status==='dropped') return;
-    let sc=0;
-    let ftHit=0;   // A 方案第三刀：分类命中必须搭配功能标签命中
-    if(role.l2 && role.l2.length && p.l2 && role.l2.indexOf(p.l2)>=0) sc+=3;
-    // 去掉后阈值 >=3 等价于「必须二级分类命中，或 >=2 个功能标签命中」。
-    if(role.ft && role.ft.length){
-      (p.ft||[]).forEach(function(f){
-        const fl=String(f).toLowerCase();
-        role.ft.forEach(function(x){
-          const xl=String(x).toLowerCase();
-          if(fl.indexOf(xl)>=0 || (fl.length>=3 && xl.indexOf(fl)>=0)) sc+=2;   // A 方案：短标签不再反向命中一切
-          ftHit++;
-        });
-      });
-    }
-    // A 方案（用户 2026-10-14 决定：宁缺毋滥）——原来 sc>0 就进候选，导致「仅一级分类命中」(1 分)
-// 的工具被塞进不相关场景（如 WeChatBridge 出现在「做 PPT」「查资料」「产品设计」三个场景）。
-// 现在要求 ≥3 分：二级分类命中(3) / 两个功能标签(2+2) / 一个标签+一级分类(2+1)。
-// 分数不够就**不显示**——让页面那句「🔍 这一步现在没有合适的选择」说真话。
-      if(sc>=3 && ftHit>=1) out.push({p:p, sc:sc});
-  });
-  out.sort(function(a,b){
-    if(b.sc!==a.sc) return b.sc-a.sc;
-    const x=(a.p.exp===null||a.p.exp===undefined)?-1:a.p.exp, y=(b.p.exp===null||b.p.exp===undefined)?-1:b.p.exp;
-    return y-x || b.p.stars-a.p.stars;
-  });
-  return out.slice(0, max||2);
-}
-function planWhyPick(p){
-  // **把数据库字段翻成人话**（GPT 评审：不要出现「体验4★｜风险中｜7天提交｜GPL」这种后台串）
-  const good=[], bad=[];
-  const pt=p.part||{};
-  const d=daysAgo(p.pushed);
-  if(pt['易用性']>=24) good.push('装上就能用'); else if(pt['易用性']!==undefined && pt['易用性']<15) bad.push('上手要花点功夫');
-  if(pt['文档完整度']>=16) good.push('文档比较全'); else if(pt['文档完整度']!==undefined && pt['文档完整度']<10) bad.push('文档较少，可能要自己摸索');
-  if(d!==null){ if(d<=30) good.push('最近仍在维护'); else if(d>365) bad.push('很久没更新了'); }
-  if(pt['功能成熟度']>=15) good.push('功能比较成熟'); else if(pt['功能成熟度']!==undefined && pt['功能成熟度']<10) bad.push('还比较早期');
-  if(pt['风险']>=12) good.push('风险低'); else if(pt['风险']!==undefined && pt['风险']<8) bad.push('有风险，先看清楚再用');
-  if(p.lic){ if(/MIT|Apache/i.test(p.lic)) good.push(p.lic+'（可商用）'); else good.push(p.lic); }
-  else bad.push('没有 License，商用要谨慎');
-  if(p.stars>=10000) good.push('社区成熟（'+(p.stars/10000).toFixed(1)+' 万 star）');
-  else if(p.stars<50) bad.push('用的人还少');
-  let out='';
-  if(good.length) out+='<span style="color:#7ee2b8">✅ '+good.map(esc).join(' ｜ ')+'</span>';
-  if(bad.length) out+=(out?'<br>':'')+'<span style="color:#ffd88a">⚠️ '+bad.map(esc).join(' ｜ ')+'</span>';
-  return out || '<span style="color:var(--dim)">资料不足，暂无法判断</span>';
-}
-function planRoleAll(role){
-  // 该角色一共能匹配到多少个（用于「查看全部 N 个同类工具 →」）
-  return planRoleTools(role, 999).length;
-}
-function showL2(l2){
-  f.l2=l2; f.l1=''; f.q='';
-  document.getElementById('q').value='';
-  document.getElementById('panel').classList.remove('open');
-  buildCat(); render();
-  window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
-}
-function buildPlans(){
-  const box=document.getElementById('planGrid');
-  if(!box) return;
-  if(!PLANS.length){ box.innerHTML='<span style="color:var(--dim);font-size:12.5px">没有方案模板（data/plans.json）</span>'; return; }
-  box.innerHTML=PLANS.map(function(pl){ return '<span class="chip" onclick="showPlan(\''+pl.id+'\')">'+esc(pl.name)+'</span>'; }).join('');
-}
-function showPlan(id){
-  const pl=PLANS.filter(function(x){ return x.id===id; })[0];
-  if(!pl) return;
-  let h='<span class="close" onclick="document.getElementById(\'panel\').classList.remove(\'open\')">×</span>'
-    +'<h2>🧩 '+esc(pl.name)+'</h2>'
-    +'<div style="color:var(--dim);font-size:12.5px">工具来自你的本地库，按用途自动匹配 ｜ 未调用 API ｜ <b>步骤顺序由你决定</b></div>';
-  // 摘要先行（商城版：一次给全，但先给能一眼看完的）
-  const roleN=(pl.roles||[]).length;
-  const easeMap={'开箱即用':5,'轻配置':4,'要编程':2,'要部署':1};
-  const eases=[];
-  (pl.roles||[]).forEach(function(r){
-    planRoleTools(r,1).forEach(function(t){
-      const e=easeMap[(t.p.t&&t.p.t[4])||''];
-      if(e) eases.push(e);
-    });
-  });
-  let diff='';
-  if(eases.length){
-    const avg=eases.reduce(function(a,b){return a+b;},0)/eases.length;
-    const lvl=Math.max(1,Math.min(5,Math.round(6-avg)));
-    diff=' ｜ 难度 '+'★'.repeat(lvl)+'☆'.repeat(5-lvl);
-  }
-  h+='<div class="hbody" style="margin-top:10px">'+esc(pl.intro)+'</div>';
-  h+='<div style="color:var(--dim);font-size:12.5px;margin-top:8px">这套要 <b>'+roleN+'</b> 步'
-    +(pl.roles||[]).map(function(r,i){return '　'+(i+1)+'. '+esc(r.role);}).join('')+diff+'</div>';
-  (pl.roles||[]).forEach(function(r,i){
-    const tools=planRoleTools(r,2);
-    const allN=planRoleAll(r);
-    h+='<div class="sec-h">'+(i+1)+'. '+esc(r.role)+'</div>';
-    h+='<div style="color:var(--dim);font-size:12.5px;margin-bottom:6px">为什么需要这一步：'+esc(r.why)+'</div>';
-    if(!tools.length){
-      // 不要像失败（GPT 评审）：给两条可走的路
-      h+='<div class="todo-box">🔍 「'+esc(r.role)+'」这一步，你的工具库现在没有合适的选择。<br>'
-        +'可以：① 我去 GitHub 搜 2–3 个候选给你过目（要花一点 API 额度）　② 先放着，等以后自动收录 —— 这一步不挡着你先做前面的</div>';
-      return;
-    }
-    h+='<table class="cmpt"><tr><th>工具</th><th>适合谁 / 为什么选它 / 要注意</th></tr>';
-    tools.forEach(function(t,ti){
-      const p=t.p;
-      const medal=ti===0?'🥇':'🥈';
-      const label=ti===0?'首选':'备选（觉得太重可以用这个）';
-      h+='<tr><td style="white-space:normal;min-width:150px">'
-        +medal+' <a href="'+repoUrl(p)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">'+esc(p.id)+'</a>'
-        +'<br><span style="color:var(--dim);font-size:11.5px">'+stars5(p.exp)+' ｜ '+label+'</span>'
-        +'<br><span class="cmp" style="margin-left:0" onclick="detail(\''+p.id+'\')">看详情</span></td>'
-        +'<td style="white-space:normal"><div>'+esc(oneText(p)||'（待补全）')+'</div>'
-        +'<div style="font-size:11.5px;margin-top:5px;line-height:1.7">'+planWhyPick(p)+'</div></td></tr>';
-    });
-    h+='</table>';
-    if(allN>tools.length && r.l2 && r.l2[0]){
-      h+='<div style="margin-top:4px"><span class="chip" onclick="showL2(\''+String(r.l2[0])+'\')">查看全部 '+allN+' 个同类工具 →</span></div>';
-    }
-  });
-  h+='<div class="cmpnote">这是「按用途归类」的建议，不构成使用担保；每个工具用前请看它的 License 与最近维护状态。想看两个的差别：在卡片上点「对比」。</div>';
-  document.getElementById('panel').innerHTML=h;
-  document.getElementById('panel').classList.add('open');
-}
-
-// —— 搜索缺口：搜不到就记下来（页面是本地静态文件，写不了工作区，所以「记下 + 复制」交给用户转给我）——
-let gapList = [];
-function loadGaps(){
-  try{ const s=localStorage.getItem('dsh-lib-gaps'); if(s) gapList=JSON.parse(s)||[]; }catch(e){ gapList=[]; }
-  renderGapChip();
-}
-function saveGaps(){ try{ localStorage.setItem('dsh-lib-gaps', JSON.stringify(gapList)); }catch(e){} }
-function addGap(term){
-  const t=(term||'').trim(); if(!t) return;
-  if(gapList.indexOf(t)<0) gapList.push(t);
-  saveGaps(); renderGapChip();
-  try{ navigator.clipboard.writeText(t); }catch(e){}
-  const el=document.getElementById('gapHint');
-  if(el) el.innerHTML='已记下「'+esc(t)+'」（同时复制到剪贴板）。攒几个后点右上角「⚠ 搜索缺口」一次性复制给我，我补进同义词表。';
-}
-function copyGaps(){
-  if(!gapList.length) return;
-  const txt=gapList.join('\n');
-  try{ navigator.clipboard.writeText(txt); }catch(e){}
-  const el=document.getElementById('gapHint');
-  if(el) el.innerHTML='已复制 '+gapList.length+' 个缺口词：'+esc(txt.replace(/\n/g,' / '))+'　→ 发给我即可补词表。';
-  else alert('已复制 '+gapList.length+' 个缺口词：\n'+txt+'\n\n发给我即可补进同义词表。');
-}
-function clearGaps(){ gapList=[]; saveGaps(); renderGapChip(); }
-function renderGapChip(){
-  const c=document.getElementById('gapChip');
-  if(!c) return;
-  if(!gapList.length){ c.style.display='none'; return; }
-  c.style.display='inline-block';
-  c.textContent='⚠ 搜索缺口 '+gapList.length+'（点我复制）';
-}
-function render(){
-  f.q=document.getElementById('q').value.trim().toLowerCase();
-  CURTOK=parseQuery(f.q);
-  f.status=document.getElementById('fs').value;
-  f.risk=document.getElementById('fr').value;
-  f.tier=document.getElementById('ft').value;
-  f.five=document.getElementById('f5').value;
-  f.active=document.getElementById('fa').value;
-  f.sort=document.getElementById('sort').value;
-  const r=sorted(P.filter(pass));
-  const hint=document.getElementById('countHint');
-  const scope = f.l1 ? ('　分类：'+f.l1+(f.l2?(' → '+f.l2):'')) : '';
-  const sortedNote = f.q ? '　（已按匹配度排序：项目名 > 简称 > 标签 > 描述）' : '';
-  hint.textContent='命中 '+r.length+' / '+P.length+' 个工具'+scope+sortedNote;
-  const list=document.getElementById('list');
-  if(!r.length){
-    const qt=document.getElementById('q').value.trim();
-    list.innerHTML=planHintHtml() + '<div class="empty">没有匹配的工具。<br>'
-      +(qt?('<span class="chip" onclick="addGap(document.getElementById(\'q\').value.trim())">记下这个词</span> '):'')
-      +'<span class="chip" onclick="clearAll()">清空筛选</span>'
-      +'<div id="gapHint" style="margin-top:12px;color:var(--dim);font-size:12.5px;line-height:1.8">搜不到？点「记下这个词」存起来，'
-      +'攒几个后点顶部「⚠ 搜索缺口」一次性复制给我 —— 我把它补进同义词表，<b>词表就这样随库增长</b>，而不是一成不变。</div></div>';
-    return;
-  }
-  if(groupByUse){
-    // 按用途分组：把命中的工具按其二级分类聚在一起，便于按流程挑组合（组合是否合适由用户判断）
-    const byL2={};
-    r.forEach(p=>{ const k=p.l2||'其他工具'; if(!byL2[k]) byL2[k]=[]; byL2[k].push(p); });
-    const keys=Object.keys(byL2).sort((a,b)=>byL2[b].length-byL2[a].length);
-    list.innerHTML=planHintHtml()+ '<div class="grpNote">按用途分组：同组工具通常可以配合使用（是否真的合适由你判断，这里只做归类，不替你决定流程）</div>'
-      + keys.map(k=>'<div class="grpHead">'+esc(k)+'<em>'+byL2[k].length+' 个</em></div>'+byL2[k].map(cardHtml).join('')).join('');
-    return;
-  }
-  list.innerHTML = planHintHtml() + r.map(cardHtml).join('');
-}
-// 搜到的词像一个「场景」时，主动提示可以看成套方案
-function planHintHtml(){
-  if(!f.q) return '';
-  const pl=planFor(f.q);
-  if(!pl) return '';
-  return '<div class="grpNote">💡 这像是一个场景，不只是单个工具 —— '
-    +'<span class="chip on" onclick="showPlan(\''+pl.id+'\')">看「'+esc(pl.name)+'」该怎么配</span></div>';
-}
-function toggleGroup(){
-  groupByUse=!groupByUse;
-  const b=document.getElementById('grpBtn');
-  b.className='chip'+(groupByUse?' on':'');
-  b.textContent=groupByUse?'分组中（点此取消）':'按用途分组';
-  render();
-}
-function quickStatus(s){ f.status=s; document.getElementById('fs').value=s; render(); window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}); }
-function setL1(g){ f.l1=(f.l1===g?'':g); f.l2=''; buildCat(); render(); }
-function setL2(g){ f.l2=(f.l2===g?'':g); buildCat(); render(); }
-function setTag(t){ f.tag=(f.tag===t?'':t); buildCat(); render(); }
-function clearAll(){
-  f.q='';f.status='';f.risk='';f.tier='';f.five='';f.active='';f.l1='';f.l2='';f.tag='';
-  document.getElementById('q').value='';['fs','fr','ft','f5','fa'].forEach(id=>document.getElementById(id).value='');
-  buildCat(); render();
-}
-function miniHtml(p){
-  return '<div class="mini" onclick="detail(\''+p.id+'\')">'
-    +'<div class="n">'+esc(p.id)+(hasNote(p)?' <span title="这条有备注" style="color:var(--gold);cursor:help">📝</span>':'')+'</div>'
-    +'<div style="margin:2px 0">'+stars5(p.exp)+'</div>'
-    +'<div class="d">'+esc(oneText(p)||'（暂无中文介绍）')+'</div>'
-    +'<div class="m"><span>★ '+p.stars.toLocaleString()+'</span><span>'+when(p.pushed)+'</span></div></div>';
-}
-function buildToday(){
-  const today=new Date().toISOString().slice(0,10);
-  let r=P.filter(p=>p.first===today);
-  if(!r.length){ r=sorted(P).slice(0,10); }
-  document.getElementById('todayRow').innerHTML = r.length
-    ? r.map(miniHtml).join('')
-    : '<div style="color:var(--dim);font-size:12.5px">今天没有新增工具</div>';
-}
-// ---------- 我的工作区（用户实例，非官方模板）----------
-function buildWorkspaces(){
-  const box=document.getElementById('wsGrid');
-  if(!box) return;
-  if(!WS.length){
-    box.innerHTML='<span style="color:var(--dim);font-size:12.5px">还没有工作区。工作区 = 「我正在做的一件事 + 它用到的那套工具」。'
-      +'让助手建一个（例如「给我建个工作区：B站视频制作」），或跑 tools\\workspace.ps1。也可以先点上面的「按需求组方案」找个模板试试。</span>';
-    return;
-  }
-  box.innerHTML=WS.map(function(w){
-    const n=(w.tools||[]).length;
-    const done=Array.isArray(w.done)?w.done.length:0;   // 加固：手写 JSONL 把 done 写成对象/字符串时不再崩
-    return '<span class="chip" onclick="showWorkspace(\''+esc(String(w.id).replace(/'/g,''))+'\')">'
-      +'📌 '+esc(w.name)+' <b style="color:var(--dim);font-weight:400">'+(w.status||'')+(n?(' · '+done+'/'+n):'')+'</b></span>';
-  }).join('');
-}
-function showWorkspace(id){
-  const w=WS.filter(function(x){ return String(x.id)===String(id); })[0];
-  if(!w) return;
-  const done=Array.isArray(w.done)?w.done:[];   // 加固（同上）
-  let h='<span class="close" onclick="document.getElementById(\'panel\').classList.remove(\'open\')">×</span>'
-    +'<h2>📌 '+esc(w.name)+'</h2>'
-    +'<div style="color:var(--dim);font-size:12.5px">状态：'+esc(w.status||'进行中')+'　｜　建于 '+esc(w.created||'')+'</div>';
-  if(w.goal) h+='<div class="hbody" style="margin-top:10px">目标：'+esc(w.goal)+'</div>';
-  if(w.note) h+='<div style="color:var(--dim);font-size:12.5px;margin-top:6px">我的备注：'+esc(w.note)+'</div>';
-  const wanted=(w.tools||[]);
-  const tools=wanted.map(function(t){ return P.filter(function(p){ return p.id===t; })[0]; }).filter(Boolean);
-  const missing=wanted.filter(function(t){ return !P.some(function(p){ return p.id===t; }); });   // B15：不静默丢弃
-  h+='<div class="sec-h">这个工作区用到的工具（'+tools.length+' 个）</div>'
-    +(missing.length? ('<div class="soon">⚠ 有 '+missing.length+' 个工具在库里找不到（可能已删或名字写错）：'+esc(missing.join('、'))+'</div>') : '');
-  if(!tools.length) h+='<div class="todo-box">还没往里加工具。可以在「🧩 按需求组方案」里找一套，然后让助手加进来。</div>';
-  else {
-    h+='<table class="cmpt"><tr><th>工具</th><th>用它做什么</th></tr>';
-    tools.forEach(function(p){
-      const isDone=done.indexOf(p.id)>=0;
-      h+='<tr><td style="white-space:normal">'+(isDone?'✅ ':'⬜ ')+'<a href="'+repoUrl(p)+'" target="_blank" rel="noopener">'+esc(p.id)+'</a>'
-        +'<br><span style="color:var(--dim);font-size:11.5px">'+stars5(p.exp)+' ｜ '+esc(p.l2)+'</span></td>'
-        +'<td style="white-space:normal">'+esc(oneText(p)||'（待补全）')+'</td></tr>';
-    });
-    h+='</table>';
-  }
-  h+='<div class="cmpnote">工作区是你自己的记录，不是官方模板；勾选进度请让助手更新（页面写不了文件）。</div>';
-  document.getElementById('panel').innerHTML=h;
-  document.getElementById('panel').classList.add('open');
-}
-function buildCat(){
-  const grid=document.getElementById('catGrid'); let h='';
-  // 一级 / 二级 两级分类（二级只在此一级下展示）
-  const byL1={};
-  P.forEach(p=>{ const k1=p.l1||'未分类', k2=p.l2||'未分类'; if(!byL1[k1]) byL1[k1]={n:0,l2:{}}; byL1[k1].n++; byL1[k1].l2[k2]=(byL1[k1].l2[k2]||0)+1; });   // B9：空分类不再变成字面量 null
-  const l1s=Object.keys(byL1).sort((a,b)=>byL1[b].n-byL1[a].n);
-  h+='<div class="catbox"><h3>全部</h3><div class="items"><span class="chip '+(f.l1===''?'on':'')+'" onclick="clearAll()">全部工具 <b style="color:var(--dim);font-weight:400">'+P.length+'</b></span></div></div>';
-  l1s.forEach(l1=>{
-    h+='<div class="catbox"><h3>'+esc(l1)+' <b style="color:var(--dim);font-weight:400">'+byL1[l1].n+'</b></h3><div class="items">';
-    h+='<span class="chip '+(f.l1===l1&&!f.l2?'on':'')+'" onclick="setL1(\''+esc(l1)+'\')">全部</span>';
-    Object.keys(byL1[l1].l2).sort((a,b)=>byL1[l1].l2[b]-byL1[l1].l2[a]).forEach(l2=>{
-      const on = (f.l2===l2) ? 'on' : '';
-      h+='<span class="chip '+on+'" onclick="setL2(\''+esc(l2)+'\')">'+esc(l2)+' <b style="color:var(--dim);font-weight:400">'+byL1[l1].l2[l2]+'</b></span>';
-    });
-    h+='</div></div>';
-  });
-  // 功能标签云
-  const tagCount={};
-  P.forEach(p=>(p.ft||[]).forEach(x=>tagCount[x]=(tagCount[x]||0)+1));
-  const topTags=Object.keys(tagCount).sort((a,b)=>tagCount[b]-tagCount[a]).slice(0,16);
-  if(topTags.length){
-    h+='<div class="catbox"><h3>功能标签</h3><div class="items">';
-    topTags.forEach(t=>{ h+='<span class="chip '+(f.tag===t?'on':'')+'" onclick="setTag(\''+esc(t)+'\')">'+esc(t)+' <b style="color:var(--dim);font-weight:400">'+tagCount[t]+'</b></span>'; });
-    h+='</div></div>';
-  }
-  grid.innerHTML=h;
-}
-function detail(id){
-  const p=P.find(x=>x.id===id); if(!p) return;
-  const evs=(E[id]||[]);
-  let human='';
-  if(p.one) human+='<div class="sec-h">💡 一句话理解（它是什么）</div><div class="hbody">'+esc(p.one)+'</div>';
-  if(p.prob) human+='<div class="sec-h">🎯 它解决什么问题</div><div class="hbody">'+esc(p.prob)+'</div>';
-  if(p.ex) human+='<div class="sec-h">🧪 举个例子</div><div class="hbody">'+esc(p.ex)+'</div>';
-  if(p.note) human+='<div class="sec-h">📝 为什么值得留意</div><div class="hbody">'+esc(p.note)+'</div>';
-  if(p.hs==='partial') human+='<div class="todo-box">该工具的更多说明<b>待补全</b>：它在 2026-10-13 之前收录，当时没有落盘英文描述。<br>上面两段来自当日台账，是<b>唯一可用素材</b>，未做任何推断。</div>';
-  if(p.hs==='missing') human+='<div class="todo-box">该工具<b>暂无介绍素材</b>，仅有仓库名与自动推断的分类。</div>';
-  const fnLabels=['是什么','核心功能','常见用途','使用案例','不适合什么场景'];
-  let fnHtml=''; (p.fn||[]).forEach((v,i)=>{ if(v) fnHtml+='<div class="fnrow"><b>'+fnLabels[i]+'</b><span>'+esc(v)+'</span></div>'; });
-  const fnBlock = fnHtml ? ('<div class="sec-h">📘 功能说明</div>'+fnHtml) : '';
-  // 功能备注：多维星级（v3.1 验收要求；**与 star 数无关**）
-  let expBlock='';
-  if(p.exp!==null && p.part){
-    const to5=(v,m)=>((typeof v==='number'&&isFinite(v))?Math.max(1,Math.min(5,Math.round(v/m*5))):null);
-    const num=(v,u)=>((typeof v==='number'&&isFinite(v))?(v+u):'暂无数据');   // B4：缺键不再显示 undefined
-    const easeMap={'开箱即用':5,'轻配置':4,'要编程':2,'要部署':1};
-    const easeTag=(p.t&&p.t[4])||'';
-    const dims=[
-      ['上手难度', easeMap[easeTag]||null, easeTag?('按分类标签「'+easeTag+'」折算'):'分类标签未定'],
-      ['本地运行难度', to5(p.part['易用性'],30), num(p.part['易用性'],'/30')],
-      ['文档质量', to5(p.part['文档完整度'],20), num(p.part['文档完整度'],'/20')],
-      ['功能成熟度', to5(p.part['功能成熟度'],20), num(p.part['功能成熟度'],'/20')],
-      ['活跃程度', to5(p.part['维护活跃'],15), num(p.part['维护活跃'],'/15')],
-      ['推荐程度', p.exp, p.expSc+'/100 综合']
-    ];
-    expBlock='<div class="sec-h">📊 功能备注（多维评分）</div>';
-    dims.forEach(d=>{
-      if(d[1]===null||d[1]===undefined) return;
-      expBlock+='<div class="fnrow"><b>'+d[0]+'</b><span>'+stars5(d[1])+' <span style="color:var(--dim);font-size:11.5px">'+d[2]+'</span></span></div>';
-    });
-    expBlock+='<div class="todo-box" style="background:#1c222c;border-color:var(--line);color:var(--dim)">评分构成：易用性 30 ｜ 文档完整 20 ｜ 功能成熟 20 ｜ 维护活跃 15 ｜ 风险 15（满分 100）。<b>不看 star 数</b>——500 star 但装上就能用的工具可以五星，5 万 star 但要配半天环境的只能三星。</div>';
-  } else {
-    expBlock='<div class="sec-h">📊 功能备注（多维评分）</div><div class="todo-box">信息不足，<b>暂不评分</b>。资料完整后会补上。</div>';
-  }
-  const tags=(p.ft||[]).map(x=>'<span class="pill pill-fn">'+esc(x)+'</span>').join('');
-  const rows=DIMS.map((d,i)=>'<div><b>'+d+'</b>'+esc(p.t[i])+'</div>').join('');
-  const evHtml=evs.length? evs.map(e=>'<div class="ev"><time>'+e.d+'</time><span><b>'+esc(e.t)+'</b> '+esc(e.x)+'</span></div>').join('') : '<div class="ev">暂无事件记录</div>';
-  document.getElementById('panel').innerHTML='<span class="close" onclick="document.getElementById(\'panel\').classList.remove(\'open\')">×</span>'
-    +'<h2>'+esc(p.id)+'</h2>'
-    +'<div style="margin:6px 0 2px">'+stars5(p.exp)+'　<span class="pill pill-fn">'+esc(p.l1)+' / '+esc(p.l2)+'</span>'
-      +((p.tier==='S'||p.tier==='A')?('　<span class="pill tier-'+p.tier+'">'+p.tier+' 档推荐</span>'):(p.tier==='dropped'?'　<span class="pill s-dropped">已淘汰</span>':'　<span class="pill tier-unrated">未评档</span>'))
-      +'</div>'
-    +human
-    +fnBlock
-    +expBlock
-    +(tags?('<div class="sec-h">🏷 功能与搜索词</div><div style="display:flex;gap:5px;flex-wrap:wrap">'+tags+'</div>'):'')
-    +'<div class="sec-h">📈 成长记录</div>'+evHtml
-    +'<div class="sec-h">🔧 详细信息</div><div class="kv">'
-    +'<div><b>英文描述</b>'+esc(p.desc||'（未落盘）')+'</div>'
-    +'<div><b>星数</b>'+p.stars.toLocaleString()+'　<b>语言</b>'+esc(p.lang||'—')+'</div>'
-    +'<div><b>许可</b>'+esc(p.lic||'未知（历史数据缺失）')+'</div>'
-    +'<div><b>最近提交</b>'+when(p.pushed)+'　<b>首次收录</b>'+p.first+'</div>'
-    +'<div><b>来源</b>'+esc(p.oder||'自动发现')+'　<b>推荐</b>'+(p.rec?(p.tier+' 档 ｜ '+p.rc+' 次'):((p.rc>0)?('历史推荐 '+p.rc+' 次'):'未推荐'))+'</div>'
-    +'<div><b>台账备注</b>'+esc(p.note||'—')+'</div>'
-    +((p.un&&p.un.filter(x=>x).length)?('<div><b>用户备注</b>'+p.un.filter(x=>x).map(x=>'【'+(x.date||'')+'】'+esc(x.note||'')).join('；')+'</div>'):'')
-    +'<div><b>事件数</b>'+evCount(p)+' 条</div>'
-    +rows+'</div>'
-    +'<div class="kv"><a href="'+repoUrl(p)+'" target="_blank" rel="noopener">在 GitHub 打开 ↗</a></div>';
-  document.getElementById('panel').classList.add('open');
-}
-document.addEventListener('keydown',e=>{
-  if(e.key==='/' && document.activeElement!==document.getElementById('q')){ e.preventDefault(); document.getElementById('q').focus(); }
-  if(e.key==='Escape'){ document.getElementById('panel').classList.remove('open'); clearCmp(); }
-});
-buildToday(); buildPlans(); buildWorkspaces(); buildCat(); loadGaps(); render(); renderCmpBar();
-try{ if(localStorage.getItem('dsh-lib-hero')==='off'){ const hs=document.getElementById('hero'); if(hs) hs.style.display='none'; } }catch(e){}
-</script>
+<script>$jsBlock</script>
 </body>
+<!-- BUILD-STAMP: $buildStamp -->
 </html>
 "@
 
-$out = P 'overview.html'
+$out = P 'legacy\overview-v5.html'
 [System.IO.File]::WriteAllText($out, $html, (New-Object System.Text.UTF8Encoding($false)))
 $sz = [math]::Round((Get-Item $out).Length/1KB,1)
 $per = (Get-Item $out).Length / [Math]::Max($rows.Count,1)
@@ -1027,3 +707,7 @@ Write-Host "已生成：$out" -ForegroundColor Green
 Write-Host "  工具 $($rows.Count) ｜ 已评分 $ratedN ｜ 今日新增 $todayNew ｜ 近 7 天有更新 $recentN"
 Write-Host "  **单文件全部内嵌**：$sz KB（每项 $([math]::Round($per,0)) B）"
 Write-Host "  按此密度 3650 项约 $([math]::Round($per*3650/1KB,0)) KB —— 双击即可用，无需服务器"
+
+# 明确退出码（同 sync-projects）：**不写这句，成功时 $LASTEXITCODE 不会更新**，
+# 调用方会读到上一条命令残留的退出码 → 把成功误判成失败 ✗（2026-10-16 实测）
+exit 0

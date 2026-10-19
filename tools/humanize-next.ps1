@@ -1,4 +1,4 @@
-# humanize-next.ps1 — 人话层补全流水线：列出「下一批该补的」，并给出可用素材
+﻿# humanize-next.ps1 — 人话层补全流水线：列出「下一批该补的」，并给出可用素材
 #
 # **补全规则（GPT 评审 2026-10-13 拍板，已固化）**
 #   * 新加入的项目优先补，老项目低优先；**永不追求 100% 覆盖**。
@@ -33,14 +33,14 @@ $introPath = P 'data\human\repo-intro.jsonl'
 if (Test-Path $introPath) {
   foreach ($l in (Get-Content $introPath -Encoding UTF8)) {
     if (-not $l.Trim()) { continue }
-    try { $o = $l | ConvertFrom-Json; if ($o.full_name) { $have[$o.full_name] = $true } } catch {}
+    try { $o = $l | ConvertFrom-Json; if ($o.full_name) { $have[$o.full_name] = $true } } catch { $null = $_ }
   }
 }
 
 $all = @()
 foreach ($l in (Get-Content (P 'data\projects.jsonl') -Encoding UTF8)) {
   if ([string]::IsNullOrWhiteSpace($l)) { continue }
-  try { $all += ($l | ConvertFrom-Json) } catch {}
+  try { $all += ($l | ConvertFrom-Json) } catch { $null = $_ }
 }
 
 function HasCJK([string]$s) { return ($s -and ($s -match '[\u4e00-\u9fff]')) }
@@ -60,7 +60,7 @@ foreach ($p in $all) {
   elseif ($p.origin -eq 'user') { $pri = 2 }
   else {
     $fs = "$($p.first_seen)"
-    if ($fs) { try { if (((Get-Date) - [datetime]$fs).TotalDays -le 3) { $pri = 3 } } catch {} }
+    if ($fs) { try { if (((Get-Date) - [datetime]$fs).TotalDays -le 3) { $pri = 3 } } catch { $null = $_ } }
   }
   if ($p.recommended -and $pri -gt 3) { $pri -= 1 }
   $todo += [pscustomobject]@{ p = $p; kind = $kind; pri = $pri }

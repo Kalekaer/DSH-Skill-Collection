@@ -1,4 +1,4 @@
-# suggest-terms.ps1 — 从库里自动挖「还没有被词表覆盖」的新词，作为同义词候选
+﻿# suggest-terms.ps1 — 从库里自动挖「还没有被词表覆盖」的新词，作为同义词候选
 #
 # 解决的问题：同义词表原来只有 14 组 108 词、手工写死。库从 90 涨到 143，它一个字没加 ——
 # **词表不随库增长，搜「功能」就会越来越搜不到。** 本脚本用本地统计挖候选，0 token。
@@ -25,7 +25,7 @@ $synPath = P 'data\human\search-synonyms.jsonl'
 if (Test-Path $synPath) {
   foreach ($l in (Get-Content $synPath -Encoding UTF8)) {
     if (-not $l.Trim()) { continue }
-    try { $g = $l | ConvertFrom-Json; foreach ($t in @($g.terms)) { $known["$t".ToLower()] = $true } } catch {}
+    try { $g = $l | ConvertFrom-Json; foreach ($t in @($g.terms)) { $known["$t".ToLower()] = $true } } catch { $null = $_ }
   }
 }
 $taxPath = P 'data\taxonomy.json'
@@ -39,7 +39,7 @@ if (Test-Path $taxPath) {
         foreach ($k in @($l2.Value)) { $known["$k".ToLower()] = $true }
       }
     }
-  } catch {}
+  } catch { $null = $_ }
 }
 
 # ---- 统计词频 ----
@@ -64,7 +64,7 @@ $generic = @('ai','llm','typescript','javascript','python','rust','go','java','c
 $all = @()
 foreach ($l in (Get-Content (P 'data\projects.jsonl') -Encoding UTF8)) {
   if ([string]::IsNullOrWhiteSpace($l)) { continue }
-  try { $all += ($l | ConvertFrom-Json) } catch {}
+  try { $all += ($l | ConvertFrom-Json) } catch { $null = $_ }
 }
 foreach ($p in $all) {
   if ($p.status -eq 'dropped') { continue }

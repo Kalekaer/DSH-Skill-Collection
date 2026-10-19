@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local/github-daily-picks/schema.json",
+  "title": "GitHub 日报库数据契约（原始层 + 投影层）",
+  "_说明": "唯一权威字段说明仍是 data/README.md；本文件是它的**机器可读**版本。改动必须同时改 data/README.md 与本文件（audit 会检查两者一致：P0-8）。",
+  "_版本": "1.3",
+  "_更新": "2026-10-19",
+  "$defs": {
+    "status": { "enum": ["watching", "active", "using", "researching", "dropped"] },
+    "tier": { "enum": ["S", "A", "B", "C", "D", "unrated", "dropped", ""] },
+    "risk": { "enum": ["低", "中", "高", ""] },
+    "picks_action": { "enum": ["试玩", "收藏", "研究", "放弃", "观察", "继续观察"] },
+    "daily_status": { "enum": ["published", "over_quota"] },
+    "quota_block": { "enum": ["s_cap", "total_cap"] },
+    "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "category": {
+      "type": "object",
+      "required": ["l1", "l2"],
+      "properties": { "l1": { "type": "string" }, "l2": { "type": "string" } }
+    },
+    "stars": {
+      "type": "object",
+      "properties": {
+        "current": { "type": ["integer", "null"] },
+        "first": { "type": ["integer", "null"] },
+        "delta_total": { "type": ["integer", "null"] },
+        "delta_7d": { "type": ["integer", "null"] },
+        "last_snapshot": { "type": ["string", "null"] },
+        "snapshots": { "type": ["integer", "null"] },
+        "forks": { "type": ["integer", "null"] },
+        "created_at": { "type": ["string", "null"] },
+        "open_issues": { "type": ["integer", "null"] },
+        "delta_7d_window_days": { "type": ["integer", "null"] },
+        "delta_7d_valid": { "type": ["boolean", "null"], "_状态": "计划中（P0-1）：投影尚未输出这些键；先记契约，实现后再生效" }
+      }
+    }
+  },
+  "files": {
+    "data/seen.jsonl": {
+      "_unique": "full_name",
+      "required": ["full_name", "status"],
+      "properties": {
+        "full_name": { "type": "string", "minLength": 3 },
+        "url": { "type": "string" },
+        "first_seen": { "$ref": "#/$defs/date" },
+        "last_seen": { "$ref": "#/$defs/date" },
+        "recommended": { "type": "boolean" },
+        "recommend_count": { "type": "integer", "minimum": 0 },
+        "status": { "$ref": "#/$defs/status" },
+        "first_stars": { "type": ["integer", "null"] },
+        "last_stars": { "type": ["integer", "null"] },
+        "note": { "type": "string" },
+        "risk": { "$ref": "#/$defs/risk" },
+        "drop_reason": { "type": "string" },
+        "origin": { "enum": ["auto", "user", ""] }
+      }
+    },
+    "data/picks/<date>.jsonl": {
+      "_唯一键": "date+full_name（date 取文件名；同一仓库在同一天只允许一行）",
+      "_unique": "date+full_name",
+      "_dateFromFilename": true,
+      "required": ["date", "full_name", "tier", "score", "risk", "action"],
+      "properties": {
+        "date": { "$ref": "#/$defs/date" },
+        "full_name": { "type": "string", "minLength": 3 },
+        "tier": { "$ref": "#/$defs/tier" },
+        "score": { "type": ["integer", "null"], "minimum": 0, "maximum": 100 },
+        "risk": { "$ref": "#/$defs/risk" },
+        "source": { "type": "string" },
+        "action": { "$ref": "#/$defs/picks_action" },
+        "captured_at": { "type": "string" },
+        "recommend_count": { "type": "integer", "minimum": 0 },
+        "repeat": { "type": "boolean" },
+        "prev_tier": { "type": ["string", "null"] },
+        "tier_changed": { "type": "boolean" },
+        "daily_status": { "$ref": "#/$defs/daily_status" },
+        "quota_block": { "$ref": "#/$defs/quota_block" },
+        "drop_reason": { "type": "string" }
+      }
+    },
+    "data/snapshots/<date>.jsonl": {
+      "_唯一键": "date+full_name+round（同日多轮用 round 区分，round 从 1 起）",
+      "_unique": "date+full_name+round",
+      "_dateFromFilename": true,
+      "required": ["full_name", "stars", "round"],
+      "properties": {
+        "full_name": { "type": "string", "minLength": 3 },
+        "stars": { "type": "integer", "minimum": 0 },
+        "forks": { "type": ["integer", "null"] },
+        "created_at": { "type": ["string", "null"] },
+        "pushed_at": { "type": ["string", "null"] },
+        "captured_at": { "type": "string" },
+        "round": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "data/projects.jsonl": {
+      "_unique": "id",
+      "required": ["id", "status", "category", "stars"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[^/]+/[^/]+$" },
+        "status": { "$ref": "#/$defs/status" },
+        "category": { "$ref": "#/$defs/category" },
+        "stars": { "$ref": "#/$defs/stars" },
+        "tier": { "$ref": "#/$defs/tier" },
+        "risk": { "$ref": "#/$defs/risk" },
+        "score": { "type": ["integer", "null"] },
+        "license": { "type": ["string", "null"] },
+        "language": { "type": ["string", "null"] },
+        "topics": { "type": "array", "items": { "type": "string" } },
+        "function_tags": { "type": "array", "items": { "type": "string" } },
+        "user_keywords": { "type": "array", "items": { "type": "string" } },
+        "recommended": { "type": "boolean" },
+        "origin": { "enum": ["auto", "user", ""] },
+        "human": { "type": ["object", "null"] },
+        "events_count": { "type": ["integer", "null"] },
+        "tags_confidence": { "enum": ["human", "auto", "inferred", "unknown", ""] },
+        "kind": { "enum": ["library", "tool", "plugin-skill", "model", "dataset", "resource-list", "learning", "infra", "channel", "unknown"] },
+        "kind_basis": { "type": "string" },
+        "owner_class": { "enum": ["official", "community"] },
+        "owner_label": { "type": ["string", "null"] }
+      }
+    },
+    "data/human/repo-intro.jsonl": {
+      "required": ["full_name", "one_liner", "problem", "example"],
+      "properties": {
+        "full_name": { "type": "string" },
+        "one_liner": { "type": "string", "minLength": 4 },
+        "problem": { "type": "string" },
+        "example": { "type": "string" },
+        "feature_note": { "type": "object" },
+        "audience": { "type": "string", "_状态": "P1-13 已批准新增；只补推荐过的条目" },
+        "source": { "type": "string" },
+        "written_at": { "type": "string" }
+      }
+    },
+    "data/human/function-tags.jsonl": {
+      "required": ["full_name", "function_tags"],
+      "properties": {
+        "full_name": { "type": "string" },
+        "function_tags": { "type": "array", "items": { "type": "string" } },
+        "user_keywords": { "type": "array", "items": { "type": "string" } },
+        "synonyms": { "type": "array", "items": { "type": "string" } },
+        "source": { "type": "string", "_说明": "human / auto(topics) / model:<名>@<版> / llm:<模型>（标签血缘，P1-9）" },
+        "written_at": { "type": "string" }
+      }
+    },
+    "data/events.jsonl": {
+      "_unique": "(不唯一：事件日志，同一项目允许多次) ",  
+      "required": ["id", "date", "type"],
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "$ref": "#/$defs/date" },
+        "type": { "enum": ["discovered", "stars_up", "stars_drop", "recommended", "re_recommended", "status_changed", "category_changed", "license_changed", "metadata_updated", "release_detected", "push_activity", "active", "watching", "dropped", "using", "researching"] },
+        "detail": { "type": "string" },
+        "source": { "type": "string" }
+      }
+    }
+  },
+  "不变量": {
+    "_说明": "这些由 audit 或 validate-lib.ps1 检查（不依赖 Python）",
+    "每行必须是合法 JSON": true,
+    "id 必须唯一（projects.jsonl 内）": true,
+    "status 必须在白名单内": true,
+    "category.l1/l2 必须能在 taxonomy.json 找到": true,
+    "数组字段不得含 null 元素": true,
+    "picks 下限流上限：精品 ≤8 / 大厂附加区 ≤3": true
+  }
+}

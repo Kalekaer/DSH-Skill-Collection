@@ -1,4 +1,4 @@
-# compare.ps1 — 项目对比（第二阶段功能 ⑦，2026-10-13 产品决策）
+﻿# compare.ps1 — 项目对比（第二阶段功能 ⑦，2026-10-13 产品决策）
 #
 # 两种用法：
 #   & ".\tools\compare.ps1" ownerA/repoA ownerB/repoB      # A vs B 对比表（Markdown，输出到控制台）
@@ -27,7 +27,7 @@ if (-not (Test-Path $projPath)) { Write-Host "❌ 找不到 data\projects.jsonl�
 $all = @()
 foreach ($l in (Get-Content $projPath -Encoding UTF8)) {
   if ([string]::IsNullOrWhiteSpace($l)) { continue }
-  try { $all += ($l | ConvertFrom-Json) } catch {}
+  try { $all += ($l | ConvertFrom-Json) } catch { $null = $_ }
 }
 
 function Find-Repo([string]$key) {

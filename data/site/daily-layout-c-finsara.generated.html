@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>今日精选 · 结构轴版 · 定稿</title>
+<style>
+/* ============================================================================
+   项目详情浮窗（三页共用：日报 C / 日报 D / 全库手账）
+   —— 屏幕正中、背景模糊、字段齐全；样式跟着页面换色（靠 --pd-* 变量）
+   变量由各页在 :root 或 .pd-wrap 上覆盖，默认按"纸面档案"配色。
+   ============================================================================ */
+.pd-wrap{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;padding:22px}
+.pd-wrap.on{display:flex}
+.pd-mask{position:absolute;inset:0;background:rgba(12,12,10,.42);backdrop-filter:blur(16px) saturate(.85);-webkit-backdrop-filter:blur(16px) saturate(.85)}
+.pd-panel{position:relative;width:min(900px,94vw);max-height:88vh;overflow:auto;background:var(--pd-bg,#f6f1e3);color:var(--pd-ink,#141412);
+  border:3px solid var(--pd-ink,#141412);box-shadow:14px 14px 0 var(--pd-accent,#e0507a);padding:24px 28px 22px;
+  animation:pdIn .16s ease-out}
+@keyframes pdIn{from{transform:translateY(10px) scale(.985);opacity:.4}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.pd-panel{animation:none}}
+/* 打开时的一次扫描线与标题色差；不循环 */
+.pd-panel::after{content:"";position:absolute;left:0;right:0;top:0;height:18%;pointer-events:none;z-index:0;
+  background:linear-gradient(180deg,transparent,rgba(255,31,107,.16),transparent);
+  animation:pdScan 1.05s ease-out 1 both;mix-blend-mode:multiply}
+@keyframes pdScan{0%{transform:translateY(-120%);opacity:0}12%{opacity:.8}100%{transform:translateY(620%);opacity:0}}
+.pd-id{animation:pdIdIn .22s steps(2) both}
+@keyframes pdIdIn{0%{text-shadow:2px 0 #ff1f6b,-2px 0 #2ef2d0;transform:translateX(1px)}100%{text-shadow:none;transform:none}}
+@media (prefers-reduced-motion:reduce){.pd-panel::after,.pd-id{animation:none!important}}
+.pd-x{position:absolute;right:14px;top:12px;background:none;border:2px solid var(--pd-ink,#141412);color:inherit;
+  width:32px;height:32px;font:400 18px/1 var(--pd-mono,monospace);cursor:pointer}
+.pd-x:hover{background:var(--pd-accent,#e0507a);color:#fff;border-color:var(--pd-accent,#e0507a)}
+
+.pd-badges{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.pd-b{font:700 10px/1 var(--pd-mono,monospace);letter-spacing:.12em;padding:5px 8px;border:1.5px solid var(--pd-ink,#141412);text-transform:uppercase}
+.pd-b.tier{background:var(--pd-ink,#141412);color:var(--pd-bg,#f6f1e3)}
+.pd-b.tier.s{background:var(--pd-accent2,#f6e800);color:#111;border-color:#111}
+.pd-b.tier.a{background:#ff1f6b;color:#fff;border-color:#ff1f6b}
+.pd-b.tier.b{background:#2ef2d0;color:#111;border-color:#111}
+.pd-b.tier.c{background:#ff9f1c;color:#111;border-color:#111}
+.pd-b.tier.d{background:#8a8a86;color:#fff;border-color:#111}
+.pd-b.risk{border-style:dashed}
+.pd-b.ghost{opacity:.72}
+
+.pd-id{margin:0 0 2px;font:700 26px/1.2 var(--pd-mono,monospace);word-break:break-all;letter-spacing:-.01em;padding-right:34px}
+.pd-one{margin:0 0 16px;font:400 15px/1.65 var(--pd-serif,Georgia,serif);color:var(--pd-ink2,#3c3c36)}
+.pd-tags{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:0 0 9px}
+.pd-tags b{font:700 8.5px/1 var(--pd-mono,monospace);letter-spacing:.18em;color:var(--pd-ink2,#5a5a52);margin-right:2px}
+.pd-tag{font:600 9.5px/1 var(--pd-mono,monospace);border:1px solid var(--pd-ink,#141412);padding:4px 6px;background:var(--pd-bg,#f6f1e3);
+  animation:pdTagIn .22s both;animation-delay:var(--d,0ms)}
+@keyframes pdTagIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.pd-tag{animation:none!important}}
+.pd-tag.kw{border-style:dashed;opacity:.82}
+
+.pd-sec{margin:0 0 16px;padding-top:12px;border-top:1px solid var(--pd-rule,#c9c2b0)}
+.pd-sec:first-of-type{border-top:0;padding-top:0}
+.pd-sec h4{margin:0 0 6px;font:700 9.5px/1 var(--pd-mono,monospace);letter-spacing:.22em;text-transform:uppercase;color:var(--pd-ink2,#5a5a52)}
+.pd-sec p{margin:0 0 7px;font:400 13.5px/1.7 var(--pd-serif,Georgia,serif);color:var(--pd-ink,#141412)}
+.pd-sec ul{margin:0;padding-left:18px}
+.pd-sec li{font:400 13px/1.65 var(--pd-serif,Georgia,serif);margin-bottom:3px}
+
+.pd-cols{display:grid;grid-template-columns:1fr 1fr;gap:4px 22px}
+@media (max-width:640px){.pd-cols{grid-template-columns:1fr}}
+
+/* 两个"适合/不适合"并排块 */
+.pd-fit{display:grid;grid-template-columns:1fr 1fr;gap:0;border:2px solid var(--pd-ink,#141412)}
+.pd-fit>div{padding:9px 11px}
+.pd-fit>div+div{border-left:2px solid var(--pd-ink,#141412)}
+.pd-fit b{display:block;font:700 9px/1.4 var(--pd-mono,monospace);letter-spacing:.16em;margin-bottom:4px}
+.pd-fit p{margin:0;font:400 12.5px/1.6 var(--pd-serif,Georgia,serif)}
+
+/* 评分 */
+.pd-score{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:center}
+.pd-score .num{font:700 40px/1 var(--pd-mono,monospace)}
+.pd-score .num small{display:block;font:600 9px/1.6 var(--pd-mono,monospace);letter-spacing:.16em;color:var(--pd-ink2,#5a5a52)}
+.pd-bars{display:grid;gap:5px}
+.pd-bar{display:grid;grid-template-columns:64px 1fr 26px;gap:8px;align-items:center;font:600 9.5px/1 var(--pd-mono,monospace)}
+.pd-bar i{height:8px;background:var(--pd-rule,#cfc8b6);position:relative;display:block}
+.pd-bar i b{position:absolute;left:0;top:0;bottom:0;background:var(--pd-accent,#e0507a)}
+
+/* 元信息表 */
+.pd-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px 18px}
+.pd-meta div{font:600 10px/1.5 var(--pd-mono,monospace);color:var(--pd-ink2,#5a5a52)}
+.pd-meta b{display:block;font:700 13px/1.45 var(--pd-serif,Georgia,serif);color:var(--pd-ink,#141412);word-break:break-all}
+
+.pd-note{margin:0;padding:10px 12px;background:var(--pd-note,#efe7d2);font:400 12.5px/1.7 var(--pd-serif,Georgia,serif);white-space:pre-wrap}
+.pd-go{display:inline-block;margin-top:14px;background:var(--pd-ink,#141412);color:var(--pd-bg,#f6f1e3);
+  font:700 10px/1 var(--pd-mono,monospace);letter-spacing:.16em;padding:10px 12px;text-decoration:none}
+.pd-go:hover{background:var(--pd-accent,#e0507a);color:#fff}
+.pd-hint{margin-top:10px;font:600 9px/1.6 var(--pd-mono,monospace);letter-spacing:.14em;color:var(--pd-ink2,#5a5a52)}
+
+/* 顶部关键事实（星标 / 许可 / 语言 / 最近推送） */
+.pd-facts{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0 0 12px;padding-bottom:10px;border-bottom:1px solid var(--pd-rule,#c9c2b0);
+  font:700 11px/1.4 var(--pd-mono,monospace);letter-spacing:.06em;color:var(--pd-ink2,#4a463a)}
+
+/* 完整日报浮层（C/D 共用；内容由构建期 ConvertFrom-Markdown 注入） */
+.frbtn{position:fixed;right:18px;bottom:74px;z-index:60;display:inline-flex;align-items:center;gap:6px;
+  background:#0a0a0a;color:#f4f1e4;border:2px solid #0a0a0a;padding:8px 11px;cursor:pointer;
+  font:700 10px/1.2 SFMono-Regular,Consolas,monospace;letter-spacing:.1em;box-shadow:4px 4px 0 rgba(255,31,107,.4)}
+.frbtn:hover{background:#ff1f6b;border-color:#ff1f6b;color:#fff}
+.frwrap{position:fixed;inset:0;z-index:9990;display:none;align-items:center;justify-content:center;padding:18px}
+.frwrap.on{display:flex}
+.frmask{position:absolute;inset:0;background:rgba(6,6,5,.72);backdrop-filter:blur(6px)}
+.frpanel{position:relative;width:min(980px,94vw);max-height:88vh;overflow:auto;background:#f4efe2;color:#151515;
+  padding:20px 26px 30px;border:3px solid #0a0a0a;box-shadow:10px 10px 0 rgba(255,31,107,.9)}
+.frx{position:sticky;top:0;margin-left:auto;display:block;width:34px;height:34px;border:2px solid #0a0a0a;background:#f4efe2;color:#0a0a0a;
+  font:400 18px/1 monospace;cursor:pointer;z-index:2}
+.frx:hover{background:#ff1f6b;color:#fff;border-color:#ff1f6b}
+.frbody{font:14px/1.75 "Noto Serif SC",Georgia,serif}
+.frbody h1{font:700 26px/1.2 "Noto Serif SC",Georgia,serif;margin:0 0 12px}
+.frbody h2{font:700 20px/1.3 "Noto Serif SC",Georgia,serif;margin:22px 0 8px;border-bottom:2px solid #0a0a0a;padding-bottom:4px}
+.frbody h3{font:700 16px/1.4 "Noto Serif SC",Georgia,serif;margin:16px 0 6px}
+.frbody blockquote{margin:10px 0;padding:8px 12px;border-left:3px solid #ff1f6b;background:#efe8d6;color:#3a3a34;
+  font:12px/1.6 SFMono-Regular,Consolas,monospace}
+.frbody pre{background:#0a0a0a;color:#f4efe2;padding:10px 12px;overflow:auto;font:12px/1.6 SFMono-Regular,Consolas,monospace}
+.frbody code{background:#e6dfcf;padding:1px 4px;font:12px/1.4 SFMono-Regular,Consolas,monospace}
+.frbody pre code{background:none;padding:0}
+.frbody ul,.frbody ol{padding-left:22px}
+.frbody table{border-collapse:collapse;width:100%;font-size:12px;margin:8px 0}
+.frbody th,.frbody td{border:1px solid #cfc6b4;padding:4px 6px;text-align:left}
+.frbody a{color:#a3234a}
+
+/* 日报相关项目（picks / 退稿 / 老朋友，全部可点开详情） */
+.relbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:14px 0 4px;padding-top:10px;border-top:1px dashed var(--pd-rule,#c9c2b0)}
+.relh{font:700 9px/1.4 var(--pd-mono,monospace);letter-spacing:.18em;text-transform:uppercase;color:var(--pd-ink2,#5a5a52);margin-right:4px}
+.relchip{font:600 10px/1.2 var(--pd-mono,monospace);letter-spacing:.02em;border:1px solid currentColor;background:transparent;color:inherit;padding:5px 7px;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.relchip:hover{background:#ff1f6b;border-color:#ff1f6b;color:#fff}
+.relempty{font:600 10px/1.4 var(--pd-mono,monospace);opacity:.6}
+/* 完整日报浮层里的相关按钮条（放在报告正文前，打开就能点） */
+.fr-relbar{margin:0 0 16px;padding:0 0 12px;border-top:0;border-bottom:2px solid #0a0a0a;background:#efe8d6;padding:10px 12px}
+.fr-relbar .relh{color:#5a5a52}
+
+/* 官方 / 大厂附加区（不计入 S/A/B；只在报告有这一节时显示） */
+.official{margin:16px 0 6px;padding:10px 12px;border:2px solid var(--pd-ink,#141412);border-left:8px solid #ff1f6b;background:var(--pd-note,#efe7d2)}
+.ofhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin:0 0 8px}
+.ofhead b{font:700 12px/1.2 var(--pd-mono,monospace);letter-spacing:.1em}
+.ofhead span{font:600 9px/1.2 var(--pd-mono,monospace);letter-spacing:.14em;color:var(--pd-ink2,#5a5a52)}
+.ofrow{display:flex;flex-wrap:wrap;gap:6px}
+.ofrow .relchip{display:flex;flex-direction:column;align-items:flex-start;gap:3px;max-width:340px;white-space:normal;text-align:left}
+.ofrow .relchip b{font:700 10px/1.3 var(--pd-mono,monospace);letter-spacing:.04em}
+.ofrow .relchip span{font:400 11px/1.45 var(--pd-serif,Georgia,serif);opacity:.82}
+
+@font-face{font-family:"Bebas";src:url("../../assets/fonts/BebasNeue-Regular.ttf") format("truetype");font-weight:400;font-display:swap}
+@font-face{font-family:"Anton";src:url("../../assets/anton-latin.woff2") format("woff2");font-weight:400;font-display:swap}
+/* ============================================================
+   GITHUB DAILY / STRUCTURAL SECTION
+   后朋克 × 粗野主义 × 巨构主义 · 结构轴版
+   约束：无整页旋转、fixed 不被祖先 transform 劫持、正文 ≥11px、
+        卡片可聚焦、完整日报在视口内可开。
+   ============================================================ */
+:root{
+  --asphalt:#0a0a09;
+  --concrete:#cfc8ba;
+  --concrete2:#bcb4a4;
+  --concrete3:#a79f8e;
+  --ink:#0d0d0c;
+  --steel:#4f4a41;
+  --red:#c81f16;
+  --red-ink:#a5140c;
+  --red-bright:#ff3b2f;
+  --acid:#d8e600;
+  --paper:#efe9dc;
+  --amber:#d99a1b;
+  --rule:rgba(13,13,12,.22);
+  --rule-hard:rgba(13,13,12,.55);
+  --mono:SFMono-Regular,Consolas,"Liberation Mono",Menlo,monospace;
+  --sans:"Noto Sans SC","Microsoft YaHei UI","Microsoft YaHei",system-ui,sans-serif;
+  --disp:"Bebas","Arial Narrow",Impact,sans-serif;
+  --disp-heavy:"Anton","Bebas","Arial Narrow",Impact,sans-serif;
+  --noise:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='180' height='180' filter='url(%23n)' opacity='.16'/></svg>");
+  --hatch:repeating-linear-gradient(135deg,rgba(13,13,12,.16) 0 1px,transparent 1px 7px);
+}
+*{box-sizing:border-box}
+html{background:var(--asphalt)}
+body{
+  margin:0;color:var(--ink);font:14px/1.7 var(--sans);
+  padding-bottom:88px;
+  background:
+    linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/100% 72px,
+    linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px) 0 0/72px 100%,
+    var(--asphalt);
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit;text-decoration-thickness:1px;text-underline-offset:3px}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--red-bright);outline-offset:3px}
+.mono{font-family:var(--mono);letter-spacing:.04em}
+
+/* ---------- 外框：结构轴 ---------- */
+.frame{max-width:1380px;margin:36px auto 64px;padding:0 20px;display:grid;grid-template-columns:88px minmax(0,1fr)}
+.spine{
+  position:relative;background:var(--ink);color:var(--concrete);
+  border:2px solid var(--ink);border-right:0;
+  display:flex;flex-direction:column;justify-content:space-between;align-items:center;
+  padding:18px 0 16px;overflow:visible;
+}
+.spine-bays{position:sticky;top:30px;z-index:3}
+.spine::before{content:"";position:absolute;inset:0;background:var(--noise);opacity:.22;pointer-events:none}
+.spine-top{font:700 11px/1.25 var(--mono);letter-spacing:.18em;text-align:center;position:relative}
+.spine-vert{writing-mode:vertical-rl;text-orientation:mixed;font:700 10px/1.1 var(--mono);letter-spacing:.32em;opacity:.75;position:relative}
+.spine-bays{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px;position:relative}
+.spine-bays li{font:400 22px/1 var(--disp);color:var(--concrete3);position:relative;padding-left:10px}
+.spine-bays li.on{color:var(--concrete)}
+.spine-bays li.on::before{content:"";position:absolute;left:0;top:4px;bottom:4px;width:4px;background:var(--acid)}
+.spine-bottom{font:700 8px/1.4 var(--mono);letter-spacing:.16em;writing-mode:vertical-rl;opacity:.6;position:relative}
+
+/* ---------- 混凝土纸 ---------- */
+.sheet{
+  position:relative;background:var(--concrete);border:2px solid var(--ink);
+  box-shadow:16px 16px 0 rgba(0,0,0,.55);
+  padding:0 0 0;
+}
+.sheet::before{content:"";position:absolute;inset:0;background:var(--noise);opacity:.5;pointer-events:none;mix-blend-mode:multiply}
+.sheet > *{position:relative}
+
+/* 角标 / 样板标记 */
+.corner{position:absolute;font:700 9px/1 var(--mono);letter-spacing:.14em;color:var(--steel);z-index:3}
+.corner.tl{left:10px;top:8px}.corner.tr{right:10px;top:8px}
+.corner.bl{left:10px;bottom:8px}.corner.br{right:10px;bottom:8px}
+
+/* ---------- 刊头 ---------- */
+.mast{padding:26px 34px 0;border-bottom:4px solid var(--ink)}
+.mast-kicker{display:flex;justify-content:space-between;gap:16px;font:700 10px/1.4 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--steel)}
+.mast-kicker b{color:var(--red-ink)}
+.mast-row{display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:20px;align-items:end;padding:14px 0 18px;border-bottom:1px solid var(--ink)}
+.mast-title h1{
+  margin:0;font-family:var(--sans);font-weight:900;
+  font-size:clamp(58px,7.4vw,104px);line-height:.94;letter-spacing:-.015em;
+  transform:rotate(-.45deg);transform-origin:left bottom;
+  text-shadow:3px 0 0 rgba(200,31,22,.55),-2px 0 0 rgba(13,13,12,.35);
+}
+.mast-title h1 .slash{color:var(--red);font-weight:400;margin:0 .06em 0 .02em}
+.mast-dek{margin:10px 0 0;max-width:46em;font:14px/1.65 var(--sans);color:var(--steel)}
+.mast-dek b{color:var(--ink)}
+.mast-no{position:relative;text-align:right;box-shadow:inset 1px 0 0 var(--ink);padding:12px 8px 0 28px;min-height:150px}
+.mast-no .no-label{display:block;font:700 10px/1 var(--mono);letter-spacing:.24em;color:var(--red-ink)}
+.mast-no .no{display:block;font:400 168px/.78 var(--disp-heavy);letter-spacing:-.03em;margin-top:2px}
+.mast-no .no-sub{display:block;font:700 10px/1.5 var(--mono);letter-spacing:.14em;color:var(--steel);margin-top:10px}
+
+/* 标题栏（施工图 title block） */
+.titleblock{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border-top:1px solid var(--ink);margin:0 -34px;padding:0 34px}
+.titleblock div{padding:9px 10px 10px;border-right:1px solid var(--rule);min-width:0}
+.titleblock div:last-child{border-right:0}
+.titleblock dt{font:700 9px/1.4 var(--mono);letter-spacing:.16em;color:var(--steel);margin:0 0 3px}
+.titleblock dd{margin:0;font:400 22px/1 var(--disp);letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.titleblock dd.small{font:700 12px/1.3 var(--mono);letter-spacing:.02em}
+
+/* ---------- 结构跨 ---------- */
+.bay{padding:30px 34px 34px;border-bottom:1px solid var(--rule-hard);position:relative}
+.bay:last-of-type{border-bottom:0}
+.bay-head{display:grid;grid-template-columns:86px minmax(0,1fr) auto;gap:14px;align-items:baseline;border-top:4px solid var(--ink);padding-top:9px;margin-bottom:22px}
+.bay-no{font:400 64px/.72 var(--disp);letter-spacing:-.02em}
+.bay-head h2{margin:0;font:900 clamp(26px,2.8vw,38px)/1.02 var(--sans);letter-spacing:-.01em}
+.bay-note{font:700 9px/1.5 var(--mono);letter-spacing:.16em;color:var(--steel);text-align:right;text-transform:uppercase}
+.bay-note b{color:var(--red-ink)}
+
+/* 主跨 */
+.lead-grid{display:grid;grid-template-columns:minmax(0,1.32fr) minmax(300px,.68fr);gap:30px;align-items:start}
+.lead{min-width:0;position:relative;cursor:pointer}
+.lead:focus-visible{outline:3px solid var(--red-bright);outline-offset:6px}
+.lead .stamp{display:inline-block;background:var(--red);color:var(--paper);font:700 11px/1 var(--mono);letter-spacing:.14em;padding:7px 9px;transform:rotate(-2deg);margin:0 0 12px}
+.lead .lead-type{font:700 9px/1.4 var(--mono);letter-spacing:.18em;color:var(--red-ink);margin:0 0 4px;text-transform:uppercase}
+.lead .lead-name{margin:0 0 4px;font:400 clamp(64px,8vw,110px)/.86 var(--disp-heavy);letter-spacing:-.01em;text-transform:uppercase;overflow-wrap:anywhere;text-shadow:3px 0 0 rgba(200,31,22,.32)}
+.lead .repo{font:700 12px/1.5 var(--mono);letter-spacing:.05em;color:var(--red-ink);margin:0 0 12px;overflow-wrap:anywhere}
+.lead .lead-one{font:700 19px/1.55 var(--sans);margin:0 0 12px;max-width:32em}
+.lead .why{font:15px/1.65 var(--sans);color:var(--steel);margin:0 0 16px;max-width:36em}
+.lead .what strong{color:var(--ink)}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-top:1px solid var(--ink);border-left:1px solid var(--ink)}
+.facts div{border-right:1px solid var(--ink);border-bottom:1px solid var(--ink);padding:9px 10px}
+.facts dt{font:700 9px/1.4 var(--mono);letter-spacing:.14em;color:var(--steel);margin:0 0 3px}
+.facts dd{margin:0;font:700 13px/1.35 var(--mono);overflow-wrap:anywhere}
+.no-s{display:block;width:100%;border-left:6px solid var(--ink);background:var(--acid);padding:7px 10px;font:700 10.5px/1.6 var(--mono);letter-spacing:.06em;color:var(--ink);margin:0 0 12px}
+.no-s b{color:var(--ink);text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:2px}
+
+.plate{position:relative;border:2px solid var(--ink);background:var(--concrete2);min-height:270px;display:flex;flex-direction:column}
+.plate .plate-img{flex:1;position:relative;overflow:hidden;background:
+  radial-gradient(circle at 30% 35%,rgba(13,13,12,.85) 0 1px,transparent 1.6px) 0 0/7px 7px,
+  linear-gradient(90deg,transparent 0 47%,rgba(13,13,12,.28) 47% 48%,transparent 48%),
+  linear-gradient(0deg,transparent 0 62%,rgba(13,13,12,.28) 62% 63%,transparent 63%),
+  linear-gradient(145deg,var(--concrete3),var(--concrete2))}
+.plate .plate-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.22) brightness(.92)}
+.plate .plate-img::after{content:"";position:absolute;inset:0;background:
+  radial-gradient(circle,rgba(13,13,12,.55) 0 1.2px,transparent 1.4px) 0 0/6px 6px;
+  mix-blend-mode:multiply;opacity:.55;pointer-events:none}
+.plate .plate-img::before{content:"";position:absolute;left:18%;top:16%;width:46%;height:56%;border:1px solid var(--ink);box-shadow:18px 18px 0 rgba(13,13,12,.14)}
+.plate .plate-img::after{content:"";position:absolute;right:12%;bottom:12%;width:26%;height:26%;border:1px solid var(--ink);border-radius:50%}
+.plate .plate-img i{position:absolute;left:0;right:0;top:38%;height:1px;background:var(--ink);opacity:.5}
+.plate .plate-img i::before{content:"";position:absolute;left:24%;top:-4px;width:8px;height:8px;background:var(--red)}
+.plate figcaption{display:block;padding:7px 8px;border-top:1px solid var(--ink);font:700 9px/1.5 var(--mono);letter-spacing:.1em;color:var(--steel);background:var(--concrete)}
+.plate .dim{position:absolute;left:8px;top:8px;background:var(--concrete);border:1px solid var(--ink);padding:2px 5px;font:700 9px/1.4 var(--mono);letter-spacing:.1em;color:var(--steel)}
+
+/* A 模块阵列 */
+.a-modules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--ink);border:1px solid var(--ink);margin-bottom:26px}
+.module{background:var(--concrete);border:0;text-align:left;padding:16px 18px 18px;display:flex;flex-direction:column;gap:8px;cursor:pointer;min-height:210px}
+.module-blank{background:var(--concrete2);cursor:default;justify-content:flex-end;align-items:flex-end;color:var(--steel);background-image:var(--hatch);font:700 9px/1.5 var(--mono);letter-spacing:.14em;padding:14px 16px}
+.module:hover{background:var(--paper)}
+.module .mod-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-bottom:1px solid var(--ink);padding-bottom:6px}
+.module .mod-no{font:400 30px/1 var(--disp);letter-spacing:-.02em}
+.module .mod-tier{font:700 9px/1 var(--mono);letter-spacing:.14em;padding:4px 6px;background:var(--ink);color:var(--concrete)}
+.module h4{margin:0;font:900 23px/1.16 var(--sans);letter-spacing:-.01em}
+.module .repo{font:700 10px/1.4 var(--mono);color:var(--red-ink);overflow-wrap:anywhere}
+.module .why{margin:0;font:14px/1.6 var(--sans);color:var(--steel)}
+.module .mod-meta{margin-top:auto;display:flex;flex-wrap:wrap;gap:10px;font:700 9px/1.4 var(--mono);letter-spacing:.08em;color:var(--steel)}
+/* A 模块配图：与 B 接触表同一套结构摄影，血到边 */
+.module .mod-thumb{position:relative;display:block;height:118px;margin:-16px -18px 0;overflow:hidden;border-bottom:1px solid var(--ink);background:var(--concrete2)}
+.module .mod-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.2) brightness(.9)}
+.module .mod-thumb::after{content:"";position:absolute;inset:0;background:radial-gradient(circle,rgba(13,13,12,.5) 0 1.1px,transparent 1.3px) 0 0/6px 6px;mix-blend-mode:multiply;opacity:.5;pointer-events:none}
+.module .mod-thumb b{position:absolute;left:0;bottom:0;z-index:1;background:var(--concrete);border-top:1px solid var(--ink);border-right:1px solid var(--ink);padding:3px 7px;font:700 11px/1.3 var(--mono);letter-spacing:.12em;color:var(--steel)}
+@media (max-width:620px){.module .mod-thumb{height:96px}}
+
+/* B 接触表 */
+.b-head{display:flex;justify-content:space-between;align-items:baseline;border-top:2px solid var(--ink);padding-top:8px;margin-bottom:10px}
+.b-head h3{margin:0;font:900 18px/1.1 var(--sans);letter-spacing:.01em}
+.b-head span{font:700 9px/1.4 var(--mono);letter-spacing:.14em;color:var(--steel)}
+.b-matrix{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--ink);border:1px solid var(--ink)}
+.b-cell{background:var(--concrete);border:0;text-align:left;padding:0;cursor:pointer;display:flex;flex-direction:column;min-width:0}
+.b-cell:hover{background:var(--paper)}
+.b-cell .b-thumb{position:relative;display:block;height:86px;border-bottom:1px solid var(--ink);background-size:cover;background-position:center;filter:grayscale(1) contrast(1.18) brightness(.92)}
+.b-cell .b-thumb::after{content:"";position:absolute;inset:0;background:radial-gradient(circle,rgba(13,13,12,.5) 0 1.1px,transparent 1.3px) 0 0/6px 6px;mix-blend-mode:multiply;opacity:.5}
+.b-cell .b-body{padding:9px 10px 11px;display:flex;flex-direction:column;gap:5px;min-width:0}
+.b-cell .b-no{font:700 9px/1 var(--mono);letter-spacing:.1em;color:var(--red-ink)}
+.b-cell h4{margin:0;font:900 14px/1.2 var(--sans);letter-spacing:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.b-cell .b-repo{font:700 10px/1.35 var(--mono);color:var(--steel);overflow-wrap:anywhere}
+.b-cell .b-one{margin:0;font:11px/1.5 var(--sans);color:var(--steel);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+
+.lead-empty{padding:18px 0 8px;border-top:2px solid var(--ink);color:var(--ink)}
+.lead-empty h3{margin:0 0 6px;font:400 clamp(42px,6vw,72px)/.9 var(--disp-heavy);text-transform:uppercase;letter-spacing:-.01em}
+.lead-empty p{margin:0 0 5px;font:400 13px/1.7 var(--sans);color:var(--steel);max-width:38em}
+.lead-empty .tagline{display:inline-block;margin-bottom:8px;background:var(--ink);color:var(--concrete);font:700 10px/1.4 var(--mono);letter-spacing:.14em;padding:5px 7px}
+.archive{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 22px}
+.arc-col h4{margin:0 0 6px;padding-bottom:4px;border-bottom:2px solid var(--ink);display:flex;justify-content:space-between;font:700 10px/1.4 var(--mono);letter-spacing:.16em}
+.arc-col h4 span:last-child{color:var(--red-ink)}
+.arc-row{display:flex;width:100%;align-items:center;gap:8px;background:none;border:0;border-bottom:1px dotted var(--rule-hard);padding:7px 0;text-align:left;cursor:pointer;font:700 11px/1.35 var(--mono);color:var(--ink);overflow-wrap:anywhere}
+.arc-row:hover{background:rgba(13,13,12,.06)}
+.arc-row b{flex:0 0 auto;display:inline-grid;place-items:center;width:24px;height:20px;border:1px solid var(--ink);font:800 9px/1 var(--mono)}
+.arc-row b.c{background:var(--ink);color:var(--concrete)}
+.arc-row b.d{background:var(--concrete3);color:var(--ink)}
+.arc-row b.u{border-style:dashed;color:var(--steel)}
+
+/* 特别 */
+.special{background:var(--ink);color:var(--concrete);border-bottom:1px solid var(--rule-hard)}
+.special::before{content:"";position:absolute;inset:0;background:var(--noise);opacity:.18;pointer-events:none}
+.special .bay-head{border-color:var(--concrete);position:relative}
+.special .bay-no{color:var(--red-bright)}
+.special .bay-note{color:var(--concrete3)}
+.special .bay-note b{color:var(--red-bright)}
+.special-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:#2a2823;border:1px solid #2a2823;position:relative}
+.special-card{background:#151513;border:0;text-align:left;padding:14px 15px 16px;cursor:pointer;display:flex;flex-direction:column;gap:8px;min-height:190px}
+.special-card:hover{background:#1e1c19}
+.special-card .sp-no{font:400 26px/1 var(--disp);color:var(--red-bright)}
+.special-card .sp-id{font:700 10px/1.4 var(--mono);color:var(--concrete3);overflow-wrap:anywhere}
+.special-card h4{margin:0;font:900 20px/1.18 var(--sans);color:var(--concrete)}
+.special-card p{margin:0;font:12px/1.6 var(--sans);color:var(--concrete3)}
+.special-card .sp-thumb{position:relative;display:block;height:96px;margin:-14px -15px 0;overflow:hidden;border-bottom:1px solid #2a2823;background:#0b0b0a}
+.special-card .sp-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.3) brightness(.62)}
+.special-card .sp-thumb::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(200,31,22,.10),rgba(5,5,4,.55))}
+
+/* 记忆 */
+.memory{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 26px;margin-top:4px}
+.mem-col h4{margin:0 0 6px;font:700 10px/1.4 var(--mono);letter-spacing:.16em;border-bottom:1px solid var(--rule-hard);padding-bottom:4px}
+.mem-col h4 .mem-hint{display:block;font-weight:400;letter-spacing:.06em;color:var(--steel);margin-top:3px}
+.mem-row{display:flex;align-items:center;gap:7px;width:100%;background:none;border:0;border-bottom:1px dotted var(--rule-hard);padding:6px 0;text-align:left;cursor:pointer;font:700 11px/1.35 var(--mono);color:var(--ink);overflow-wrap:anywhere}
+.mem-row:hover{background:rgba(13,13,12,.06)}
+.mem-row .tag{flex:0 0 auto;font:700 8px/1 var(--mono);letter-spacing:.06em;padding:3px 4px;border:1px solid var(--ink)}
+.mem-row .tag.self{background:var(--ink);color:var(--concrete)}
+.mem-row .tag.rep{background:var(--red);border-color:var(--red);color:var(--paper)}
+.mem-more{margin-top:10px;font:700 9px/1.5 var(--mono);letter-spacing:.1em;color:var(--steel)}
+
+/* 达线未刊 / 折叠 / 全名单 */
+.overflow{margin:10px 0 2px;padding:9px 12px;border:1px dashed var(--red);background:rgba(200,31,22,.05);font:700 10px/1.6 var(--mono);color:var(--ink)}
+.overflow b{color:var(--red-ink);letter-spacing:.12em;margin-right:8px}
+.overflow span{display:inline-block;margin-right:10px;white-space:nowrap}
+.overflow .t{color:var(--steel);margin-left:3px}
+.foldbar{display:flex;justify-content:flex-end;margin-top:8px}
+.foldbar:empty{display:none}
+.foldbtn{font:700 10px/1.2 var(--mono);letter-spacing:.08em;border:1px solid var(--ink);background:transparent;color:var(--ink);padding:6px 9px;cursor:pointer}
+.foldbtn:hover{background:var(--ink);color:var(--concrete)}
+.allin{margin-top:10px;border-top:1px solid var(--rule-hard);padding-top:7px;font:700 11px/1.5 var(--mono)}
+.allin summary{cursor:pointer;color:var(--ink);letter-spacing:.08em}
+.allin-list{margin-top:6px;color:var(--steel);font-weight:400;line-height:1.65;word-break:break-all}
+
+/* 页脚 */
+.colophon{background:var(--ink);color:var(--concrete);padding:18px 34px 20px;display:grid;grid-template-columns:2fr 1fr 1fr;gap:20px;align-items:end}
+.colophon .end{font:400 54px/.8 var(--disp);letter-spacing:-.02em;color:var(--concrete3)}
+.colophon .end b{color:var(--red-bright);font-weight:400}
+.colophon dl{margin:0}
+.colophon dt{font:700 8px/1.4 var(--mono);letter-spacing:.18em;color:var(--concrete3);margin:0 0 3px}
+.colophon dd{margin:0;font:700 11px/1.5 var(--mono);letter-spacing:.02em}
+
+/* 完整日报：fixed 在 body 下，不被 transform 劫持 */
+.frbtn{position:fixed;right:22px;bottom:22px;z-index:90;background:var(--red);color:var(--paper);border:2px solid var(--ink);padding:12px 14px;font:700 10px/1 var(--mono);letter-spacing:.14em;cursor:pointer;box-shadow:5px 5px 0 rgba(0,0,0,.6);min-height:44px}
+.frbtn:hover{background:var(--ink);color:var(--paper)}
+.frwrap{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:24px;background:transparent}
+.frmask{position:absolute;inset:0;background:rgba(5,5,4,.82)}
+.frwrap.on{display:flex}
+.frpanel{position:relative;width:min(880px,100%);max-height:88vh;overflow:auto;background:var(--concrete);border:2px solid var(--ink);box-shadow:12px 12px 0 rgba(0,0,0,.6);padding:26px 30px 34px}
+.frpanel .frx{position:sticky;top:0;float:right;background:var(--ink);color:var(--concrete);border:0;padding:8px 10px;font:700 14px/1 var(--mono);cursor:pointer;z-index:2}
+.frpanel h2{margin:0 0 4px;font:900 34px/1.05 var(--sans);letter-spacing:-.01em}
+.frpanel .fr-kicker{font:700 9px/1.4 var(--mono);letter-spacing:.2em;color:var(--red-ink);margin:0 0 16px}
+.frpanel h3{margin:22px 0 6px;font:900 16px/1.3 var(--sans);border-top:1px solid var(--ink);padding-top:8px}
+.frpanel p{margin:0 0 10px;font:14px/1.8 var(--sans);max-width:62ch}
+.frpanel blockquote{margin:0 0 16px;padding:10px 12px;border-left:5px solid var(--red);background:var(--paper);font:13px/1.7 var(--mono)}
+.frpanel .fr-close-hint{font:700 9px/1.4 var(--mono);color:var(--steel);letter-spacing:.12em;margin-top:18px}
+.frbody{font:14px/1.8 var(--sans);color:var(--ink);max-width:68ch}
+.frbody h1{font:900 30px/1.15 var(--sans);letter-spacing:-.02em;margin:6px 0 12px;border-bottom:3px double var(--ink);padding-bottom:10px}
+.frbody h2{font:900 20px/1.3 var(--sans);margin:22px 0 8px;border-top:2px solid var(--ink);padding-top:8px}
+.frbody h3{font:700 15px/1.4 var(--sans);color:var(--red-ink);margin:16px 0 5px}
+.frbody p{margin:0 0 10px}
+.frbody ul,.frbody ol{padding-left:1.4em;margin:4px 0 12px}
+.frbody li{margin:3px 0}
+.frbody blockquote{margin:10px 0;padding:8px 12px;border-left:3px solid var(--red);background:var(--paper);color:var(--steel);font:13px/1.7 var(--mono)}
+.frbody code{font:12px/1.5 var(--mono);background:var(--paper);padding:1px 3px}
+.frbody pre{background:var(--ink);color:var(--paper);padding:10px 12px;overflow:auto;font:12px/1.6 var(--mono)}
+.frbody pre code{background:none;padding:0}
+.frbody table{border-collapse:collapse;width:100%;font-size:12px;margin:8px 0}
+.frbody th,.frbody td{border:1px solid var(--rule-hard);padding:5px 7px;text-align:left}
+.frbody a{color:var(--ink);text-decoration:underline}
+.relbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:10px 34px;border-top:1px solid var(--ink);background:var(--concrete2)}
+.relbar .relh{font:700 11px/1.4 var(--mono);letter-spacing:.14em;color:var(--ink);margin-right:6px}
+.relchip{font:600 10px/1.2 var(--mono);letter-spacing:.02em;border:1px solid var(--ink);background:transparent;color:var(--ink);padding:5px 7px;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.relchip:hover{background:var(--ink);color:var(--concrete)}
+/* 详情浮层收编：覆盖 _detail.css 的荧光色，统一到结构色 */
+.pd-wrap{--pd-bg:var(--concrete);--pd-ink:var(--ink);--pd-ink2:var(--steel);--pd-rule:var(--rule-hard);--pd-accent:var(--red);--pd-accent2:var(--amber);--pd-note:var(--paper)}
+.pd-panel{background:var(--concrete);color:var(--ink);border:2px solid var(--ink);box-shadow:10px 10px 0 rgba(0,0,0,.55)}
+.pd-panel::after{display:none}
+.pd-b.tier.s{background:var(--red);color:var(--paper);border-color:var(--red)}
+.pd-b.tier.a{background:var(--ink);color:var(--concrete);border-color:var(--ink)}
+.pd-b.tier.b{background:var(--concrete3);color:var(--ink);border-color:var(--ink)}
+.pd-b.tier.c{background:var(--paper);color:var(--ink);border-color:var(--rule-hard)}
+.pd-b.tier.d{background:var(--concrete2);color:var(--ink);border-color:var(--ink)}
+.pd-x:hover,.pd-go{background:var(--ink);color:var(--concrete);border-color:var(--ink)}
+.pd-go:hover{background:var(--red);border-color:var(--red)}
+
+/* ---------- 窄屏 ---------- */
+@media (max-width:1040px){
+  .frame{grid-template-columns:1fr;margin-top:18px;padding:0 12px}
+  .spine{flex-direction:row;justify-content:space-between;padding:10px 14px;border-right:2px solid var(--ink);border-bottom:0}
+  .spine-vert,.spine-bottom{display:none}
+  .spine-bays{flex-direction:row;gap:16px}
+  .lead-grid{grid-template-columns:1fr}
+  .mast-row{grid-template-columns:1fr}
+  .mast-no{border-left:0;border-top:1px solid var(--ink);padding:10px 0 0;text-align:left;min-height:0;display:flex;align-items:baseline;gap:14px}
+  .mast-no .no{font-size:92px}
+  .titleblock{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .a-modules{grid-template-columns:1fr}
+  .b-matrix{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .archive,.memory{grid-template-columns:1fr}
+  .special-grid{grid-template-columns:1fr}
+  .colophon{grid-template-columns:1fr}
+}
+@media (max-width:620px){
+  body{font-size:13px}
+  .mast{padding:18px 16px 0}
+  .mast-kicker{font-size:9px;letter-spacing:.12em;flex-wrap:wrap;flex-direction:column;align-items:flex-start;gap:3px}
+  .mast-title h1{font-size:46px}
+  .mast-dek{font-size:13px}
+  .titleblock{margin:0 -16px;padding:0 16px;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .titleblock dd{font-size:18px}
+  .titleblock dd.small{font-size:10px;white-space:normal;overflow-wrap:anywhere}
+  .spine-top{font-size:9px}
+  .spine-bays{gap:8px}
+  .spine-bays li{font-size:18px}
+  .bay{padding:22px 16px 26px}
+  .bay-head{grid-template-columns:56px minmax(0,1fr);gap:10px}
+  .bay-no{font-size:44px}
+  .bay-head h2{font-size:26px}
+  .bay-note{display:none}
+  .lead .lead-name{font-size:56px}
+  .lead .lead-one{font-size:16px}
+  .lead .why{font-size:14px}
+  .facts{grid-template-columns:1fr}
+  .b-matrix{grid-template-columns:1fr}
+  .b-cell .b-repo{font-size:10.5px}
+  .b-cell .b-one{font-size:11.5px}
+  .arc-row,.mem-row{min-height:40px}
+  .module h4{font-size:21px}
+  .special-card h4{font-size:18px}
+  .frbtn{right:12px;bottom:12px;font-size:9.5px}
+  .frpanel{padding:18px 16px 26px}
+  .colophon{padding:16px}
+  .colophon .end{font-size:40px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* 印刷：A4 施工图，保留黑块与结构线，去掉固定层/浮层/装饰旋转 */
+@media print{
+  @page{margin:12mm}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  html,body{background:#fff}
+  body{padding:0}
+  .frame{display:block;margin:0;padding:0;max-width:none}
+  .spine{display:none}
+  .sheet{box-shadow:none;border:0}
+  .sheet::before,.corner,.frbtn,.frwrap,.relbar{display:none!important}
+  .mast-title h1,.lead .lead-name{transform:none;text-shadow:none}
+  .lead,.module,.b-cell,.special-card,.mem-col,.plate{break-inside:avoid}
+  .bay{break-inside:auto}
+  a{color:var(--ink);text-decoration:none}
+}
+
+/* 2026-10-19 可读性下限：功能性等宽标注 ≥11px（检测器 48 条 undersized 的收敛） */
+.corner,.mast-kicker,.mast-no .no-label,.mast-no .no-sub,.titleblock dt,.titleblock dd.small,.bay-note,.lead-type,.no-s,.module .mod-tier,.module .repo,.mod-meta,.b-cell .b-no,.b-head span,.arc-col h4,.arc-row b,.special-card .sp-id,.mem-col h4,.mem-more,.mem-row .tag,.colophon dt,.plate figcaption,.plate .dim,.fr-kicker,.fr-close-hint,.relbar .relh,.relchip,.frbtn,.spine-vert,.spine-bottom{font-size:11px!important}
+</style>
+<!-- BUILD-STAMP: build 2026-10-19 18:16 ｜ 数据指纹 04E36F67152A ｜ 15 条 -->
+</head>
+<body>
+<div class="frame">
+  <aside class="spine" aria-hidden="true">
+    <div class="spine-top">GITHUB<br>DAILY</div>
+    <div class="spine-vert">STRUCTURAL SECTION — 2026.10.18 — ISSUE 08</div>
+    <ol class="spine-bays"><li class="on">01</li><li>02</li><li>03</li><li>04</li><li>05</li></ol>
+    <div class="spine-bottom">CC0 / OFL / NO TRACKING</div>
+  </aside>
+
+  <article class="sheet">
+    <span class="corner tl">SEC.A / SHEET 01</span>
+    <span class="corner tr">SCALE 1:1 / OFFLINE</span>
+
+    <header class="mast">
+      <div class="mast-kicker">
+        <span>GITHUB DAILY · 中文开源情报</span>
+        <span>READ BY STRUCTURE · <b>NOT BY EDITION</b></span>
+      </div>
+      <div class="mast-row">
+        <div class="mast-title">
+          <h1>今日精选<span class="slash">/</span></h1>
+          <p class="mast-dek">S / A / B / C / D 是<b>承重等级</b>，不是版次。先读 01 主跨，再沿结构下行到 02 模块、03 档案；特别与记忆放在末端。</p>
+        </div>
+        <div class="mast-no">
+          <span class="no-label">ISSUE</span>
+          <span class="no" id="issueNo">08</span>
+          <span class="no-sub" id="issueDate">2026.10.18 / 周日</span>
+        </div>
+      </div>
+      <dl class="titleblock">
+        <div><dt>DATE</dt><dd id="tbDate">2026.10.18</dd></div>
+        <div><dt>ENTRIES</dt><dd id="tbNew">21</dd></div>
+        <div><dt>RECOMMENDED</dt><dd id="tbRec">4</dd></div>
+        <div><dt>LIBRARY</dt><dd id="tbLib">256</dd></div>
+        <div><dt>BUILD</dt><dd class="small" id="tbBuild">STATIC / SINGLE FILE</dd></div>
+        <div><dt>LICENSE</dt><dd class="small">CC0 · OFL</dd></div>
+      </dl>
+    </header>
+
+    <section class="bay" id="bay01" aria-labelledby="h01">
+      <div class="bay-head"><span class="bay-no">01</span><h2 id="h01">主承重跨</h2><span class="bay-note">PRIMARY SPAN / <b id="sFlag">TODAY: NO S</b></span></div>
+      <div class="lead-grid">
+        <div class="lead" id="lead"></div>
+        <div id="leadSide"></div>
+      </div>
+    </section>
+
+    <section class="bay" id="bay02" aria-labelledby="h02">
+      <div class="bay-head"><span class="bay-no">02</span><h2 id="h02">模块阵列</h2><span class="bay-note">MODULE ARRAY / S·A × B</span></div>
+      <div class="a-modules" id="aModules"></div>
+      <div class="overflow" id="overflow" hidden></div>
+      <div class="b-head"><h3>B 档 · 观察面</h3><span id="bCount">8 MODULES / 4 COL</span></div>
+      <div class="b-matrix" id="bMatrix"></div>
+      <div class="foldbar" id="bFold"></div>
+    </section>
+
+    <section class="bay" id="bay03" aria-labelledby="h03">
+      <div class="bay-head"><span class="bay-no">03</span><h2 id="h03">档案层</h2><span class="bay-note">ARCHIVE / C · D / INDEX</span></div>
+      <div class="archive" id="archive"></div>
+      <div class="foldbar" id="cdFold"></div>
+      <details class="allin" id="allinBox" hidden><summary id="allinSum">当日入库全名单</summary><div class="allin-list" id="allinList"></div></details>
+    </section>
+
+    <section class="bay special" id="bay04" aria-labelledby="h04">
+      <div class="bay-head"><span class="bay-no">04</span><h2 id="h04">特别栏目</h2><span class="bay-note">OFFICIAL / <b>NOT IN QUOTA</b></span></div>
+      <div class="special-grid" id="special"></div>
+    </section>
+
+    <section class="bay" id="bay05" aria-labelledby="h05">
+      <div class="bay-head"><span class="bay-no">05</span><h2 id="h05">记忆层</h2><span class="bay-note">OLD FRIENDS / LEDGER</span></div>
+      <div class="memory" id="memory"></div>
+      <div class="foldbar" id="memFold"></div>
+    </section>
+
+    <div class="relbar"><span class="relh">本日报相关</span><span class="relempty">（本期没有可链接条目）</span></div>
+
+    <footer class="colophon">
+      <div>
+        <div class="end">END OF<br>SECTION <b>/</b></div>
+      </div>
+      <dl><dt>DRAWN</dt><dd><span id="footDate"></span> · NO.<span id="footIssue"></span></dd><dt>SOURCE</dt><dd>github.com</dd></dl>
+      <dl><dt>MATERIAL</dt><dd>CSS CONCRETE / HALFTONE</dd><dt>SET IN</dt><dd>SYSTEM HEAVY + BEBAS + MONO</dd></dl>
+    </footer>
+  </article>
+</div>
+
+<button class="frbtn" id="frbtn" type="button" aria-haspopup="dialog">完整日报 ↗</button>
+<div class="frwrap" id="frwrap" aria-hidden="true">
+  <div class="frmask" data-fr-close></div>
+  <div class="frpanel" role="dialog" aria-modal="true" aria-labelledby="frTitle">
+    <button class="frx" id="frClose" type="button" aria-label="关闭" data-fr-close>×</button>
+    <p class="fr-kicker">COMPLETE REPORT / 本期完整日报</p>
+    <h2 id="frTitle">2026.10.18 · 结构日报</h2>
+    <blockquote id="frQuote"></blockquote>
+    <div class="frbody"><p>（本期完整日报未生成）</p></div>
+    <p class="fr-close-hint">ESC / 点击遮罩关闭</p>
+  </div>
+</div>
+
+<script>
+var D = {"date":"2026-10-19","iso":"2026-10-19","shortDate":"2026.10.19","week":"周一","issue":"00","band":"2026 · 10 · 19 · 周一 — NO.00 — 新入库 0 → 推荐 5","stats":{"cand":0,"new":0,"rec":5,"s":3,"a":2,"sf":3,"af":2 ,"b":2,"ba":2,"bh":0,"c":0,"ca":0 ,"d":2,"da":2,"cd":2,"cda":2,"cdh":0 ,"rej":2,"un":0,"total":15,"cats":6,"tags":17},"cats":[{"l1":"AI","n":6},{"l1":"设计","n":3},{"l1":"其他","n":2},{"l1":"办公","n":2},{"l1":"开发","n":1},{"l1":"效率","n":1}],"imgs":["../../assets/bg/nasa-vab-highbay.jpg","../../assets/bg/nasa-pad-structure.jpg","../../assets/bg/nasa-engine-test.jpg","../../assets/bg/nasa-robot-arm.jpg","../../assets/bg/nasa-pad39b-steel.jpg"],"picks":[{"id":"yetone/magpie","url":"https://github.com/yetone/magpie","tier":"S","score":80,"risk":"中","action":"试玩","stars":15397,"d7":0,"forks":1061,"lic":"MIT","lang":"TypeScript","l1":"AI","l2":"AI Agent","one":"这是一个给开发者用的模型接入层，可以帮你把各家 AI 编程助手接到同一个地方，比如让 Codex 用上 DeepSeek。","problem":"以前每个 AI 编程工具都认自己合作的模型厂商，想换一家就得改一堆配置；这个把\"工具\"和\"模型\"解耦，一处配置就能混用。","example":"比如你习惯用 Codex 但想用 DeepSeek 的模型，配置一次之后，Codex 那边就像什么都没变一样跑在 DeepSeek 上。","aud":"同时用多家 AI 编程助手的人；想统一接入层和计费的开发者","what":"一个本地运行的模型路由层（TypeScript），把不同 agent 接到不同模型。","feats":["一处配置多家模型","让不同 AI 工具混用模型","本地服务，中转在你机器上"],"uses":["让 Codex 接 DeepSeek","多个工具共用一套 Key","快速换模型做对比"],"cases":["Codex 换模型","给 Claude Code 接别的供应商","对比同一问题在不同模型上的效果"],"unfit":["完全不用命令行的新手","只需要一家模型、不做切换的人"],"note":"","exp":{"stars":4,"score":78,"parts":{"易用性":18,"文档完整度":20,"功能成熟度":15,"维护活跃":15,"风险":10}},"first":"2026-10-13","last":"2026-10-18","pushed":"10/17/2026","created":"09/23/2026 16:22:35","evc":3,"topics":["claude-code","codex","deepseek","gemini-cli","llm","macos"],"tags":["模型路由","Agent 工具","开发辅助"],"kw":["换模型","codex 用 deepseek","模型切换","接模型"],"syn":["model router","LLM gateway","模型网关"],"repeat":false,"prev_tier":"","tier_changed":false,"rec":true,"lastRec":"2026-10-19","rel":"","recCount":2,"status":"活跃","drop":""},{"id":"Niko1221/Strata","url":"https://github.com/Niko1221/Strata","tier":"S","score":null,"risk":"","action":"收藏","stars":27068,"d7":0,"forks":2810,"lic":"MIT","lang":"C++","l1":"AI","l2":"本地模型","one":"这是一个让你在自己电脑上跑大模型的工具，可以帮你一键装好，并在本机提供一个兼容 OpenAI 接口的服务。","problem":"以前想在本地跑大模型，要自己配环境、下权重、写接口，很容易在依赖上卡住；这个做到一键安装，装完就能像调用云端 API 一样调用本机模型。","example":"比如你写了一个用 OpenAI 接口的程序，把接口地址改成它给的本地地址，就能在断网情况下继续跑，数据也不出机器。","aud":"想在自己电脑上跑大模型、又不想折腾环境的人","what":"一个面向消费级硬件的本地大模型推理引擎，提供 OpenAI / Anthropic 兼容接口。","feats":["一键安装（Windows / Linux）","在本地暴露兼容 OpenAI 的接口","支持可选的图像输入"],"uses":["本机跑私有模型","给已有程序换上本地模型","断网/隐私场景使用 AI"],"cases":["把现有代码里的 API 地址换成 localhost","离线做文本处理","自建不给外人用的模型服务"],"unfit":["机器显存不足跑不动目标模型的硬件","不想下载几十 GB 权重的人"],"note":"","exp":{"stars":5,"score":85,"parts":{"易用性":30,"文档完整度":20,"功能成熟度":10,"维护活跃":15,"风险":10}},"first":"2026-10-11","last":"2026-10-18","pushed":"10/17/2026","created":"09/24/2026 16:40:20","evc":3,"topics":[],"tags":["本地大模型","推理引擎","OpenAI 兼容"],"kw":["本地跑模型","离线ai","自己电脑跑ai","私有模型"],"syn":["local llm","inference","本地部署模型"],"repeat":false,"prev_tier":"","tier_changed":false,"rec":true,"lastRec":"2026-10-19","rel":"","recCount":2,"status":"活跃","drop":""},{"id":"browser-use/jev-ultrafast","url":"https://github.com/browser-use/jev-ultrafast","tier":"S","score":null,"risk":"","action":"收藏","stars":22979,"d7":0,"forks":1699,"lic":"MIT","lang":"Python","l1":"效率","l2":"自动化","one":"这是一个给开发者用的网页自动化代理，可以帮你用最少的钱和时间让 AI 去操作网站。","problem":"以前让 AI 去点网页，要么用大模型逐步截图推理（又慢又贵），要么写一堆脆弱的 CSS 选择器脚本。这个走的是更省 token 的路线。","example":"比如你要每天从一个后台系统里导出报表，可以让它代替你登录、点菜单、下载文件，而不是自己写脚本盯着网页改版。","aud":"要跑网页自动化的开发者；想省 token 和时间的 AI 用户","what":"一个主打「最快最便宜」的网页 agent（Python）。","feats":["用 AI 驱动浏览器完成操作","针对速度与调用成本做优化","跟随 browser-use 生态"],"uses":["批量操作网页后台","把重复点击交给 AI","做网页数据采集"],"cases":["定期导出后台报表","自动填写表单","跨站点搬运信息"],"unfit":["需要长期稳定、网页改版也不坏的生产脚本","对浏览器自动化完全不熟的人"],"note":"","exp":{"stars":3,"score":67,"parts":{"易用性":18,"文档完整度":16,"功能成熟度":10,"维护活跃":13,"风险":10}},"first":"2026-10-11","last":"2026-10-15","pushed":"09/30/2026","created":"09/16/2026 21:30:12","evc":3,"topics":[],"tags":["网页自动化","浏览器代理","AI代理"],"kw":["自动点网页","网页操作","爬数据","自动填表","代替我点"],"syn":["web agent","browser automation","RPA"],"repeat":false,"prev_tier":"","tier_changed":false,"rec":true,"lastRec":"2026-10-19","rel":"","recCount":2,"status":"活跃","drop":""},{"id":"robbietilton/Compositor","url":"https://github.com/robbietilton/Compositor","tier":"A","score":65,"risk":"中","action":"收藏","stars":17017,"d7":0,"forks":1645,"lic":"MIT","lang":"Swift","l1":"设计","l2":"图片处理","one":"这是一个给 Mac 用户用的修图软件，可以帮你处理照片，而不用按月付 Adobe 的订阅费。","problem":"以前在 Mac 上做基本的照片处理，要么忍受 Adobe 的订阅，要么用功能残缺的免费软件；现在有一个原生的、买断式的替代品。","example":"比如你要把一张照片调色、去掉多余的路人、再导出成网页用的格式，可以直接用它完成，不需要为偶尔用几次而续费一年订阅。","aud":"Mac 用户；要修图但不想付 Adobe 订阅的人","what":"一个用 Swift 写的 macOS 原生图像编辑软件，定位是 Photoshop 的免费替代。","feats":["图层与常用修图工具","原生性能，启动和响应接近系统应用","常见的图片格式读写"],"uses":["日常照片修整","简单合成与抠图","替代订阅制修图软件"],"cases":["修掉照片里的杂物","给图片加文字和边框","批量调整尺寸"],"unfit":["需要专业印刷级色彩管理的人","Windows 或 Linux 用户","重度依赖 Adobe 生态插件的工作流"],"note":"","exp":{"stars":4,"score":69,"parts":{"易用性":18,"文档完整度":16,"功能成熟度":10,"维护活跃":15,"风险":10}},"first":"2026-10-12","last":"2026-10-15","pushed":"10/15/2026","created":"09/16/2026 20:35:54","evc":3,"topics":[],"tags":["图片编辑","修图","照片处理"],"kw":["修图","改照片","p图","做图","抠图","调色"],"syn":["photoshop 替代","图像编辑","photo editor"],"repeat":false,"prev_tier":"","tier_changed":false,"rec":true,"lastRec":"2026-10-19","rel":"","recCount":2,"status":"活跃","drop":""},{"id":"storytold/photocraft","url":"https://github.com/storytold/photocraft","tier":"A","score":null,"risk":"","action":"收藏","stars":66738,"d7":0,"forks":11520,"lic":"Apache-2.0","lang":"Rust","l1":"设计","l2":"图片处理","one":"这是一个免费的修图软件，可以帮你处理照片，而且是用 Rust 从零重写的、不依赖 Adobe。","problem":"以前想不花钱修图，要么用功能缩水的免费软件，要么继续交订阅费；这是一个从零重写、架构现代的替代品。","example":"比如你要给一批活动照片统一调色、裁剪、导出，可以用它处理，而不用为一次性需求续费。","aud":"要免费修图、不依赖 Adobe 的人","what":"用纯 Rust 从零重写的开源照片编辑器。","feats":["图片编辑与调整","原生性能、启动快","开源可自行编译"],"uses":["替代订阅制修图软件","批量处理照片","学习 Rust 写的 GUI 应用"],"cases":["活动照片批量调色","简单修图与导出","自托管图像处理流程"],"unfit":["需要专业印刷色彩管理的场景","想马上稳定使用、不能容忍早期版本问题的人"],"note":"","exp":{"stars":4,"score":78,"parts":{"易用性":18,"文档完整度":20,"功能成熟度":15,"维护活跃":15,"风险":10}},"first":"2026-10-11","last":"2026-10-18","pushed":"10/17/2026","created":"09/30/2026 13:37:48","evc":3,"topics":["art","image-editing","image-editing-software","image-editor","images","photo-editing","rust"],"tags":["图片编辑","修图","照片处理"],"kw":["修图","改照片","免费ps","批量调色"],"syn":["photoshop 替代","image editor","Rust 图像"],"repeat":false,"prev_tier":"","tier_changed":false,"rec":true,"lastRec":"2026-10-19","rel":"","recCount":2,"status":"活跃","drop":""}],"rejects":[{"id":"unslothai/unsloth","url":"https://github.com/unslothai/unsloth","tier":"D","score":null,"risk":"","action":"收藏","stars":77838,"d7":0,"forks":0,"lic":"","lang":"Python","l1":"AI","l2":"模型训练","one":"这是一个加速大模型微调的工具，可以帮你用更少的显卡显存、更快地训练自己的模型。","problem":"以前自己微调一个大模型，动不动就需要多张高端显卡，显存不够直接跑不起来；这个通过优化训练实现，把门槛降到单张消费级显卡。","example":"比如你想拿自己的行业数据微调一个 7B 模型，原本要 A100，用它在一张 24G 显存的卡上就能跑完。","aud":"","what":"一个大模型微调加速库，兼容主流开源模型。","feats":["显著降低显存占用","加快训练速度","支持多种开源模型与常见微调方式"],"uses":["本地微调大模型","做行业专用模型","教学与实验"],"cases":["用自有数据微调 7B 模型","在单卡上做 LoRA 微调","低成本试验不同训练参数"],"unfit":["完全不写代码的人","只想直接调用现成模型 API 的场景"],"note":"","exp":{"stars":1,"score":36,"parts":{"易用性":8,"文档完整度":0,"功能成熟度":10,"维护活跃":8,"风险":10}},"first":"2026-10-12","last":"2026-10-12","pushed":"","created":"","evc":1,"topics":[],"tags":["模型微调","训练加速","本地训练"],"kw":["微调模型","训练自己的模型","省显存","本地训练"],"syn":["fine-tune","LoRA","微调"],"repeat":false,"prev_tier":"","tier_changed":false,"rec":false,"lastRec":"","rel":"","recCount":0,"status":"观望","drop":"","reason":""},{"id":"ImageMagick/ImageMagick","url":"https://github.com/ImageMagick/ImageMagick","tier":"D","score":null,"risk":"","action":"收藏","stars":17650,"d7":0,"forks":0,"lic":"","lang":"C","l1":"AI","l2":"AI绘画","one":"这是一个图像处理工具，可以帮你批量转换、裁剪、压缩图片，也能在命令行里一次处理成千上万张。","problem":"以前要批量改图片格式或尺寸，要么一张张手动点，要么装庞大的图形软件；这个用一行命令就能处理整个文件夹。","example":"比如你要把一百张 PNG 压成体积更小的 JPG，一行命令就能全部搞定，不用打开任何界面。","aud":"","what":"一个老牌的命令行图像处理工具集，几乎支持所有常见图片格式。","feats":["格式转换、缩放、裁剪、旋转","批量处理整个文件夹","也能被其他程序当图像处理库调用"],"uses":["批量压缩图片","网站图片处理流水线","自动化脚本里处理图像"],"cases":["批量把 PNG 转 JPG","统一给图片加边框","压缩上传前的图片体积"],"unfit":["想用鼠标点点就完成修图的人","需要精细图层编辑的设计工作"],"note":"","exp":{"stars":1,"score":36,"parts":{"易用性":8,"文档完整度":0,"功能成熟度":10,"维护活跃":8,"风险":10}},"first":"2026-10-12","last":"2026-10-12","pushed":"","created":"","evc":1,"topics":[],"tags":["图片处理","批量转换","命令行工具","图片编辑"],"kw":["批量压缩图片","图片格式转换","批量改尺寸","处理图片"],"syn":["imagemagick","convert","批量图片"],"repeat":false,"prev_tier":"","tier_changed":false,"rec":false,"lastRec":"","rel":"","recCount":0,"status":"观望","drop":"","reason":""}],"related":[],"official":[],"watch":[{"id":"NandhaKishorM/laya","url":"https://github.com/NandhaKishorM/laya","tier":"B","score":null,"risk":"","action":"收藏","stars":33211,"d7":0,"forks":2984,"lic":"Apache-2.0","lang":"Python","l1":"其他","l2":"其他工具","one":"一个专门用来「做选择题」的小模型，一次计算就给答案，33 毫秒出结果，支持一百多种语言。","problem":"没有它的时候，想让 AI 判断「这封邮件该给哪个部门」「这条评论有多生气」，得调一个大模型生成一段文字再解析，慢、贵，还可能瞎编。它直接给出选项和概率，不生成文字，也就没有胡说这一说。","example":"比如客服系统收到一条投诉，它能同时判断出该分给计费组、紧急程度是「快炸了」、以及这个人有退订风险，一次调用全给出来。","aud":"","what":"一个做结构化判断的模型，装上就能用，也能作为服务提供给 AI 助手调用。","feats":["三种题型：选项题（该归哪一类）、打分题（有多严重）、是否题（给出 0 到 1 的概率）","能读文本、邮件、工单或结构化数据","批量一次算很多条，比一条条问快","自动识别语言并切换到对应版本","可以在自己的数据上再训练，准确率提升很明显"],"uses":["客服工单自动分流、判定紧急程度","垃圾内容、钓鱼、越狱提示词识别","给 AI 工作流做快速路由和安全护栏"],"cases":["自动把工单分派给对应部门","判断一条评论是好评还是差评","在 AI 流程入口挡住提示词注入攻击"],"unfit":["需要写文章、聊天、回答开放问题的场景（它只做判断，不生成文字）","选项特别多的分类任务（超过二十个选项时，官方承认明显弱于同类对手）","期望开箱即用就很准的人——官方自己说基础模型在选择题上接近瞎猜，要靠微调"],"note":"","exp":{"stars":4,"score":81,"parts":{"易用性":18,"文档完整度":20,"功能成熟度":18,"维护活跃":15,"风险":10}},"first":"2026-10-11","last":"2026-10-17","pushed":"10/17/2026","created":"09/18/2026 04:46:33","evc":1,"topics":["calibration","classification","decision-model","huggingface","jev","modernbert","multilingual","nlp"],"tags":["非自回归决策引擎","需自取权重","上手成本高"],"kw":["非自回归决策引擎","需自取权重","上手成本高"],"syn":[],"repeat":false,"prev_tier":"","tier_changed":false,"rec":false,"lastRec":"","rel":"","recCount":0,"status":"观望","drop":""},{"id":"storytold/pdfcraft","url":"https://github.com/storytold/pdfcraft","tier":"B","score":null,"risk":"","action":"收藏","stars":15620,"d7":0,"forks":5897,"lic":"Apache-2.0","lang":"Rust","l1":"办公","l2":"PDF 与阅读","one":"这是一个 PDF 阅读编辑工具，可以帮你看 PDF、也能改里面的内容，是免费开源的。","problem":"以前改 PDF 基本都得买付费软件，免费工具通常只能看不能改；这个把阅读和编辑都做在本地。","example":"比如你要把一份 PDF 里几页删掉、再合并另一份进去，用它就能完成，不用上传到网页工具。","aud":"","what":"一个开源的 PDF 阅读与编辑软件，用 Rust 编写。","feats":["阅读 PDF","编辑与生成 PDF","处理页面（增删、合并）"],"uses":["看资料与合同","合并拆分 PDF","给 PDF 做简单修改"],"cases":["合并几份 PDF","删掉不需要的页","导出新的 PDF"],"unfit":["需要复杂表单填写与签章的场景","要求与 Adobe 生态完全兼容的工作流"],"note":"","exp":{"stars":4,"score":81,"parts":{"易用性":18,"文档完整度":20,"功能成熟度":18,"维护活跃":15,"风险":10}},"first":"2026-10-12","last":"2026-10-18","pushed":"10/16/2026","created":"09/30/2026 13:39:37","evc":1,"topics":["document-processing","documents","pdf","pdf-generation","pdf-processing","pdf-tools","pdf-viewer","rust"],"tags":["PDF工具","阅读编辑","文档处理"],"kw":["看pdf","改pdf","合并pdf","pdf怎么编辑"],"syn":["pdf reader","pdf editor","拆pdf"],"repeat":false,"prev_tier":"","tier_changed":false,"rec":false,"lastRec":"","rel":"","recCount":0,"status":"观望","drop":""}],"overflow":[],"oldFriends":[],"selfPushed":[],"bAll":[{"id":"NandhaKishorM/laya","url":"https://github.com/NandhaKishorM/laya","tier":"B","score":null,"risk":"","action":"收藏","stars":33211,"d7":0,"forks":2984,"lic":"Apache-2.0","lang":"Python","l1":"其他","l2":"其他工具","one":"一个专门用来「做选择题」的小模型，一次计算就给答案，33 毫秒出结果，支持一百多种语言。","problem":"没有它的时候，想让 AI 判断「这封邮件该给哪个部门」「这条评论有多生气」，得调一个大模型生成一段文字再解析，慢、贵，还可能瞎编。它直接给出选项和概率，不生成文字，也就没有胡说这一说。","example":"比如客服系统收到一条投诉，它能同时判断出该分给计费组、紧急程度是「快炸了」、以及这个人有退订风险，一次调用全给出来。","aud":"","what":"一个做结构化判断的模型，装上就能用，也能作为服务提供给 AI 助手调用。","feats":["三种题型：选项题（该归哪一类）、打分题（有多严重）、是否题（给出 0 到 1 的概率）","能读文本、邮件、工单或结构化数据","批量一次算很多条，比一条条问快","自动识别语言并切换到对应版本","可以在自己的数据上再训练，准确率提升很明显"],"uses":["客服工单自动分流、判定紧急程度","垃圾内容、钓鱼、越狱提示词识别","给 AI 工作流做快速路由和安全护栏"],"cases":["自动把工单分派给对应部门","判断一条评论是好评还是差评","在 AI 流程入口挡住提示词注入攻击"],"unfit":["需要写文章、聊天、回答开放问题的场景（它只做判断，不生成文字）","选项特别多的分类任务（超过二十个选项时，官方承认明显弱于同类对手）","期望开箱即用就很准的人——官方自己说基础模型在选择题上接近瞎猜，要靠微调"],"note":"","exp":{"stars":4,"score":81,"parts":{"易用性":18,"文档完整度":20,"功能成熟度":18,"维护活跃":15,"风险":10}},"first":"2026-10-11","last":"2026-10-17","pushed":"10/17/2026","created":"09/18/2026 04:46:33","evc":1,"topics":["calibration","classification","decision-model","huggingface","jev","modernbert","multilingual","nlp"],"tags":["非自回归决策引擎","需自取权重","上手成本高"],"kw":["非自回归决策引擎","需自取权重","上手成本高"],"syn":[],"repeat":false,"prev_tier":"","tier_changed":false,"rec":false,"lastRec":"","rel":"","recCount":0,"status":"观望","drop":""},{"id":"storytold/pdfcraft","url":"https://github.com/storytold/pdfcraft","tier":"B","score":null,"risk":"","action":"收藏","stars":15620,"d7":0,"forks":5897,"lic":"Apache-2.0","lang":"Rust","l1":"办公","l2":"PDF 与阅读","one":"这是一个 PDF 阅读编辑工具，可以帮你看 PDF、也能改里面的内容，是免费开源的。","problem":"以前改 PDF 基本都得买付费软件，免费工具通常只能看不能改；这个把阅读和编辑都做在本地。","example":"比如你要把一份 PDF 里几页删掉、再合并另一份进去，用它就能完成，不用上传到网页工具。","aud":"","what":"一个开源的 PDF 阅读与编辑软件，用 Rust 编写。","feats":["阅读 PDF","编辑与生成 PDF","处理页面（增删、合并）"],"uses":["看资料与合同","合并拆分 PDF","给 PDF 做简单修改"],"cases":["合并几份 PDF","删掉不需要的页","导出新的 PDF"],"unfit":["需要复杂表单填写与签章的场景","要求与 Adobe 生态完全兼容的工作流"],"note":"","exp":{"stars":4,"score":81,"parts":{"易用性":18,"文档完整度":20,"功能成熟度":18,"维护活跃":15,"风险":10}},"first":"2026-10-12","last":"2026-10-18","pushed":"10/16/2026","created":"09/30/2026 13:39:37","evc":1,"topics":["document-processing","documents","pdf","pdf-generation","pdf-processing","pdf-tools","pdf-viewer","rust"],"tags":["PDF工具","阅读编辑","文档处理"],"kw":["看pdf","改pdf","合并pdf","pdf怎么编辑"],"syn":["pdf reader","pdf editor","拆pdf"],"repeat":false,"prev_tier":"","tier_changed":false,"rec":false,"lastRec":"","rel":"","recCount":0,"status":"观望","drop":""}],"cAll":[],"allIn":[]};
+/* ============================================================================
+   项目详情浮窗（三页共用）—— window.PD.open(project)
+   project 字段（缺哪个就自动藏哪个区块）：
+     id url tier score risk action stars d7 forks lic lang l1 l2
+     one problem example aud what feats[] uses[] cases[] unfit[]
+     note exp{stars,score,parts{易用性,文档完整度,功能成熟度,维护活跃,风险}}
+     first last pushed created evc rec status drop
+   ============================================================================ */
+(function () {
+  var HOST = null;
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+  function has(x) { return x != null && String(x).trim() !== ''; }
+  function list(a) { return Array.isArray(a) ? a.filter(has) : []; }
+  function sec(title, body) { return body ? '<section class="pd-sec"><h4>' + title + '</h4>' + body + '</section>' : ''; }
+  function pgh(t) { return '<p>' + esc(t) + '</p>'; }
+  function ul(a) { return '<ul>' + list(a).map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>'; }
+
+  function ensure() {
+    if (HOST && document.body.contains(HOST)) { return HOST; }
+    HOST = document.createElement('div');
+    HOST.className = 'pd-wrap';
+    HOST.innerHTML = '<div class="pd-mask"></div><div class="pd-panel" role="dialog" aria-modal="true"></div>';
+    document.body.appendChild(HOST);
+    HOST.querySelector('.pd-mask').addEventListener('click', close);
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { close(); } });
+    return HOST;
+  }
+  function close() {
+    if (!HOST) { return; }
+    HOST.classList.remove('on');
+    document.documentElement.style.overflow = '';
+  }
+
+  function render(p) {
+    var parts = (p.exp && p.exp.parts) || {};
+    var rows = Object.keys(parts).map(function (k) {
+      var v = Math.max(0, Math.min(20, Number(parts[k]) || 0));
+      return '<div class="pd-bar"><span>' + esc(k) + '</span><i><b style="width:' + (v / 20 * 100) + '%"></b></i><span>' + v + '</span></div>';
+    }).join('');
+    var tier = has(p.tier) ? String(p.tier) : 'D';
+    var TLAB = { S: 'S 档', A: 'A 档', B: 'B 档', C: 'C 档', D: 'D 档', dropped: 'D 档' };
+    var tl = TLAB[tier] || (tier + ' 档');
+    var badges = '<span class="pd-b tier ' + String(tier).toLowerCase() + '">' + esc(tl) + '</span>';
+    if (has(p.score)) { badges += '<span class="pd-b">' + esc(p.score) + ' 分</span>'; }
+    if (has(p.risk)) { badges += '<span class="pd-b risk">风险 ' + esc(p.risk) + '</span>'; }
+    if (has(p.l1)) { badges += '<span class="pd-b ghost">' + esc(p.l1) + (has(p.l2) ? ' · ' + esc(p.l2) : '') + '</span>'; }
+    if (p.rec) { badges += '<span class="pd-b ghost">推荐过</span>'; }
+    if (p.org) { badges += '<span class="pd-b ghost">🏢 官方</span>'; }
+    if (has(p.action)) { badges += '<span class="pd-b ghost">' + esc(p.action) + '</span>'; }
+
+    /* 关键事实放最上面：星标 / 许可 / 语言 / 最近推送 —— 不用滚到底也知道分量 */
+    var facts = [];
+    if (has(p.stars)) { facts.push('★ ' + p.stars + (has(p.d7) && p.d7 !== 0 ? '（7 日 ' + (p.d7 > 0 ? '+' : '') + p.d7 + '）' : '')); }
+    if (has(p.lic)) { facts.push(/^NOASSERTION$|^NOASSERTION$/i.test(p.lic) ? '许可未标注' : p.lic); }
+    if (has(p.lang)) { facts.push(p.lang); }
+    if (has(p.pushed)) { facts.push('最近推送 ' + p.pushed); }
+    var factsHtml = facts.length ? '<div class="pd-facts">' + facts.map(function (x) { return '<span>' + esc(x) + '</span>'; }).join('') + '</div>' : '';
+
+    var tagBits = '';
+    var tgs = list(p.tags), kws = list(p.kw), syns = list(p.syn);
+    if (tgs.length) { tagBits += '<div class="pd-tags"><b>标签</b>' + tgs.map(function (x, i) { return '<span class="pd-tag" style="--d:' + (i * 18) + 'ms">' + esc(x) + '</span>'; }).join('') + '</div>'; }
+    if (kws.length) { tagBits += '<div class="pd-tags"><b>搜索词</b>' + kws.map(function (x, i) { return '<span class="pd-tag kw" style="--d:' + (i * 18 + 40) + 'ms">' + esc(x) + '</span>'; }).join('') + '</div>'; }
+    if (syns.length) { tagBits += '<div class="pd-tags"><b>同义词</b>' + syns.map(function (x, i) { return '<span class="pd-tag kw" style="--d:' + (i * 18 + 80) + 'ms">' + esc(x) + '</span>'; }).join('') + '</div>'; }
+
+    var meta = '';
+    function m(label, val) { if (has(val)) { meta += '<div>' + label + '<b>' + esc(val) + '</b></div>'; } }
+    if (has(p.stars)) { m('STARS', '★ ' + p.stars + (has(p.d7) && p.d7 !== 0 ? '（7 日 ' + (p.d7 > 0 ? '+' : '') + p.d7 + '）' : '')); }
+    if (has(p.forks)) { m('FORKS', p.forks); }
+    if (has(p.lic)) { m('许可', p.lic); }
+    if (has(p.lang)) { m('语言', p.lang); }
+    if (has(p.created)) { m('建于', p.created); }
+    if (has(p.pushed)) { m('最近推送', p.pushed); }
+    if (has(p.first)) { m('首次收录', p.first); }
+    if (has(p.last)) { m('最近更新', p.last); }
+    if (has(p.evc)) { m('成长记录', p.evc + ' 条'); }
+    if (has(p.status)) { m('状态', p.status); }
+    if (has(p.drop)) { m('退稿原因', p.drop); }
+
+    var fit = (has(p.aud) || list(p.unfit).length)
+      ? '<div class="pd-fit">' +
+        '<div><b>适合谁</b><p>' + (has(p.aud) ? esc(p.aud) : '—') + '</p></div>' +
+        '<div><b>不适合</b><p>' + (list(p.unfit).length ? list(p.unfit).map(esc).join('；') : '—') + '</p></div>' +
+        '</div>' : '';
+
+    var scoreBlock = (has(p.exp && p.exp.stars) || rows)
+      ? '<div class="pd-score"><div class="num">' + (has(p.exp && p.exp.stars) ? esc(p.exp.stars) + '★' : '—') +
+        '<small>体验评分' + (has(p.exp && p.exp.score) ? ' · ' + esc(p.exp.score) + '/100' : '') + '</small></div><div class="pd-bars">' + rows + '</div></div>'
+      : '';
+
+    var html =
+      '<button class="pd-x" aria-label="关闭">×</button>' +
+      '<div class="pd-badges">' + badges + '</div>' +
+      '<h3 class="pd-id">' + esc(p.id || '—') + '</h3>' +
+      factsHtml +
+      tagBits +
+      (has(p.one) ? '<p class="pd-one">' + esc(p.one) + '</p>' : '') +
+      sec('它是什么', has(p.what) ? pgh(p.what) : '') +
+      sec('解决什么问题', has(p.problem) ? pgh(p.problem) : '') +
+      sec('怎么用 · 例子', has(p.example) ? pgh(p.example) : '') +
+      sec('核心功能', list(p.feats).length ? ul(p.feats) : '') +
+      sec('常见用途 / 使用案例', (list(p.uses).length || list(p.cases).length)
+        ? (list(p.uses).length ? ul(p.uses) : '') + (list(p.cases).length ? ul(p.cases) : '') : '') +
+      (fit ? '<section class="pd-sec"><h4>适合谁 / 门槛</h4>' + fit + '</section>' : '') +
+      (scoreBlock ? '<section class="pd-sec"><h4>我的评价</h4>' + scoreBlock + '</section>' : '') +
+      (meta ? '<section class="pd-sec"><h4>数据</h4><div class="pd-meta">' + meta + '</div></section>' : '') +
+      (has(p.note) ? '<section class="pd-sec"><h4>备注</h4><p class="pd-note">' + esc(p.note) + '</p></section>' : '') +
+      '<a class="pd-go" href="' + esc(p.url || ('https://github.com/' + (p.id || ''))) + '" target="_blank" rel="noopener">在 GitHub 打开 ↗</a>' +
+      '<div class="pd-hint">ESC 关闭 · 点背景关闭</div>';
+
+    var host = ensure();
+    var panel = host.querySelector('.pd-panel');
+    panel.innerHTML = html;
+    panel.scrollTop = 0;
+    panel.querySelector('.pd-x').addEventListener('click', close);
+    host.classList.add('on');
+    document.documentElement.style.overflow = 'hidden';
+  }
+
+  window.PD = {
+    open: render,
+    close: close,
+    bind: function (el, get) {
+      if (!el) { return; }
+      el.addEventListener('click', function (e) { var p = get(e); if (p) { e.preventDefault(); render(p); } });
+    }
+  };
+
+  function findCard(id) {
+    var srcs = [];
+    try { if (typeof DATA !== 'undefined' && DATA) { srcs = srcs.concat(DATA.picks || [], DATA.projects || [], DATA.related || [], DATA.official || []); } } catch (e) {}
+    try { if (typeof D !== 'undefined' && D) { srcs = srcs.concat(D.picks || [], D.projects || [], D.related || [], D.official || []); } } catch (e) {}
+    try { if (typeof PROJ !== 'undefined' && PROJ) { srcs = srcs.concat(PROJ); } } catch (e) {}
+    try { if (window.__CARDS) { srcs = srcs.concat(window.__CARDS); } } catch (e) {}
+    for (var i = 0; i < srcs.length; i++) { if (srcs[i] && srcs[i].id === id) { return srcs[i]; } }
+    return null;
+  }
+
+  /* 日报「本日报相关」里的项目按钮（老朋友 / 退稿等，库里有卡片就直接复用） */
+  document.addEventListener('click', function (e) {
+    var el = e.target && e.target.closest ? e.target.closest('.relchip[data-pid]') : null;
+    if (!el) { return; }
+    var p = findCard(el.getAttribute('data-pid'));
+    if (p) { e.preventDefault(); render(p); }
+  });
+
+  /* 深链：?detail=<owner/repo> 直接打开（方便截图和分享） */
+  window.addEventListener('DOMContentLoaded', function () {
+    var id = new URLSearchParams(location.search).get('detail');
+    if (!id) { return; }
+    var srcs = [];
+    try { if (typeof DATA !== 'undefined' && DATA) { srcs = srcs.concat(DATA.picks || [], DATA.projects || [], DATA.related || []); } } catch (e) {}
+    try { if (typeof PROJ !== 'undefined' && PROJ) { srcs = srcs.concat(PROJ); } } catch (e) {}
+    try { if (window.__CARDS) { srcs = srcs.concat(window.__CARDS); } } catch (e) {}
+    var found = null;
+    srcs.forEach(function (x) { if (x && x.id === id) { found = x; } });
+    if (found) { render(found); }
+  });
+  /* 站点外壳的快捷键（1–4 / G / ESC）转发：焦点在页面里也能用 */
+  document.addEventListener('keydown', function (e) {
+    var t = e.target;
+    if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) { return; }
+    if (/^[1-4gG]$/.test(e.key) || e.key === 'Escape') {
+      try { parent.postMessage({ __archiveKey: e.key }, '*'); } catch (err) {}
+    }
+  });
+  /* file:// 下父文档拿不到本页 contentWindow：页内 #/ 路由链接改成 postMessage 转发给外壳 */
+  if (window.parent !== window) {
+    document.addEventListener('click', function (e) {
+      var a = e.target && e.target.closest ? e.target.closest('a[href^="#/"]') : null;
+      if (!a) { return; }
+      e.preventDefault();
+      try { parent.postMessage({ __archiveRoute: a.getAttribute('href') }, '*'); } catch (err) {}
+    }, true);
+  }
+
+  /* 完整日报浮层（C/D 共用；内容由构建期注入） */
+  (function () {
+    var btn = document.getElementById('frbtn'), wrap = document.getElementById('frwrap');
+    if (!btn || !wrap) { return; }
+    function openFr() { wrap.classList.add('on'); wrap.setAttribute('aria-hidden', 'false'); document.documentElement.style.overflow = 'hidden'; }
+    function closeFr() { wrap.classList.remove('on'); wrap.setAttribute('aria-hidden', 'true'); document.documentElement.style.overflow = ''; }
+    btn.addEventListener('click', openFr);
+    wrap.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-fr-close]')) { closeFr(); } });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeFr(); } });
+  })();
+})();
+
+(function(){
+  if(!D) return;
+  var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]})};
+  var arr=function(a){return Array.isArray(a)?a:[]};
+  var P=arr(D.picks), A=P.filter(function(p){return p.tier==='A'}), B=arr(D.bAll), C=arr(D.cAll), R=arr(D.rejects), O=arr(D.official), OV=arr(D.overflow);
+  var S=P.filter(function(p){return p.tier==='S'});
+  var sFlag=document.getElementById('sFlag');
+  if(sFlag){ sFlag.textContent = S.length ? ('TODAY: S ×'+S.length) : 'TODAY: NO S'; }
+  var fd=document.getElementById('footDate'), fi=document.getElementById('footIssue');
+  if(fd){ fd.textContent = D.shortDate || D.date || ''; }
+  if(fi){ fi.textContent = D.issue || ''; }
+  var ST=D.stats||{};
+  var lead = (P.filter(function(p){return p.tier==='S'})[0] || A[0]);
+  var PLATES=[
+    {src:'../../assets/bg/nasa-vab-highbay.jpg',cap:'PLATE 01 · VAB HIGH BAY 3 · NASA / GLENN BENSON · PUBLIC DOMAIN'},
+    {src:'../../assets/bg/nasa-pad39b-steel.jpg',cap:'PLATE 02 · PAD 39B STEEL · NASA / JIM GROSSMANN · PUBLIC DOMAIN'},
+    {src:'../../assets/bg/nasa-mobile-launcher.jpg',cap:'PLATE 03 · MOBILE LAUNCHER · NASA / BEN SMEGELSKY · PUBLIC DOMAIN'},
+    {src:'../../assets/bg/nasa-engine-test.jpg',cap:'PLATE 04 · ENGINE TEST · NASA · PUBLIC DOMAIN'}
+  ];
+  var ALL=(P.concat(B,C,R,OV,arr(D.official),arr(D.selfPushed),arr(D.oldFriends))).filter(function(p){return p&&p.id});
+  var seenAll={}, uniqAll=[];
+  ALL.forEach(function(p){if(!seenAll[p.id]){seenAll[p.id]=1;uniqAll.push(p)}});
+  ALL=uniqAll;
+  window.__CARDS=ALL;
+  var noS = !P.some(function(p){return p.tier==='S'});
+
+  document.getElementById('issueNo').textContent = String(D.issue||'08').padStart(2,'0');
+  document.getElementById('issueDate').textContent = (D.iso||'') + ' / ' + (D.week||'');
+  document.getElementById('tbDate').textContent = (D.iso||'').replace(/-/g,'.');
+  document.getElementById('tbNew').textContent = ST.new==null?ST.cand:ST.new;
+  document.getElementById('tbRec').textContent = ST.rec;
+  document.getElementById('tbLib').textContent = ST.total;
+
+  function facts(p){
+    var rows=[['STARS',p.stars==null?'—':p.stars],['LANG',p.lang||'—'],['LICENSE',p.lic||'未验证'],['RISK',p.risk||'—']];
+    return '<dl class="facts">'+rows.map(function(r){return '<div><dt>'+r[0]+'</dt><dd>'+esc(r[1])+'</dd></div>'}).join('')+'</dl>';
+  }
+  function leadHtml(p){
+    var slug=(p.id||'').split('/')[1]||p.id;
+    return '<span class="stamp">'+(noS?'A-01 / 主跨代行':'S-01 / PRIMARY')+'</span>'
+      +(noS?'<div class="no-s">TODAY NO S — <b>主跨由 A 档承担</b>，不拿 B 档冒充头版</div>':'')
+      +'<p class="lead-type">'+esc((p.tier||'')+'-01 / PRIMARY SPAN / '+(p.stars==null?'—':p.stars)+' ★')+'</p>'
+      +'<h3 class="lead-name">'+esc(slug)+'</h3>'
+      +'<p class="repo">'+esc(p.id)+(p.score!=null?' · '+esc(p.score)+' 分':'')+'</p>'
+      +'<p class="lead-one">'+esc(p.one||'')+'</p>'
+      +'<p class="why">'+esc(p.problem||'')+'</p>'
+      +facts(p);
+  }
+  var leadEl=document.getElementById('lead');
+  if(lead){
+    leadEl.innerHTML = leadHtml(lead);
+    if(lead.id){ leadEl.setAttribute('data-pid',lead.id); leadEl.setAttribute('role','button'); leadEl.setAttribute('tabindex','0'); leadEl.setAttribute('aria-label','打开 '+lead.id+' 的详情'); }
+  } else {
+    leadEl.innerHTML='<div class="lead-empty"><span class="tagline">TODAY / 0 RECOMMENDED</span><h3>今日无主推荐</h3><p>'+esc(D.emptyNote||'没有达到主推荐线的条目：宁少勿凑，不拿 B 档冒充头版。')+'</p><p>可继续看 02 模块 / 03 档案 / 04 特别 / 05 记忆层。</p></div>';
+  }
+
+  document.getElementById('leadSide').innerHTML =
+    '<figure class="plate"><div class="plate-img"><img src="'+PLATES[0].src+'" alt="NASA 结构摄影，公有领域" loading="eager"><i></i></div>'
+    +'<figcaption>'+PLATES[0].cap+'</figcaption>'
+    +'<span class="dim">SPAN 01 · STRUCTURE PLATE</span></figure>'
+    +'<div style="margin-top:14px;border-top:2px solid var(--ink);padding-top:10px">'
+    +'<p class="mono" style="font-size:11px;color:var(--steel);margin:0 0 6px">READING ORDER</p>'
+    +'<p style="margin:0;font-size:13px;line-height:1.7">01 主跨 → 02 模块 → 03 档案 → 04 特别 → 05 记忆。每一跨是一层结构，不是一“版”。</p></div>';
+
+  var mods = P.filter(function(p){return !lead || p.id!==lead.id});
+  var modHtml = mods.map(function(p,i){
+    var no = i + 2;
+    var tag = p.tier==='S' ? 'S' : 'A';
+    var pi = (i+1) % PLATES.length;
+    return '<button class="module" type="button" data-pid="'+esc(p.id)+'">'
+      +'<span class="mod-thumb" aria-hidden="true"><img src="'+PLATES[pi].src+'" alt="" loading="lazy"><b>PLATE '+String(pi+1).padStart(2,'0')+'</b></span>'
+      +'<div class="mod-top"><span class="mod-no">'+tag+'-'+String(no).padStart(2,'0')+'</span>'
+      +'<span class="mod-tier">'+esc(p.tier)+' / '+esc(p.score==null?'—':p.score)+'</span></div>'
+      +'<h4>'+esc(p.one||p.id)+'</h4>'
+      +'<span class="repo">'+esc(p.id)+'</span>'
+      +'<p class="why">'+esc(p.problem||p.one||'')+'</p>'
+      +'<div class="mod-meta"><span>★ '+esc(p.stars==null?'—':p.stars)+'</span><span>'+esc(p.lang||'—')+'</span><span>'+esc(p.lic||'LICENSE?')+'</span></div>'
+      +'</button>';
+  }).join('');
+  if (mods.length % 2 === 1) {
+    modHtml += '<div class="module module-blank" aria-hidden="true"><span>NO FURTHER A<br>结构留白 / 不凑数</span></div>';
+  }
+  document.getElementById('aModules').innerHTML = modHtml;
+  if(!mods.length){ document.getElementById('aModules').style.display='none'; }
+  if(!mods.length && !B.length && !OV.length){ document.getElementById('bay02').style.display='none'; }
+
+  var B_LIMIT=4, bExpanded=false;
+  function renderB(limit){
+    var shown=B.slice(0,limit);
+    document.getElementById('bCount').textContent=(B.length>B_LIMIT?shown.length+' / '+B.length:shown.length)+' MODULES / 4 COL';
+    document.getElementById('bMatrix').innerHTML=shown.map(function(p,i){
+      return '<button class="b-cell" type="button" data-pid="'+esc(p.id)+'">'
+        +'<span class="b-thumb" aria-hidden="true" style="background-image:url(\''+PLATES[i%PLATES.length].src+'\')"></span>'
+        +'<span class="b-body"><span class="b-no">B-'+String(i+1).padStart(2,'0')+'</span>'
+        +'<h4>'+esc((p.id||'').split('/')[1]||p.id)+'</h4>'
+        +'<span class="b-repo">'+esc(p.id)+'</span>'
+        +'<p class="b-one">'+esc(p.one||'')+'</p></span></button>';
+    }).join('');
+    var fold=document.getElementById('bFold');
+    if(B.length<=B_LIMIT){ fold.innerHTML=''; return; }
+    fold.innerHTML='<button class="foldbtn" id="bFoldBtn" type="button">'+(bExpanded?'收起 B':'查看全部 B（'+B.length+'）')+'</button>';
+    document.getElementById('bFoldBtn').onclick=function(){ bExpanded=!bExpanded; renderB(bExpanded?B.length:B_LIMIT); };
+  }
+  if(!B.length){ document.querySelector('#bay02 .b-head').style.display='none'; document.getElementById('bMatrix').style.display='none'; }
+  else { renderB(B_LIMIT); }
+
+  if(OV.length){
+    var ov=document.getElementById('overflow'); ov.hidden=false;
+    ov.innerHTML='<b>达线未刊</b>'+OV.map(function(p){return '<span>'+esc(p.id)+'<span class="t">'+esc(p.tier||'S/A')+'</span></span>';}).join('');
+  }
+
+  function arcCol(title,items,tierClass){
+    return '<div class="arc-col"><h4><span>'+title+'</span><span>'+items.length+'</span></h4>'
+      +items.map(function(p){return '<button class="arc-row" type="button" data-pid="'+esc(p.id)+'"><b class="'+tierClass+'">'+esc(p.tier)+'</b>'+esc(p.id)+'</button>'}).join('')
+      +'</div>';
+  }
+  document.getElementById('archive').innerHTML = '';
+  var CD_ALL=C.concat(R), CD_LIMIT=8, cdExpanded=false;
+  function renderArchive(limit){
+    var shown=CD_ALL.slice(0,limit);
+    var cs=shown.filter(function(p){return p.tier==='C'});
+    var ds=shown.filter(function(p){return p.tier==='D'||p.tier==='dropped'});
+    document.getElementById('archive').innerHTML = arcCol('C / 观察',cs,'c')+arcCol('D / 淘汰',ds,'d');
+    var fold=document.getElementById('cdFold');
+    if(CD_ALL.length<=CD_LIMIT){ fold.innerHTML=''; return; }
+    fold.innerHTML='<button class="foldbtn" id="cdFoldBtn" type="button">'+(cdExpanded?'收起 C/D':'查看全部 C/D（'+CD_ALL.length+'）')+'</button>';
+    document.getElementById('cdFoldBtn').onclick=function(){ cdExpanded=!cdExpanded; renderArchive(cdExpanded?CD_ALL.length:CD_LIMIT); };
+  }
+  renderArchive(CD_LIMIT);
+  var allIn=arr(D.allIn);
+  if(allIn.length){
+    var box=document.getElementById('allinBox'); box.hidden=false;
+    document.getElementById('allinSum').textContent='当日入库全名单 '+allIn.length+' 条（只含当天检索入库）';
+    document.getElementById('allinList').textContent=allIn.map(function(p){return p.id}).join(' · ');
+  }
+  if(!CD_ALL.length && !allIn.length){ document.getElementById('bay03').style.display='none'; }
+
+  document.getElementById('special').innerHTML = O.map(function(p,i){
+    var spi = (i+2) % PLATES.length;
+    return '<button class="special-card" type="button" data-pid="'+esc(p.id)+'">'
+      +'<span class="sp-thumb" aria-hidden="true"><img src="'+PLATES[spi].src+'" alt="" loading="lazy"></span>'
+      +'<span class="sp-no">0'+(i+1)+'</span>'
+      +'<span class="sp-id">'+esc(p.id)+' · '+esc(p.tier||'?')+' 档</span>'
+      +'<h4>'+esc(p.one||p.id)+'</h4>'
+      +'<p>'+esc(p.problem||p.what||'')+'</p></button>';
+  }).join('');
+  if(!O.length){ document.getElementById('bay04').style.display='none'; }
+
+  var self=arr(D.selfPushed), auto=arr(D.oldFriends);
+  function memCol(title,items,src,total){
+    var srcLabel = src==='SELF' ? '用户自推' : '自动发现';
+    var rows = items.map(function(p){
+      return '<button class="mem-row" type="button" data-pid="'+esc(p.id)+'"><i class="tag">老朋友</i><i class="tag '+(src==='SELF'?'self':'')+'">'+srcLabel+'</i>'+esc(p.id)+(p.repeat?'<i class="tag rep">REPEAT</i>':'')+'</button>';
+    }).join('');
+    var hint = (!items.length && total>0) ? '<i class="mem-hint">前 5 条已满，展开后可见</i>' : '';
+    return '<div class="mem-col"><h4>'+title+' / 显示 '+items.length+' / 共 '+total+' 条'+hint+'</h4>'+rows+'</div>';
+  }
+  var MEM_LIMIT=5, memExpanded=false;
+  var memSeen={}, memAll=[];
+  self.forEach(function(p){ if(p&&p.id&&!memSeen[p.id]){memSeen[p.id]=1;memAll.push({p:p,src:'SELF'})} });
+  auto.forEach(function(p){ if(p&&p.id&&!memSeen[p.id]){memSeen[p.id]=1;memAll.push({p:p,src:'AUTO'})} });
+  function renderMem(limit){
+    var show=memAll.slice(0,limit);
+    var ss=show.filter(function(x){return x.src==='SELF'}).map(function(x){return x.p});
+    var aa=show.filter(function(x){return x.src==='AUTO'}).map(function(x){return x.p});
+    document.getElementById('memory').innerHTML =
+      memCol('SELF / 用户自推', ss, 'SELF', self.length)
+      + memCol('AUTO / 自动老朋友', aa, 'AUTO', auto.length)
+      + '<div class="mem-more" style="grid-column:1/-1">共 '+memAll.length+' 条（自推 '+self.length+' / 自动 '+auto.length+'）· 先自推后自动 · 显示前 '+Math.min(limit,memAll.length)+' 条</div>';
+    var fold=document.getElementById('memFold');
+    if(memAll.length<=MEM_LIMIT){ fold.innerHTML=''; return; }
+    fold.innerHTML='<button class="foldbtn" id="memFoldBtn" type="button">'+(memExpanded?'收起记忆层':'查看全部老朋友（'+memAll.length+'）')+'</button>';
+    document.getElementById('memFoldBtn').onclick=function(){ memExpanded=!memExpanded; renderMem(memExpanded?memAll.length:MEM_LIMIT); };
+  }
+  if(!memAll.length){ document.getElementById('bay05').style.display='none'; } else { renderMem(MEM_LIMIT); }
+
+  /* 完整日报：开合由 _detail.js 统一接管（#frbtn / #frwrap.on / [data-fr-close]） */
+  document.getElementById('frQuote').textContent = lead ? (lead.problem||'') : '';
+
+  /* 结构卡片 → 详情浮层（_detail.js 的 PD.open） */
+  document.addEventListener('click', function(e){
+    var el = e.target && e.target.closest ? e.target.closest('[data-pid]') : null;
+    if(!el || (el.classList && el.classList.contains('relchip'))) return;
+    var id = el.getAttribute('data-pid'), p = null;
+    for(var i=0;i<ALL.length;i++){ if(ALL[i].id===id){ p=ALL[i]; break; } }
+    if(p && window.PD){ window.PD.open(p); }
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key!=='Enter' && e.key!==' ') return;
+    var el=e.target && e.target.closest ? e.target.closest('[data-pid]') : null;
+    if(!el || /^(BUTTON|A)$/.test(el.tagName)) return;
+    e.preventDefault(); el.click();
+  });
+})();
+</script>
+</body>
+</html>

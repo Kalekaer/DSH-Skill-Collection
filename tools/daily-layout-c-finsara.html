@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>今日精选 · 结构轴版 · 定稿</title>
+<style>
+/*__DETAIL_CSS__*/
+@font-face{font-family:"Bebas";src:url("../../assets/fonts/BebasNeue-Regular.ttf") format("truetype");font-weight:400;font-display:swap}
+@font-face{font-family:"Anton";src:url("../../assets/anton-latin.woff2") format("woff2");font-weight:400;font-display:swap}
+/* ============================================================
+   GITHUB DAILY / STRUCTURAL SECTION
+   后朋克 × 粗野主义 × 巨构主义 · 结构轴版
+   约束：无整页旋转、fixed 不被祖先 transform 劫持、正文 ≥11px、
+        卡片可聚焦、完整日报在视口内可开。
+   ============================================================ */
+:root{
+  --asphalt:#0a0a09;
+  --concrete:#cfc8ba;
+  --concrete2:#bcb4a4;
+  --concrete3:#a79f8e;
+  --ink:#0d0d0c;
+  --steel:#4f4a41;
+  --red:#c81f16;
+  --red-ink:#a5140c;
+  --red-bright:#ff3b2f;
+  --acid:#d8e600;
+  --paper:#efe9dc;
+  --amber:#d99a1b;
+  --rule:rgba(13,13,12,.22);
+  --rule-hard:rgba(13,13,12,.55);
+  --mono:SFMono-Regular,Consolas,"Liberation Mono",Menlo,monospace;
+  --sans:"Noto Sans SC","Microsoft YaHei UI","Microsoft YaHei",system-ui,sans-serif;
+  --disp:"Bebas","Arial Narrow",Impact,sans-serif;
+  --disp-heavy:"Anton","Bebas","Arial Narrow",Impact,sans-serif;
+  --noise:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='180' height='180' filter='url(%23n)' opacity='.16'/></svg>");
+  --hatch:repeating-linear-gradient(135deg,rgba(13,13,12,.16) 0 1px,transparent 1px 7px);
+}
+*{box-sizing:border-box}
+html{background:var(--asphalt)}
+body{
+  margin:0;color:var(--ink);font:14px/1.7 var(--sans);
+  padding-bottom:88px;
+  background:
+    linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/100% 72px,
+    linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px) 0 0/72px 100%,
+    var(--asphalt);
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit;text-decoration-thickness:1px;text-underline-offset:3px}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--red-bright);outline-offset:3px}
+.mono{font-family:var(--mono);letter-spacing:.04em}
+
+/* ---------- 外框：结构轴 ---------- */
+.frame{max-width:1380px;margin:36px auto 64px;padding:0 20px;display:grid;grid-template-columns:88px minmax(0,1fr)}
+.spine{
+  position:relative;background:var(--ink);color:var(--concrete);
+  border:2px solid var(--ink);border-right:0;
+  display:flex;flex-direction:column;justify-content:space-between;align-items:center;
+  padding:18px 0 16px;overflow:visible;
+}
+.spine-bays{position:sticky;top:30px;z-index:3}
+.spine::before{content:"";position:absolute;inset:0;background:var(--noise);opacity:.22;pointer-events:none}
+.spine-top{font:700 11px/1.25 var(--mono);letter-spacing:.18em;text-align:center;position:relative}
+.spine-vert{writing-mode:vertical-rl;text-orientation:mixed;font:700 10px/1.1 var(--mono);letter-spacing:.32em;opacity:.75;position:relative}
+.spine-bays{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px;position:relative}
+.spine-bays li{font:400 22px/1 var(--disp);color:var(--concrete3);position:relative;padding-left:10px}
+.spine-bays li.on{color:var(--concrete)}
+.spine-bays li.on::before{content:"";position:absolute;left:0;top:4px;bottom:4px;width:4px;background:var(--acid)}
+.spine-bottom{font:700 8px/1.4 var(--mono);letter-spacing:.16em;writing-mode:vertical-rl;opacity:.6;position:relative}
+
+/* ---------- 混凝土纸 ---------- */
+.sheet{
+  position:relative;background:var(--concrete);border:2px solid var(--ink);
+  box-shadow:16px 16px 0 rgba(0,0,0,.55);
+  padding:0 0 0;
+}
+.sheet::before{content:"";position:absolute;inset:0;background:var(--noise);opacity:.5;pointer-events:none;mix-blend-mode:multiply}
+.sheet > *{position:relative}
+
+/* 角标 / 样板标记 */
+.corner{position:absolute;font:700 9px/1 var(--mono);letter-spacing:.14em;color:var(--steel);z-index:3}
+.corner.tl{left:10px;top:8px}.corner.tr{right:10px;top:8px}
+.corner.bl{left:10px;bottom:8px}.corner.br{right:10px;bottom:8px}
+
+/* ---------- 刊头 ---------- */
+.mast{padding:26px 34px 0;border-bottom:4px solid var(--ink)}
+.mast-kicker{display:flex;justify-content:space-between;gap:16px;font:700 10px/1.4 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--steel)}
+.mast-kicker b{color:var(--red-ink)}
+.mast-row{display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:20px;align-items:end;padding:14px 0 18px;border-bottom:1px solid var(--ink)}
+.mast-title h1{
+  margin:0;font-family:var(--sans);font-weight:900;
+  font-size:clamp(58px,7.4vw,104px);line-height:.94;letter-spacing:-.015em;
+  transform:rotate(-.45deg);transform-origin:left bottom;
+  text-shadow:3px 0 0 rgba(200,31,22,.55),-2px 0 0 rgba(13,13,12,.35);
+}
+.mast-title h1 .slash{color:var(--red);font-weight:400;margin:0 .06em 0 .02em}
+.mast-dek{margin:10px 0 0;max-width:46em;font:14px/1.65 var(--sans);color:var(--steel)}
+.mast-dek b{color:var(--ink)}
+.mast-no{position:relative;text-align:right;box-shadow:inset 1px 0 0 var(--ink);padding:12px 8px 0 28px;min-height:150px}
+.mast-no .no-label{display:block;font:700 10px/1 var(--mono);letter-spacing:.24em;color:var(--red-ink)}
+.mast-no .no{display:block;font:400 168px/.78 var(--disp-heavy);letter-spacing:-.03em;margin-top:2px}
+.mast-no .no-sub{display:block;font:700 10px/1.5 var(--mono);letter-spacing:.14em;color:var(--steel);margin-top:10px}
+
+/* 标题栏（施工图 title block） */
+.titleblock{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border-top:1px solid var(--ink);margin:0 -34px;padding:0 34px}
+.titleblock div{padding:9px 10px 10px;border-right:1px solid var(--rule);min-width:0}
+.titleblock div:last-child{border-right:0}
+.titleblock dt{font:700 9px/1.4 var(--mono);letter-spacing:.16em;color:var(--steel);margin:0 0 3px}
+.titleblock dd{margin:0;font:400 22px/1 var(--disp);letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.titleblock dd.small{font:700 12px/1.3 var(--mono);letter-spacing:.02em}
+
+/* ---------- 结构跨 ---------- */
+.bay{padding:30px 34px 34px;border-bottom:1px solid var(--rule-hard);position:relative}
+.bay:last-of-type{border-bottom:0}
+.bay-head{display:grid;grid-template-columns:86px minmax(0,1fr) auto;gap:14px;align-items:baseline;border-top:4px solid var(--ink);padding-top:9px;margin-bottom:22px}
+.bay-no{font:400 64px/.72 var(--disp);letter-spacing:-.02em}
+.bay-head h2{margin:0;font:900 clamp(26px,2.8vw,38px)/1.02 var(--sans);letter-spacing:-.01em}
+.bay-note{font:700 9px/1.5 var(--mono);letter-spacing:.16em;color:var(--steel);text-align:right;text-transform:uppercase}
+.bay-note b{color:var(--red-ink)}
+
+/* 主跨 */
+.lead-grid{display:grid;grid-template-columns:minmax(0,1.32fr) minmax(300px,.68fr);gap:30px;align-items:start}
+.lead{min-width:0;position:relative;cursor:pointer}
+.lead:focus-visible{outline:3px solid var(--red-bright);outline-offset:6px}
+.lead .stamp{display:inline-block;background:var(--red);color:var(--paper);font:700 11px/1 var(--mono);letter-spacing:.14em;padding:7px 9px;transform:rotate(-2deg);margin:0 0 12px}
+.lead .lead-type{font:700 9px/1.4 var(--mono);letter-spacing:.18em;color:var(--red-ink);margin:0 0 4px;text-transform:uppercase}
+.lead .lead-name{margin:0 0 4px;font:400 clamp(64px,8vw,110px)/.86 var(--disp-heavy);letter-spacing:-.01em;text-transform:uppercase;overflow-wrap:anywhere;text-shadow:3px 0 0 rgba(200,31,22,.32)}
+.lead .repo{font:700 12px/1.5 var(--mono);letter-spacing:.05em;color:var(--red-ink);margin:0 0 12px;overflow-wrap:anywhere}
+.lead .lead-one{font:700 19px/1.55 var(--sans);margin:0 0 12px;max-width:32em}
+.lead .why{font:15px/1.65 var(--sans);color:var(--steel);margin:0 0 16px;max-width:36em}
+.lead .what strong{color:var(--ink)}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-top:1px solid var(--ink);border-left:1px solid var(--ink)}
+.facts div{border-right:1px solid var(--ink);border-bottom:1px solid var(--ink);padding:9px 10px}
+.facts dt{font:700 9px/1.4 var(--mono);letter-spacing:.14em;color:var(--steel);margin:0 0 3px}
+.facts dd{margin:0;font:700 13px/1.35 var(--mono);overflow-wrap:anywhere}
+.no-s{display:block;width:100%;border-left:6px solid var(--ink);background:var(--acid);padding:7px 10px;font:700 10.5px/1.6 var(--mono);letter-spacing:.06em;color:var(--ink);margin:0 0 12px}
+.no-s b{color:var(--ink);text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:2px}
+
+.plate{position:relative;border:2px solid var(--ink);background:var(--concrete2);min-height:270px;display:flex;flex-direction:column}
+.plate .plate-img{flex:1;position:relative;overflow:hidden;background:
+  radial-gradient(circle at 30% 35%,rgba(13,13,12,.85) 0 1px,transparent 1.6px) 0 0/7px 7px,
+  linear-gradient(90deg,transparent 0 47%,rgba(13,13,12,.28) 47% 48%,transparent 48%),
+  linear-gradient(0deg,transparent 0 62%,rgba(13,13,12,.28) 62% 63%,transparent 63%),
+  linear-gradient(145deg,var(--concrete3),var(--concrete2))}
+.plate .plate-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.22) brightness(.92)}
+.plate .plate-img::after{content:"";position:absolute;inset:0;background:
+  radial-gradient(circle,rgba(13,13,12,.55) 0 1.2px,transparent 1.4px) 0 0/6px 6px;
+  mix-blend-mode:multiply;opacity:.55;pointer-events:none}
+.plate .plate-img::before{content:"";position:absolute;left:18%;top:16%;width:46%;height:56%;border:1px solid var(--ink);box-shadow:18px 18px 0 rgba(13,13,12,.14)}
+.plate .plate-img::after{content:"";position:absolute;right:12%;bottom:12%;width:26%;height:26%;border:1px solid var(--ink);border-radius:50%}
+.plate .plate-img i{position:absolute;left:0;right:0;top:38%;height:1px;background:var(--ink);opacity:.5}
+.plate .plate-img i::before{content:"";position:absolute;left:24%;top:-4px;width:8px;height:8px;background:var(--red)}
+.plate figcaption{display:block;padding:7px 8px;border-top:1px solid var(--ink);font:700 9px/1.5 var(--mono);letter-spacing:.1em;color:var(--steel);background:var(--concrete)}
+.plate .dim{position:absolute;left:8px;top:8px;background:var(--concrete);border:1px solid var(--ink);padding:2px 5px;font:700 9px/1.4 var(--mono);letter-spacing:.1em;color:var(--steel)}
+
+/* A 模块阵列 */
+.a-modules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--ink);border:1px solid var(--ink);margin-bottom:26px}
+.module{background:var(--concrete);border:0;text-align:left;padding:16px 18px 18px;display:flex;flex-direction:column;gap:8px;cursor:pointer;min-height:210px}
+.module-blank{background:var(--concrete2);cursor:default;justify-content:flex-end;align-items:flex-end;color:var(--steel);background-image:var(--hatch);font:700 9px/1.5 var(--mono);letter-spacing:.14em;padding:14px 16px}
+.module:hover{background:var(--paper)}
+.module .mod-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-bottom:1px solid var(--ink);padding-bottom:6px}
+.module .mod-no{font:400 30px/1 var(--disp);letter-spacing:-.02em}
+.module .mod-tier{font:700 9px/1 var(--mono);letter-spacing:.14em;padding:4px 6px;background:var(--ink);color:var(--concrete)}
+.module h4{margin:0;font:900 23px/1.16 var(--sans);letter-spacing:-.01em}
+.module .repo{font:700 10px/1.4 var(--mono);color:var(--red-ink);overflow-wrap:anywhere}
+.module .why{margin:0;font:14px/1.6 var(--sans);color:var(--steel)}
+.module .mod-meta{margin-top:auto;display:flex;flex-wrap:wrap;gap:10px;font:700 9px/1.4 var(--mono);letter-spacing:.08em;color:var(--steel)}
+/* A 模块配图：与 B 接触表同一套结构摄影，血到边 */
+.module .mod-thumb{position:relative;display:block;height:118px;margin:-16px -18px 0;overflow:hidden;border-bottom:1px solid var(--ink);background:var(--concrete2)}
+.module .mod-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.2) brightness(.9)}
+.module .mod-thumb::after{content:"";position:absolute;inset:0;background:radial-gradient(circle,rgba(13,13,12,.5) 0 1.1px,transparent 1.3px) 0 0/6px 6px;mix-blend-mode:multiply;opacity:.5;pointer-events:none}
+.module .mod-thumb b{position:absolute;left:0;bottom:0;z-index:1;background:var(--concrete);border-top:1px solid var(--ink);border-right:1px solid var(--ink);padding:3px 7px;font:700 11px/1.3 var(--mono);letter-spacing:.12em;color:var(--steel)}
+@media (max-width:620px){.module .mod-thumb{height:96px}}
+
+/* B 接触表 */
+.b-head{display:flex;justify-content:space-between;align-items:baseline;border-top:2px solid var(--ink);padding-top:8px;margin-bottom:10px}
+.b-head h3{margin:0;font:900 18px/1.1 var(--sans);letter-spacing:.01em}
+.b-head span{font:700 9px/1.4 var(--mono);letter-spacing:.14em;color:var(--steel)}
+.b-matrix{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--ink);border:1px solid var(--ink)}
+.b-cell{background:var(--concrete);border:0;text-align:left;padding:0;cursor:pointer;display:flex;flex-direction:column;min-width:0}
+.b-cell:hover{background:var(--paper)}
+.b-cell .b-thumb{position:relative;display:block;height:86px;border-bottom:1px solid var(--ink);background-size:cover;background-position:center;filter:grayscale(1) contrast(1.18) brightness(.92)}
+.b-cell .b-thumb::after{content:"";position:absolute;inset:0;background:radial-gradient(circle,rgba(13,13,12,.5) 0 1.1px,transparent 1.3px) 0 0/6px 6px;mix-blend-mode:multiply;opacity:.5}
+.b-cell .b-body{padding:9px 10px 11px;display:flex;flex-direction:column;gap:5px;min-width:0}
+.b-cell .b-no{font:700 9px/1 var(--mono);letter-spacing:.1em;color:var(--red-ink)}
+.b-cell h4{margin:0;font:900 14px/1.2 var(--sans);letter-spacing:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.b-cell .b-repo{font:700 10px/1.35 var(--mono);color:var(--steel);overflow-wrap:anywhere}
+.b-cell .b-one{margin:0;font:11px/1.5 var(--sans);color:var(--steel);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+
+.lead-empty{padding:18px 0 8px;border-top:2px solid var(--ink);color:var(--ink)}
+.lead-empty h3{margin:0 0 6px;font:400 clamp(42px,6vw,72px)/.9 var(--disp-heavy);text-transform:uppercase;letter-spacing:-.01em}
+.lead-empty p{margin:0 0 5px;font:400 13px/1.7 var(--sans);color:var(--steel);max-width:38em}
+.lead-empty .tagline{display:inline-block;margin-bottom:8px;background:var(--ink);color:var(--concrete);font:700 10px/1.4 var(--mono);letter-spacing:.14em;padding:5px 7px}
+.archive{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 22px}
+.arc-col h4{margin:0 0 6px;padding-bottom:4px;border-bottom:2px solid var(--ink);display:flex;justify-content:space-between;font:700 10px/1.4 var(--mono);letter-spacing:.16em}
+.arc-col h4 span:last-child{color:var(--red-ink)}
+.arc-row{display:flex;width:100%;align-items:center;gap:8px;background:none;border:0;border-bottom:1px dotted var(--rule-hard);padding:7px 0;text-align:left;cursor:pointer;font:700 11px/1.35 var(--mono);color:var(--ink);overflow-wrap:anywhere}
+.arc-row:hover{background:rgba(13,13,12,.06)}
+.arc-row b{flex:0 0 auto;display:inline-grid;place-items:center;width:24px;height:20px;border:1px solid var(--ink);font:800 9px/1 var(--mono)}
+.arc-row b.c{background:var(--ink);color:var(--concrete)}
+.arc-row b.d{background:var(--concrete3);color:var(--ink)}
+.arc-row b.u{border-style:dashed;color:var(--steel)}
+
+/* 特别 */
+.special{background:var(--ink);color:var(--concrete);border-bottom:1px solid var(--rule-hard)}
+.special::before{content:"";position:absolute;inset:0;background:var(--noise);opacity:.18;pointer-events:none}
+.special .bay-head{border-color:var(--concrete);position:relative}
+.special .bay-no{color:var(--red-bright)}
+.special .bay-note{color:var(--concrete3)}
+.special .bay-note b{color:var(--red-bright)}
+.special-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:#2a2823;border:1px solid #2a2823;position:relative}
+.special-card{background:#151513;border:0;text-align:left;padding:14px 15px 16px;cursor:pointer;display:flex;flex-direction:column;gap:8px;min-height:190px}
+.special-card:hover{background:#1e1c19}
+.special-card .sp-no{font:400 26px/1 var(--disp);color:var(--red-bright)}
+.special-card .sp-id{font:700 10px/1.4 var(--mono);color:var(--concrete3);overflow-wrap:anywhere}
+.special-card h4{margin:0;font:900 20px/1.18 var(--sans);color:var(--concrete)}
+.special-card p{margin:0;font:12px/1.6 var(--sans);color:var(--concrete3)}
+.special-card .sp-thumb{position:relative;display:block;height:96px;margin:-14px -15px 0;overflow:hidden;border-bottom:1px solid #2a2823;background:#0b0b0a}
+.special-card .sp-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.3) brightness(.62)}
+.special-card .sp-thumb::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(200,31,22,.10),rgba(5,5,4,.55))}
+
+/* 记忆 */
+.memory{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 26px;margin-top:4px}
+.mem-col h4{margin:0 0 6px;font:700 10px/1.4 var(--mono);letter-spacing:.16em;border-bottom:1px solid var(--rule-hard);padding-bottom:4px}
+.mem-col h4 .mem-hint{display:block;font-weight:400;letter-spacing:.06em;color:var(--steel);margin-top:3px}
+.mem-row{display:flex;align-items:center;gap:7px;width:100%;background:none;border:0;border-bottom:1px dotted var(--rule-hard);padding:6px 0;text-align:left;cursor:pointer;font:700 11px/1.35 var(--mono);color:var(--ink);overflow-wrap:anywhere}
+.mem-row:hover{background:rgba(13,13,12,.06)}
+.mem-row .tag{flex:0 0 auto;font:700 8px/1 var(--mono);letter-spacing:.06em;padding:3px 4px;border:1px solid var(--ink)}
+.mem-row .tag.self{background:var(--ink);color:var(--concrete)}
+.mem-row .tag.rep{background:var(--red);border-color:var(--red);color:var(--paper)}
+.mem-more{margin-top:10px;font:700 9px/1.5 var(--mono);letter-spacing:.1em;color:var(--steel)}
+
+/* 达线未刊 / 折叠 / 全名单 */
+.overflow{margin:10px 0 2px;padding:9px 12px;border:1px dashed var(--red);background:rgba(200,31,22,.05);font:700 10px/1.6 var(--mono);color:var(--ink)}
+.overflow b{color:var(--red-ink);letter-spacing:.12em;margin-right:8px}
+.overflow span{display:inline-block;margin-right:10px;white-space:nowrap}
+.overflow .t{color:var(--steel);margin-left:3px}
+.foldbar{display:flex;justify-content:flex-end;margin-top:8px}
+.foldbar:empty{display:none}
+.foldbtn{font:700 10px/1.2 var(--mono);letter-spacing:.08em;border:1px solid var(--ink);background:transparent;color:var(--ink);padding:6px 9px;cursor:pointer}
+.foldbtn:hover{background:var(--ink);color:var(--concrete)}
+.allin{margin-top:10px;border-top:1px solid var(--rule-hard);padding-top:7px;font:700 11px/1.5 var(--mono)}
+.allin summary{cursor:pointer;color:var(--ink);letter-spacing:.08em}
+.allin-list{margin-top:6px;color:var(--steel);font-weight:400;line-height:1.65;word-break:break-all}
+
+/* 页脚 */
+.colophon{background:var(--ink);color:var(--concrete);padding:18px 34px 20px;display:grid;grid-template-columns:2fr 1fr 1fr;gap:20px;align-items:end}
+.colophon .end{font:400 54px/.8 var(--disp);letter-spacing:-.02em;color:var(--concrete3)}
+.colophon .end b{color:var(--red-bright);font-weight:400}
+.colophon dl{margin:0}
+.colophon dt{font:700 8px/1.4 var(--mono);letter-spacing:.18em;color:var(--concrete3);margin:0 0 3px}
+.colophon dd{margin:0;font:700 11px/1.5 var(--mono);letter-spacing:.02em}
+
+/* 完整日报：fixed 在 body 下，不被 transform 劫持 */
+.frbtn{position:fixed;right:22px;bottom:22px;z-index:90;background:var(--red);color:var(--paper);border:2px solid var(--ink);padding:12px 14px;font:700 10px/1 var(--mono);letter-spacing:.14em;cursor:pointer;box-shadow:5px 5px 0 rgba(0,0,0,.6);min-height:44px}
+.frbtn:hover{background:var(--ink);color:var(--paper)}
+.frwrap{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:24px;background:transparent}
+.frmask{position:absolute;inset:0;background:rgba(5,5,4,.82)}
+.frwrap.on{display:flex}
+.frpanel{position:relative;width:min(880px,100%);max-height:88vh;overflow:auto;background:var(--concrete);border:2px solid var(--ink);box-shadow:12px 12px 0 rgba(0,0,0,.6);padding:26px 30px 34px}
+.frpanel .frx{position:sticky;top:0;float:right;background:var(--ink);color:var(--concrete);border:0;padding:8px 10px;font:700 14px/1 var(--mono);cursor:pointer;z-index:2}
+.frpanel h2{margin:0 0 4px;font:900 34px/1.05 var(--sans);letter-spacing:-.01em}
+.frpanel .fr-kicker{font:700 9px/1.4 var(--mono);letter-spacing:.2em;color:var(--red-ink);margin:0 0 16px}
+.frpanel h3{margin:22px 0 6px;font:900 16px/1.3 var(--sans);border-top:1px solid var(--ink);padding-top:8px}
+.frpanel p{margin:0 0 10px;font:14px/1.8 var(--sans);max-width:62ch}
+.frpanel blockquote{margin:0 0 16px;padding:10px 12px;border-left:5px solid var(--red);background:var(--paper);font:13px/1.7 var(--mono)}
+.frpanel .fr-close-hint{font:700 9px/1.4 var(--mono);color:var(--steel);letter-spacing:.12em;margin-top:18px}
+.frbody{font:14px/1.8 var(--sans);color:var(--ink);max-width:68ch}
+.frbody h1{font:900 30px/1.15 var(--sans);letter-spacing:-.02em;margin:6px 0 12px;border-bottom:3px double var(--ink);padding-bottom:10px}
+.frbody h2{font:900 20px/1.3 var(--sans);margin:22px 0 8px;border-top:2px solid var(--ink);padding-top:8px}
+.frbody h3{font:700 15px/1.4 var(--sans);color:var(--red-ink);margin:16px 0 5px}
+.frbody p{margin:0 0 10px}
+.frbody ul,.frbody ol{padding-left:1.4em;margin:4px 0 12px}
+.frbody li{margin:3px 0}
+.frbody blockquote{margin:10px 0;padding:8px 12px;border-left:3px solid var(--red);background:var(--paper);color:var(--steel);font:13px/1.7 var(--mono)}
+.frbody code{font:12px/1.5 var(--mono);background:var(--paper);padding:1px 3px}
+.frbody pre{background:var(--ink);color:var(--paper);padding:10px 12px;overflow:auto;font:12px/1.6 var(--mono)}
+.frbody pre code{background:none;padding:0}
+.frbody table{border-collapse:collapse;width:100%;font-size:12px;margin:8px 0}
+.frbody th,.frbody td{border:1px solid var(--rule-hard);padding:5px 7px;text-align:left}
+.frbody a{color:var(--ink);text-decoration:underline}
+.relbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:10px 34px;border-top:1px solid var(--ink);background:var(--concrete2)}
+.relbar .relh{font:700 11px/1.4 var(--mono);letter-spacing:.14em;color:var(--ink);margin-right:6px}
+.relchip{font:600 10px/1.2 var(--mono);letter-spacing:.02em;border:1px solid var(--ink);background:transparent;color:var(--ink);padding:5px 7px;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.relchip:hover{background:var(--ink);color:var(--concrete)}
+/* 详情浮层收编：覆盖 _detail.css 的荧光色，统一到结构色 */
+.pd-wrap{--pd-bg:var(--concrete);--pd-ink:var(--ink);--pd-ink2:var(--steel);--pd-rule:var(--rule-hard);--pd-accent:var(--red);--pd-accent2:var(--amber);--pd-note:var(--paper)}
+.pd-panel{background:var(--concrete);color:var(--ink);border:2px solid var(--ink);box-shadow:10px 10px 0 rgba(0,0,0,.55)}
+.pd-panel::after{display:none}
+.pd-b.tier.s{background:var(--red);color:var(--paper);border-color:var(--red)}
+.pd-b.tier.a{background:var(--ink);color:var(--concrete);border-color:var(--ink)}
+.pd-b.tier.b{background:var(--concrete3);color:var(--ink);border-color:var(--ink)}
+.pd-b.tier.c{background:var(--paper);color:var(--ink);border-color:var(--rule-hard)}
+.pd-b.tier.d{background:var(--concrete2);color:var(--ink);border-color:var(--ink)}
+.pd-x:hover,.pd-go{background:var(--ink);color:var(--concrete);border-color:var(--ink)}
+.pd-go:hover{background:var(--red);border-color:var(--red)}
+
+/* ---------- 窄屏 ---------- */
+@media (max-width:1040px){
+  .frame{grid-template-columns:1fr;margin-top:18px;padding:0 12px}
+  .spine{flex-direction:row;justify-content:space-between;padding:10px 14px;border-right:2px solid var(--ink);border-bottom:0}
+  .spine-vert,.spine-bottom{display:none}
+  .spine-bays{flex-direction:row;gap:16px}
+  .lead-grid{grid-template-columns:1fr}
+  .mast-row{grid-template-columns:1fr}
+  .mast-no{border-left:0;border-top:1px solid var(--ink);padding:10px 0 0;text-align:left;min-height:0;display:flex;align-items:baseline;gap:14px}
+  .mast-no .no{font-size:92px}
+  .titleblock{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .a-modules{grid-template-columns:1fr}
+  .b-matrix{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .archive,.memory{grid-template-columns:1fr}
+  .special-grid{grid-template-columns:1fr}
+  .colophon{grid-template-columns:1fr}
+}
+@media (max-width:620px){
+  body{font-size:13px}
+  .mast{padding:18px 16px 0}
+  .mast-kicker{font-size:9px;letter-spacing:.12em;flex-wrap:wrap;flex-direction:column;align-items:flex-start;gap:3px}
+  .mast-title h1{font-size:46px}
+  .mast-dek{font-size:13px}
+  .titleblock{margin:0 -16px;padding:0 16px;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .titleblock dd{font-size:18px}
+  .titleblock dd.small{font-size:10px;white-space:normal;overflow-wrap:anywhere}
+  .spine-top{font-size:9px}
+  .spine-bays{gap:8px}
+  .spine-bays li{font-size:18px}
+  .bay{padding:22px 16px 26px}
+  .bay-head{grid-template-columns:56px minmax(0,1fr);gap:10px}
+  .bay-no{font-size:44px}
+  .bay-head h2{font-size:26px}
+  .bay-note{display:none}
+  .lead .lead-name{font-size:56px}
+  .lead .lead-one{font-size:16px}
+  .lead .why{font-size:14px}
+  .facts{grid-template-columns:1fr}
+  .b-matrix{grid-template-columns:1fr}
+  .b-cell .b-repo{font-size:10.5px}
+  .b-cell .b-one{font-size:11.5px}
+  .arc-row,.mem-row{min-height:40px}
+  .module h4{font-size:21px}
+  .special-card h4{font-size:18px}
+  .frbtn{right:12px;bottom:12px;font-size:9.5px}
+  .frpanel{padding:18px 16px 26px}
+  .colophon{padding:16px}
+  .colophon .end{font-size:40px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* 印刷：A4 施工图，保留黑块与结构线，去掉固定层/浮层/装饰旋转 */
+@media print{
+  @page{margin:12mm}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  html,body{background:#fff}
+  body{padding:0}
+  .frame{display:block;margin:0;padding:0;max-width:none}
+  .spine{display:none}
+  .sheet{box-shadow:none;border:0}
+  .sheet::before,.corner,.frbtn,.frwrap,.relbar{display:none!important}
+  .mast-title h1,.lead .lead-name{transform:none;text-shadow:none}
+  .lead,.module,.b-cell,.special-card,.mem-col,.plate{break-inside:avoid}
+  .bay{break-inside:auto}
+  a{color:var(--ink);text-decoration:none}
+}
+
+/* 2026-10-19 可读性下限：功能性等宽标注 ≥11px（检测器 48 条 undersized 的收敛） */
+.corner,.mast-kicker,.mast-no .no-label,.mast-no .no-sub,.titleblock dt,.titleblock dd.small,.bay-note,.lead-type,.no-s,.module .mod-tier,.module .repo,.mod-meta,.b-cell .b-no,.b-head span,.arc-col h4,.arc-row b,.special-card .sp-id,.mem-col h4,.mem-more,.mem-row .tag,.colophon dt,.plate figcaption,.plate .dim,.fr-kicker,.fr-close-hint,.relbar .relh,.relchip,.frbtn,.spine-vert,.spine-bottom{font-size:11px!important}
+</style>
+</head>
+<body>
+<div class="frame">
+  <aside class="spine" aria-hidden="true">
+    <div class="spine-top">GITHUB<br>DAILY</div>
+    <div class="spine-vert">STRUCTURAL SECTION — 2026.10.18 — ISSUE 08</div>
+    <ol class="spine-bays"><li class="on">01</li><li>02</li><li>03</li><li>04</li><li>05</li></ol>
+    <div class="spine-bottom">CC0 / OFL / NO TRACKING</div>
+  </aside>
+
+  <article class="sheet">
+    <span class="corner tl">SEC.A / SHEET 01</span>
+    <span class="corner tr">SCALE 1:1 / OFFLINE</span>
+
+    <header class="mast">
+      <div class="mast-kicker">
+        <span>GITHUB DAILY · 中文开源情报</span>
+        <span>READ BY STRUCTURE · <b>NOT BY EDITION</b></span>
+      </div>
+      <div class="mast-row">
+        <div class="mast-title">
+          <h1>今日精选<span class="slash">/</span></h1>
+          <p class="mast-dek">S / A / B / C / D 是<b>承重等级</b>，不是版次。先读 01 主跨，再沿结构下行到 02 模块、03 档案；特别与记忆放在末端。</p>
+        </div>
+        <div class="mast-no">
+          <span class="no-label">ISSUE</span>
+          <span class="no" id="issueNo">08</span>
+          <span class="no-sub" id="issueDate">2026.10.18 / 周日</span>
+        </div>
+      </div>
+      <dl class="titleblock">
+        <div><dt>DATE</dt><dd id="tbDate">2026.10.18</dd></div>
+        <div><dt>ENTRIES</dt><dd id="tbNew">21</dd></div>
+        <div><dt>RECOMMENDED</dt><dd id="tbRec">4</dd></div>
+        <div><dt>LIBRARY</dt><dd id="tbLib">256</dd></div>
+        <div><dt>BUILD</dt><dd class="small" id="tbBuild">STATIC / SINGLE FILE</dd></div>
+        <div><dt>LICENSE</dt><dd class="small">CC0 · OFL</dd></div>
+      </dl>
+    </header>
+
+    <section class="bay" id="bay01" aria-labelledby="h01">
+      <div class="bay-head"><span class="bay-no">01</span><h2 id="h01">主承重跨</h2><span class="bay-note">PRIMARY SPAN / <b id="sFlag">TODAY: NO S</b></span></div>
+      <div class="lead-grid">
+        <div class="lead" id="lead"></div>
+        <div id="leadSide"></div>
+      </div>
+    </section>
+
+    <section class="bay" id="bay02" aria-labelledby="h02">
+      <div class="bay-head"><span class="bay-no">02</span><h2 id="h02">模块阵列</h2><span class="bay-note">MODULE ARRAY / S·A × B</span></div>
+      <div class="a-modules" id="aModules"></div>
+      <div class="overflow" id="overflow" hidden></div>
+      <div class="b-head"><h3>B 档 · 观察面</h3><span id="bCount">8 MODULES / 4 COL</span></div>
+      <div class="b-matrix" id="bMatrix"></div>
+      <div class="foldbar" id="bFold"></div>
+    </section>
+
+    <section class="bay" id="bay03" aria-labelledby="h03">
+      <div class="bay-head"><span class="bay-no">03</span><h2 id="h03">档案层</h2><span class="bay-note">ARCHIVE / C · D / INDEX</span></div>
+      <div class="archive" id="archive"></div>
+      <div class="foldbar" id="cdFold"></div>
+      <details class="allin" id="allinBox" hidden><summary id="allinSum">当日入库全名单</summary><div class="allin-list" id="allinList"></div></details>
+    </section>
+
+    <section class="bay special" id="bay04" aria-labelledby="h04">
+      <div class="bay-head"><span class="bay-no">04</span><h2 id="h04">特别栏目</h2><span class="bay-note">OFFICIAL / <b>NOT IN QUOTA</b></span></div>
+      <div class="special-grid" id="special"></div>
+    </section>
+
+    <section class="bay" id="bay05" aria-labelledby="h05">
+      <div class="bay-head"><span class="bay-no">05</span><h2 id="h05">记忆层</h2><span class="bay-note">OLD FRIENDS / LEDGER</span></div>
+      <div class="memory" id="memory"></div>
+      <div class="foldbar" id="memFold"></div>
+    </section>
+
+    <div class="relbar"><span class="relh">本日报相关</span>/*__RELATED__*/</div>
+
+    <footer class="colophon">
+      <div>
+        <div class="end">END OF<br>SECTION <b>/</b></div>
+      </div>
+      <dl><dt>DRAWN</dt><dd><span id="footDate"></span> · NO.<span id="footIssue"></span></dd><dt>SOURCE</dt><dd>github.com</dd></dl>
+      <dl><dt>MATERIAL</dt><dd>CSS CONCRETE / HALFTONE</dd><dt>SET IN</dt><dd>SYSTEM HEAVY + BEBAS + MONO</dd></dl>
+    </footer>
+  </article>
+</div>
+
+<button class="frbtn" id="frbtn" type="button" aria-haspopup="dialog">完整日报 ↗</button>
+<div class="frwrap" id="frwrap" aria-hidden="true">
+  <div class="frmask" data-fr-close></div>
+  <div class="frpanel" role="dialog" aria-modal="true" aria-labelledby="frTitle">
+    <button class="frx" id="frClose" type="button" aria-label="关闭" data-fr-close>×</button>
+    <p class="fr-kicker">COMPLETE REPORT / 本期完整日报</p>
+    <h2 id="frTitle">2026.10.18 · 结构日报</h2>
+    <blockquote id="frQuote"></blockquote>
+    <div class="frbody">/*__FULLREPORT__*/</div>
+    <p class="fr-close-hint">ESC / 点击遮罩关闭</p>
+  </div>
+</div>
+
+<script>
+var D = /*__DAILY__*/null;
+/*__DETAIL_JS__*/
+(function(){
+  if(!D) return;
+  var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]})};
+  var arr=function(a){return Array.isArray(a)?a:[]};
+  var P=arr(D.picks), A=P.filter(function(p){return p.tier==='A'}), B=arr(D.bAll), C=arr(D.cAll), R=arr(D.rejects), O=arr(D.official), OV=arr(D.overflow);
+  var S=P.filter(function(p){return p.tier==='S'});
+  var sFlag=document.getElementById('sFlag');
+  if(sFlag){ sFlag.textContent = S.length ? ('TODAY: S ×'+S.length) : 'TODAY: NO S'; }
+  var fd=document.getElementById('footDate'), fi=document.getElementById('footIssue');
+  if(fd){ fd.textContent = D.shortDate || D.date || ''; }
+  if(fi){ fi.textContent = D.issue || ''; }
+  var ST=D.stats||{};
+  var lead = (P.filter(function(p){return p.tier==='S'})[0] || A[0]);
+  var PLATES=[
+    {src:'../../assets/bg/nasa-vab-highbay.jpg',cap:'PLATE 01 · VAB HIGH BAY 3 · NASA / GLENN BENSON · PUBLIC DOMAIN'},
+    {src:'../../assets/bg/nasa-pad39b-steel.jpg',cap:'PLATE 02 · PAD 39B STEEL · NASA / JIM GROSSMANN · PUBLIC DOMAIN'},
+    {src:'../../assets/bg/nasa-mobile-launcher.jpg',cap:'PLATE 03 · MOBILE LAUNCHER · NASA / BEN SMEGELSKY · PUBLIC DOMAIN'},
+    {src:'../../assets/bg/nasa-engine-test.jpg',cap:'PLATE 04 · ENGINE TEST · NASA · PUBLIC DOMAIN'}
+  ];
+  var ALL=(P.concat(B,C,R,OV,arr(D.official),arr(D.selfPushed),arr(D.oldFriends))).filter(function(p){return p&&p.id});
+  var seenAll={}, uniqAll=[];
+  ALL.forEach(function(p){if(!seenAll[p.id]){seenAll[p.id]=1;uniqAll.push(p)}});
+  ALL=uniqAll;
+  window.__CARDS=ALL;
+  var noS = !P.some(function(p){return p.tier==='S'});
+
+  document.getElementById('issueNo').textContent = String(D.issue||'08').padStart(2,'0');
+  document.getElementById('issueDate').textContent = (D.iso||'') + ' / ' + (D.week||'');
+  document.getElementById('tbDate').textContent = (D.iso||'').replace(/-/g,'.');
+  document.getElementById('tbNew').textContent = ST.new==null?ST.cand:ST.new;
+  document.getElementById('tbRec').textContent = ST.rec;
+  document.getElementById('tbLib').textContent = ST.total;
+
+  function facts(p){
+    var rows=[['STARS',p.stars==null?'—':p.stars],['LANG',p.lang||'—'],['LICENSE',p.lic||'未验证'],['RISK',p.risk||'—']];
+    return '<dl class="facts">'+rows.map(function(r){return '<div><dt>'+r[0]+'</dt><dd>'+esc(r[1])+'</dd></div>'}).join('')+'</dl>';
+  }
+  function leadHtml(p){
+    var slug=(p.id||'').split('/')[1]||p.id;
+    return '<span class="stamp">'+(noS?'A-01 / 主跨代行':'S-01 / PRIMARY')+'</span>'
+      +(noS?'<div class="no-s">TODAY NO S — <b>主跨由 A 档承担</b>，不拿 B 档冒充头版</div>':'')
+      +'<p class="lead-type">'+esc((p.tier||'')+'-01 / PRIMARY SPAN / '+(p.stars==null?'—':p.stars)+' ★')+'</p>'
+      +'<h3 class="lead-name">'+esc(slug)+'</h3>'
+      +'<p class="repo">'+esc(p.id)+(p.score!=null?' · '+esc(p.score)+' 分':'')+'</p>'
+      +'<p class="lead-one">'+esc(p.one||'')+'</p>'
+      +'<p class="why">'+esc(p.problem||'')+'</p>'
+      +facts(p);
+  }
+  var leadEl=document.getElementById('lead');
+  if(lead){
+    leadEl.innerHTML = leadHtml(lead);
+    if(lead.id){ leadEl.setAttribute('data-pid',lead.id); leadEl.setAttribute('role','button'); leadEl.setAttribute('tabindex','0'); leadEl.setAttribute('aria-label','打开 '+lead.id+' 的详情'); }
+  } else {
+    leadEl.innerHTML='<div class="lead-empty"><span class="tagline">TODAY / 0 RECOMMENDED</span><h3>今日无主推荐</h3><p>'+esc(D.emptyNote||'没有达到主推荐线的条目：宁少勿凑，不拿 B 档冒充头版。')+'</p><p>可继续看 02 模块 / 03 档案 / 04 特别 / 05 记忆层。</p></div>';
+  }
+
+  document.getElementById('leadSide').innerHTML =
+    '<figure class="plate"><div class="plate-img"><img src="'+PLATES[0].src+'" alt="NASA 结构摄影，公有领域" loading="eager"><i></i></div>'
+    +'<figcaption>'+PLATES[0].cap+'</figcaption>'
+    +'<span class="dim">SPAN 01 · STRUCTURE PLATE</span></figure>'
+    +'<div style="margin-top:14px;border-top:2px solid var(--ink);padding-top:10px">'
+    +'<p class="mono" style="font-size:11px;color:var(--steel);margin:0 0 6px">READING ORDER</p>'
+    +'<p style="margin:0;font-size:13px;line-height:1.7">01 主跨 → 02 模块 → 03 档案 → 04 特别 → 05 记忆。每一跨是一层结构，不是一“版”。</p></div>';
+
+  var mods = P.filter(function(p){return !lead || p.id!==lead.id});
+  var modHtml = mods.map(function(p,i){
+    var no = i + 2;
+    var tag = p.tier==='S' ? 'S' : 'A';
+    var pi = (i+1) % PLATES.length;
+    return '<button class="module" type="button" data-pid="'+esc(p.id)+'">'
+      +'<span class="mod-thumb" aria-hidden="true"><img src="'+PLATES[pi].src+'" alt="" loading="lazy"><b>PLATE '+String(pi+1).padStart(2,'0')+'</b></span>'
+      +'<div class="mod-top"><span class="mod-no">'+tag+'-'+String(no).padStart(2,'0')+'</span>'
+      +'<span class="mod-tier">'+esc(p.tier)+' / '+esc(p.score==null?'—':p.score)+'</span></div>'
+      +'<h4>'+esc(p.one||p.id)+'</h4>'
+      +'<span class="repo">'+esc(p.id)+'</span>'
+      +'<p class="why">'+esc(p.problem||p.one||'')+'</p>'
+      +'<div class="mod-meta"><span>★ '+esc(p.stars==null?'—':p.stars)+'</span><span>'+esc(p.lang||'—')+'</span><span>'+esc(p.lic||'LICENSE?')+'</span></div>'
+      +'</button>';
+  }).join('');
+  if (mods.length % 2 === 1) {
+    modHtml += '<div class="module module-blank" aria-hidden="true"><span>NO FURTHER A<br>结构留白 / 不凑数</span></div>';
+  }
+  document.getElementById('aModules').innerHTML = modHtml;
+  if(!mods.length){ document.getElementById('aModules').style.display='none'; }
+  if(!mods.length && !B.length && !OV.length){ document.getElementById('bay02').style.display='none'; }
+
+  var B_LIMIT=4, bExpanded=false;
+  function renderB(limit){
+    var shown=B.slice(0,limit);
+    document.getElementById('bCount').textContent=(B.length>B_LIMIT?shown.length+' / '+B.length:shown.length)+' MODULES / 4 COL';
+    document.getElementById('bMatrix').innerHTML=shown.map(function(p,i){
+      return '<button class="b-cell" type="button" data-pid="'+esc(p.id)+'">'
+        +'<span class="b-thumb" aria-hidden="true" style="background-image:url(\''+PLATES[i%PLATES.length].src+'\')"></span>'
+        +'<span class="b-body"><span class="b-no">B-'+String(i+1).padStart(2,'0')+'</span>'
+        +'<h4>'+esc((p.id||'').split('/')[1]||p.id)+'</h4>'
+        +'<span class="b-repo">'+esc(p.id)+'</span>'
+        +'<p class="b-one">'+esc(p.one||'')+'</p></span></button>';
+    }).join('');
+    var fold=document.getElementById('bFold');
+    if(B.length<=B_LIMIT){ fold.innerHTML=''; return; }
+    fold.innerHTML='<button class="foldbtn" id="bFoldBtn" type="button">'+(bExpanded?'收起 B':'查看全部 B（'+B.length+'）')+'</button>';
+    document.getElementById('bFoldBtn').onclick=function(){ bExpanded=!bExpanded; renderB(bExpanded?B.length:B_LIMIT); };
+  }
+  if(!B.length){ document.querySelector('#bay02 .b-head').style.display='none'; document.getElementById('bMatrix').style.display='none'; }
+  else { renderB(B_LIMIT); }
+
+  if(OV.length){
+    var ov=document.getElementById('overflow'); ov.hidden=false;
+    ov.innerHTML='<b>达线未刊</b>'+OV.map(function(p){return '<span>'+esc(p.id)+'<span class="t">'+esc(p.tier||'S/A')+'</span></span>';}).join('');
+  }
+
+  function arcCol(title,items,tierClass){
+    return '<div class="arc-col"><h4><span>'+title+'</span><span>'+items.length+'</span></h4>'
+      +items.map(function(p){return '<button class="arc-row" type="button" data-pid="'+esc(p.id)+'"><b class="'+tierClass+'">'+esc(p.tier)+'</b>'+esc(p.id)+'</button>'}).join('')
+      +'</div>';
+  }
+  document.getElementById('archive').innerHTML = '';
+  var CD_ALL=C.concat(R), CD_LIMIT=8, cdExpanded=false;
+  function renderArchive(limit){
+    var shown=CD_ALL.slice(0,limit);
+    var cs=shown.filter(function(p){return p.tier==='C'});
+    var ds=shown.filter(function(p){return p.tier==='D'||p.tier==='dropped'});
+    document.getElementById('archive').innerHTML = arcCol('C / 观察',cs,'c')+arcCol('D / 淘汰',ds,'d');
+    var fold=document.getElementById('cdFold');
+    if(CD_ALL.length<=CD_LIMIT){ fold.innerHTML=''; return; }
+    fold.innerHTML='<button class="foldbtn" id="cdFoldBtn" type="button">'+(cdExpanded?'收起 C/D':'查看全部 C/D（'+CD_ALL.length+'）')+'</button>';
+    document.getElementById('cdFoldBtn').onclick=function(){ cdExpanded=!cdExpanded; renderArchive(cdExpanded?CD_ALL.length:CD_LIMIT); };
+  }
+  renderArchive(CD_LIMIT);
+  var allIn=arr(D.allIn);
+  if(allIn.length){
+    var box=document.getElementById('allinBox'); box.hidden=false;
+    document.getElementById('allinSum').textContent='当日入库全名单 '+allIn.length+' 条（只含当天检索入库）';
+    document.getElementById('allinList').textContent=allIn.map(function(p){return p.id}).join(' · ');
+  }
+  if(!CD_ALL.length && !allIn.length){ document.getElementById('bay03').style.display='none'; }
+
+  document.getElementById('special').innerHTML = O.map(function(p,i){
+    var spi = (i+2) % PLATES.length;
+    return '<button class="special-card" type="button" data-pid="'+esc(p.id)+'">'
+      +'<span class="sp-thumb" aria-hidden="true"><img src="'+PLATES[spi].src+'" alt="" loading="lazy"></span>'
+      +'<span class="sp-no">0'+(i+1)+'</span>'
+      +'<span class="sp-id">'+esc(p.id)+' · '+esc(p.tier||'?')+' 档</span>'
+      +'<h4>'+esc(p.one||p.id)+'</h4>'
+      +'<p>'+esc(p.problem||p.what||'')+'</p></button>';
+  }).join('');
+  if(!O.length){ document.getElementById('bay04').style.display='none'; }
+
+  var self=arr(D.selfPushed), auto=arr(D.oldFriends);
+  function memCol(title,items,src,total){
+    var srcLabel = src==='SELF' ? '用户自推' : '自动发现';
+    var rows = items.map(function(p){
+      return '<button class="mem-row" type="button" data-pid="'+esc(p.id)+'"><i class="tag">老朋友</i><i class="tag '+(src==='SELF'?'self':'')+'">'+srcLabel+'</i>'+esc(p.id)+(p.repeat?'<i class="tag rep">REPEAT</i>':'')+'</button>';
+    }).join('');
+    var hint = (!items.length && total>0) ? '<i class="mem-hint">前 5 条已满，展开后可见</i>' : '';
+    return '<div class="mem-col"><h4>'+title+' / 显示 '+items.length+' / 共 '+total+' 条'+hint+'</h4>'+rows+'</div>';
+  }
+  var MEM_LIMIT=5, memExpanded=false;
+  var memSeen={}, memAll=[];
+  self.forEach(function(p){ if(p&&p.id&&!memSeen[p.id]){memSeen[p.id]=1;memAll.push({p:p,src:'SELF'})} });
+  auto.forEach(function(p){ if(p&&p.id&&!memSeen[p.id]){memSeen[p.id]=1;memAll.push({p:p,src:'AUTO'})} });
+  function renderMem(limit){
+    var show=memAll.slice(0,limit);
+    var ss=show.filter(function(x){return x.src==='SELF'}).map(function(x){return x.p});
+    var aa=show.filter(function(x){return x.src==='AUTO'}).map(function(x){return x.p});
+    document.getElementById('memory').innerHTML =
+      memCol('SELF / 用户自推', ss, 'SELF', self.length)
+      + memCol('AUTO / 自动老朋友', aa, 'AUTO', auto.length)
+      + '<div class="mem-more" style="grid-column:1/-1">共 '+memAll.length+' 条（自推 '+self.length+' / 自动 '+auto.length+'）· 先自推后自动 · 显示前 '+Math.min(limit,memAll.length)+' 条</div>';
+    var fold=document.getElementById('memFold');
+    if(memAll.length<=MEM_LIMIT){ fold.innerHTML=''; return; }
+    fold.innerHTML='<button class="foldbtn" id="memFoldBtn" type="button">'+(memExpanded?'收起记忆层':'查看全部老朋友（'+memAll.length+'）')+'</button>';
+    document.getElementById('memFoldBtn').onclick=function(){ memExpanded=!memExpanded; renderMem(memExpanded?memAll.length:MEM_LIMIT); };
+  }
+  if(!memAll.length){ document.getElementById('bay05').style.display='none'; } else { renderMem(MEM_LIMIT); }
+
+  /* 完整日报：开合由 _detail.js 统一接管（#frbtn / #frwrap.on / [data-fr-close]） */
+  document.getElementById('frQuote').textContent = lead ? (lead.problem||'') : '';
+
+  /* 结构卡片 → 详情浮层（_detail.js 的 PD.open） */
+  document.addEventListener('click', function(e){
+    var el = e.target && e.target.closest ? e.target.closest('[data-pid]') : null;
+    if(!el || (el.classList && el.classList.contains('relchip'))) return;
+    var id = el.getAttribute('data-pid'), p = null;
+    for(var i=0;i<ALL.length;i++){ if(ALL[i].id===id){ p=ALL[i]; break; } }
+    if(p && window.PD){ window.PD.open(p); }
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key!=='Enter' && e.key!==' ') return;
+    var el=e.target && e.target.closest ? e.target.closest('[data-pid]') : null;
+    if(!el || /^(BUTTON|A)$/.test(el.tagName)) return;
+    e.preventDefault(); el.click();
+  });
+})();
+</script>
+</body>
+</html>

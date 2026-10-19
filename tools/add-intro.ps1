@@ -1,4 +1,4 @@
-# add-intro.ps1 — 批量写入人话层介绍（配合 humanize-next.ps1 使用）
+﻿# add-intro.ps1 — 批量写入人话层介绍（配合 humanize-next.ps1 使用）
 #
 # 用法：
 #   & ".\tools\add-intro.ps1" -File "data\_batch\2026-10-13-intro.jsonl"      # 预览
@@ -31,7 +31,7 @@ $introPath = P 'data\human\repo-intro.jsonl'
 if (Test-Path $introPath) {
   foreach ($l in (Get-Content $introPath -Encoding UTF8)) {
     if (-not $l.Trim()) { continue }
-    try { $o = $l | ConvertFrom-Json; if ($o.full_name) { $existing[$o.full_name] = $true } } catch {}
+    try { $o = $l | ConvertFrom-Json; if ($o.full_name) { $existing[$o.full_name] = $true } } catch { $null = $_ }
   }
 }
 
@@ -54,10 +54,36 @@ if ($bad.Count) { Write-Host ("  失败行：{0}" -f ($bad -join ' | ')) -Foregr
 if (-not $rows.Count) { Write-Host "没有要写的。" -ForegroundColor Yellow; exit 0 }
 
 if (-not $Apply) { Write-Host "（预览模式，加 -Apply 实际写入）" -ForegroundColor Yellow; exit 0 }
-Add-Content -Path $introPath -Value ($rows -join "`r`n") -Encoding UTF8
-Write-Host ("✅ 已写入 {0} 条 → data\human\repo-intro.jsonl" -f $rows.Count) -ForegroundColor Green
-if ($Sync) {
-  & (P 'tools\sync-projects.ps1') -Force
-  & (P 'tools\build-overview.ps1')
-  & (P 'tools\check-page.ps1')
+
+# ---- 写入前按 full_name 去重（2026-10-16 新增；建议调整项 5）----
+# 本脚本原来是**纯追加**写：同一仓库被写两遍（先粗后精、或 -Force 覆盖）会在文件里留下
+# 两行同名记录，而 audit 的「人话层条目字段齐全」是**逐行**检查的 → 命中那行**旧的**不完整记录
+# 就误报 FAIL（2026-10-16 实测踩到两次，只能手工去重 189→183 行）。
+# 现在改为：先丢掉本批次要写的 full_name 的旧行，再追加新行 → 文件里一个仓库永远只有一行。
+$batchNames = @{}
+$uniq = [System.Collections.Generic.List[string]]::new()
+foreach ($r in $rows) {
+  $nm = ($r | ConvertFrom-Json).full_name
+  if ($batchNames.ContainsKey($nm)) { continue }   # 批次内部也去重，保留最后一条
+  $batchNames[$nm] = $true
+  [void]$uniq.Add($r)
 }
+$kept = [System.Collections.Generic.List[string]]::new()
+if (Test-Path $introPath) {
+  foreach ($l in (Get-Content $introPath -Encoding UTF8)) {
+    if (-not $l.Trim()) { continue }
+    $nm = $null
+    try { $nm = ($l | ConvertFrom-Json).full_name } catch { [void]$kept.Add($l); continue }
+    if ($nm -and $batchNames.ContainsKey($nm)) { continue }   # 丢掉即将被覆盖的旧行
+    [void]$kept.Add($l)
+  }
+}
+$removed = @(Get-Content $introPath -Encoding UTF8 | Where-Object { $_.Trim() }).Count - $kept.Count
+$final = @($kept) + @($uniq)
+[System.IO.File]::WriteAllLines($introPath, $final, (New-Object System.Text.UTF8Encoding($false)))
+Write-Host ("✅ 已写入 {0} 条 → data\human\repo-intro.jsonl（去重：移除旧行 {1} 条，现共 {2} 行）" -f $uniq.Count, $removed, $final.Count) -ForegroundColor Green
+# P1-16：**默认**写盘后自动重建页面（原来是加 -Sync 才重建 → 用户要的是"写完页面就变"）
+#   人话层变了要用 -Force 让投影一定重算；本批次 0 条新记录就不重建
+if ($uniq.Count -gt 0) { & (P 'tools\rebuild-page.ps1') -Force }
+else { Write-Host "   （本批次 0 条新记录：页面无需重建）" -ForegroundColor DarkGray }
+if ($Sync) { & (P 'tools\check-page.ps1') }

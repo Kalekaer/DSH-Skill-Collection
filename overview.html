@@ -1,828 +1,333 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<base href="data/site/">
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>我的开源工具库</title>
+<title>本地开源项目 · 档案站</title>
 <style>
-:root{--bg:#0e1014;--panel:#151922;--card:#1a1f29;--line:#262c37;--fg:#e7e9ee;--dim:#98a2b3;--acc:#4f8cff;--gold:#e8b93a}
+@font-face{font-family:"Big";src:url("../../assets/anton-latin.woff2") format("woff2");font-display:swap}
+:root{--ink:#0a0a0a;--paper:#f4f1e4;--fluoro:#e9ff2e;--magenta:#ff1f6b;--mono:SFMono-Regular,Consolas,monospace}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
-a{color:var(--acc);text-decoration:none}
-header{padding:16px 22px 12px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(14,16,20,.97);backdrop-filter:blur(8px);z-index:9}
-h1{margin:0 0 4px;font-size:19px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-h1 small{font-weight:400;color:var(--dim);font-size:12px}
-#q{width:100%;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:12px 15px;font-size:14.5px;margin-top:9px}
-#q:focus{outline:none;border-color:var(--acc)}
-.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px;align-items:center}
-select{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:12.5px}
-.chip{cursor:pointer;border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:12.5px;color:var(--dim);background:var(--panel);display:inline-block}
-.chip:hover{border-color:var(--acc);color:var(--fg)}
-.chip.on{background:#243149;border-color:var(--acc);color:#cfe0ff}
-.wrap{padding:16px 22px 30px;max-width:1560px}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(126px,1fr));gap:10px;margin-bottom:16px}
-.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 13px;cursor:pointer}
-.stat:hover{border-color:#3c4a63}
-.stat b{display:block;font-size:21px;line-height:1.25}
-.stat span{color:var(--dim);font-size:12px}
-section{margin-bottom:20px}
-h2{font-size:14.5px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
-h2 em{font-style:normal;color:var(--dim);font-weight:400;font-size:12px}
-.row-scroll{display:flex;gap:9px;overflow-x:auto;padding-bottom:5px}
-.mini{flex:0 0 218px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer}
-.mini:hover{border-color:#3c4a63}
-.mini .n{font-size:13px;font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mini .d{color:var(--dim);font-size:11.5px;height:32px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-.mini .m{color:var(--dim);font-size:11px;margin-top:6px;display:flex;justify-content:space-between}
-.catgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:9px}
-.catbox{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
-.catbox h3{margin:0 0 8px;font-size:13px;color:var(--fg);font-weight:600}
-.catbox .items{display:flex;flex-wrap:wrap;gap:5px}
-#list{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(350px,1fr))}
-.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:13px;cursor:pointer}
-.card:hover{border-color:#3c4a63}
-.card h3{margin:0 0 7px;font-size:14.5px;display:flex;gap:7px;align-items:center;flex-wrap:wrap}
-.card h3 a{color:var(--fg)}
-.card h3 a:hover{color:var(--acc)}
-.stars5{color:var(--gold);font-size:13px;letter-spacing:1px}
-.stars5 small{color:var(--dim);font-size:11px;letter-spacing:0}
-.one{color:var(--fg);font-size:13px;margin:0 0 8px;min-height:36px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;opacity:.92}
-.one.none{color:var(--dim);font-style:italic}
-/* 待补全的条目：**不隐藏、但降低视觉权重**（GPT 建议）——让库看起来还在长，而不是"就这么点东西" */
-.card.thin{opacity:.82;border-style:dashed}
-.card.thin:hover{opacity:1}
-.soon{font-size:11.5px;color:#ffd88a;border-left:2px solid #8a6d3a;padding-left:7px;margin:0 0 8px}
-.pill{border-radius:999px;padding:1px 8px;font-size:11px;border:1px solid var(--line);color:var(--dim);white-space:nowrap}
-.pill-fn{border-color:#3a5f8a;color:#9cc4ff}
-.pill-todo{border-color:#8a6d3a;color:#ffd88a}
-.tier-S,.r-low{border-color:#2e7d5b;color:#7ee2b8}
-.tier-A{border-color:#3a5f8a;color:#9cc4ff}
-.tier-unrated{border-color:#6a4f8a;color:#c9a9f5}
-.r-mid{border-color:#8a6d3a;color:#ffd88a}
-.r-high{border-color:#8a3a3a;color:#ff9d9d}
-.s-saved{border-color:#4f8cff;color:#9cc4ff}
-.s-using{border-color:#2f8f5b;color:#8ee7b0}
-.s-watching{border-color:#8a6d3a;color:#ffd88a}
-.s-researching{border-color:#6a4f8a;color:#c9a9f5}
-.s-dropped{border-color:#8a3a3a;color:#ff9d9d}
-.meta{color:var(--dim);font-size:11.5px;margin-top:7px;display:flex;justify-content:space-between;gap:8px}
-.empty{grid-column:1/-1;text-align:center;color:var(--dim);padding:50px}
-#panel{position:fixed;inset:0 0 0 auto;width:min(660px,95vw);background:var(--panel);border-left:1px solid var(--line);padding:22px;overflow:auto;transform:translateX(105%);transition:transform .18s;z-index:20;box-shadow:-20px 0 40px rgba(0,0,0,.45)}
-#panel.open{transform:none}
-#panel h2{margin:0 0 6px;font-size:19px;display:block}
-#panel .close{position:absolute;top:14px;right:16px;cursor:pointer;color:var(--dim);font-size:22px;line-height:1}
-.sec-h{font-size:12px;color:var(--dim);font-weight:600;margin:16px 0 7px;padding-bottom:5px;border-bottom:1px solid var(--line)}
-.hbody{font-size:13.5px;line-height:1.75;background:#1c222c;border-left:3px solid var(--acc);border-radius:0 8px 8px 0;padding:10px 13px;margin-bottom:4px}
-.fnrow{display:flex;gap:10px;font-size:13px;margin:6px 0;line-height:1.7}
-.fnrow b{color:var(--dim);font-weight:500;min-width:92px;flex:0 0 auto}
-.todo-box{background:#2a2418;border:1px solid #5c4a24;border-radius:8px;padding:10px 13px;font-size:12.5px;line-height:1.8;color:#ffd88a;margin-top:10px}
-.kv{margin:12px 0;padding-top:10px;border-top:1px solid var(--line)}
-.kv div{margin:5px 0;font-size:13px}
-.kv b{color:var(--dim);font-weight:500;display:inline-block;min-width:84px}
-.ev{font-size:12.5px;margin:4px 0;display:flex;gap:8px}
-.ev time{color:var(--dim);white-space:nowrap}
-.foot{padding:0 22px 26px;color:var(--dim);font-size:12px;line-height:1.9;max-width:1560px}
-code{background:#222733;padding:1px 5px;border-radius:4px;font-size:12px}
-/* —— 项目对比（页内，纯前端；数据已内嵌，不调 API）—— */
-.cmp{cursor:pointer;border:1px solid var(--line);border-radius:6px;padding:1px 8px;font-size:11px;color:var(--dim);background:transparent;white-space:nowrap;margin-left:auto}
-.cmp:hover{border-color:var(--acc);color:var(--fg)}
-.cmp.on{background:#243149;border-color:var(--acc);color:#cfe0ff}
-#cmpBar{position:fixed;bottom:18px;right:18px;background:var(--panel);border:1px solid var(--acc);border-radius:10px;padding:10px 14px;display:none;gap:10px;align-items:center;z-index:15;box-shadow:0 8px 24px rgba(0,0,0,.45);font-size:12.5px}
-#cmpBar.on{display:flex}
-table.cmpt{border-collapse:collapse;width:100%;font-size:12.5px;margin-top:8px}
-table.cmpt th,table.cmpt td{border:1px solid var(--line);padding:6px 8px;vertical-align:top;text-align:left;line-height:1.6}
-table.cmpt th{background:#1c222c;color:var(--dim);font-weight:500;white-space:nowrap}
-table.cmpt td:first-child{color:var(--dim);white-space:nowrap;background:#181d26}
-.cmpnote{color:var(--dim);font-size:12px;margin-top:8px;line-height:1.7}
-.grpNote{grid-column:1/-1;color:var(--dim);font-size:12.5px;line-height:1.7;margin-bottom:2px}
-.grpHead{grid-column:1/-1;font-size:13px;font-weight:600;color:var(--fg);border-bottom:1px solid var(--line);padding:6px 0 5px;margin-top:6px}
-.grpHead em{font-style:normal;color:var(--dim);font-weight:400;font-size:11.5px;margin-left:7px}
-@media(max-width:700px){.wrap{padding:12px}}
+html,body{margin:0;height:100%;background:#080807;color:var(--paper);font:14px/1.5 "Noto Sans SC","Microsoft YaHei UI",system-ui,sans-serif;overflow:hidden}
+#view{position:fixed;inset:0;width:100%;height:100%;border:0;background:#080807}
+
+/* 底部游戏式导航坞 */
+.dock{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:50;display:flex;align-items:stretch;gap:2px;
+  background:#0c0c0b;border:3px solid var(--paper);box-shadow:8px 8px 0 rgba(233,255,46,.28);padding:4px}
+.dock a{display:flex;align-items:baseline;gap:8px;text-decoration:none;color:var(--paper);
+  font:700 11px/1 var(--mono);letter-spacing:.14em;padding:10px 14px;border:2px solid transparent;white-space:nowrap;cursor:pointer;
+  transition:background .12s,color .12s,border-color .12s}
+.dock a .n{font:400 18px/1 "Big",Impact,sans-serif;color:var(--fluoro)}
+.dock a:hover{border-color:var(--paper)}
+.dock a.on{background:var(--fluoro);color:#0a0a0a;border-color:var(--fluoro)}
+.dock a.on .n{color:#0a0a0a}
+.dock .k{margin-left:6px;padding:10px 8px;font:700 9px/1.6 var(--mono);letter-spacing:.14em;color:#6a6a60;border-left:1px solid #2a2a26;display:flex;align-items:center;gap:4px}
+.dock .k b{color:var(--fluoro);border:1.5px solid #3a3a36;padding:2px 4px;font-weight:700}
+.dock .k b:last-child{margin-right:0}
+
+/* 左上角状态 */
+.status{position:fixed;left:16px;bottom:18px;z-index:50;font:700 9px/1.6 var(--mono);letter-spacing:.18em;color:#6a6a60;
+  border-left:3px solid var(--fluoro);padding-left:10px;pointer-events:none;text-transform:uppercase}
+.status b{display:block;font:400 22px/1 "Big",Impact,sans-serif;color:var(--paper);letter-spacing:0}
+.status i{font-style:normal;color:var(--fluoro)}
+.status .dot{color:var(--magenta)}
+
+/* ============================================================================
+   图例小窗：斜切多边形 + 进场动画 + 每类不同表现
+   ============================================================================ */
+.lbtn{position:fixed;right:18px;bottom:18px;z-index:70;width:46px;height:46px;background:var(--fluoro);color:#0a0a0a;
+  border:3px solid #0a0a0a;font:700 20px/1 "Big",Impact,sans-serif;cursor:pointer;
+  clip-path:polygon(0 10px,10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%);
+  box-shadow:4px 4px 0 var(--magenta);transition:transform .12s}
+.lbtn:hover{transform:translate(-2px,-2px)}
+.lbtn.on{background:var(--magenta);color:#fff;box-shadow:4px 4px 0 var(--fluoro)}
+
+.legend{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;padding:26px}
+.legend.on{display:flex}
+.legend .mask{position:absolute;inset:0;background:rgba(6,6,5,.62);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.legend .frame{position:relative;width:min(940px,94vw);max-height:86vh;padding:3px;background:var(--fluoro);
+  clip-path:polygon(0 18px,18px 0,calc(100% - 58px) 0,100% 58px,100% calc(100% - 18px),calc(100% - 18px) 100%,58px 100%,0 calc(100% - 58px));
+  animation:lgIn .34s cubic-bezier(.2,.85,.2,1) both}
+@keyframes lgIn{from{opacity:0;transform:translateY(26px) rotate(-.8deg) scale(.97)}to{opacity:1;transform:none}}
+.legend .panel{position:relative;background:#0b0b0a;color:var(--paper);padding:24px 26px 20px;overflow-y:auto;overflow-x:hidden;max-height:calc(86vh - 6px);
+  clip-path:polygon(0 17px,17px 0,calc(100% - 56px) 0,100% 56px,100% calc(100% - 17px),calc(100% - 17px) 100%,56px 100%,0 calc(100% - 56px))}
+.legend .panel::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(115deg,transparent 0 40%,rgba(233,255,46,.06) 46%,transparent 52%);
+  animation:lgSweep 2.6s linear infinite}
+@keyframes lgSweep{from{transform:translateX(-60%)}to{transform:translateX(60%)}}
+.legend h3{margin:0 0 2px;font:400 34px/1 "Big",Impact,sans-serif;color:var(--paper);letter-spacing:.01em}
+.legend h3 i{font-style:normal;color:var(--fluoro)}
+.legend .sub{margin:0 0 16px;font:700 9px/1.6 var(--mono);letter-spacing:.22em;color:var(--grey);text-transform:uppercase}
+.legend .x{position:absolute;right:16px;top:14px;width:34px;height:34px;background:none;border:2px solid var(--paper);color:var(--paper);font:400 18px/1 var(--mono);cursor:pointer;z-index:3}
+.legend .x:hover{background:var(--magenta);border-color:var(--magenta)}
+
+.lgrid{display:grid;grid-template-columns:1fr 1fr;gap:20px 26px}
+@media (max-width:820px){.lgrid{grid-template-columns:1fr}}
+.lbox.wide{grid-column:1/-1}
+.lbox{border-top:2px solid #2a2a26;padding-top:12px;opacity:0;animation:lgUp .38s ease forwards}
+.lbox:nth-child(1){animation-delay:.06s}.lbox:nth-child(2){animation-delay:.12s}.lbox:nth-child(3){animation-delay:.18s}
+.lbox:nth-child(4){animation-delay:.24s}.lbox:nth-child(5){animation-delay:.3s}.lbox:nth-child(6){animation-delay:.36s}
+@keyframes lgUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.lbox h4{margin:0 0 10px;font:700 10.5px/1 var(--mono);letter-spacing:.2em;color:var(--grey);text-transform:uppercase;display:flex;justify-content:space-between}
+.lbox h4 i{font-style:normal;color:var(--fluoro)}
+
+/* 档位：大字母块 + 一行解释 */
+.tiers{display:flex;gap:6px}
+.tiers .t{flex:1;min-width:0;background:#151513;padding:9px 9px 8px;border:2px solid #2d2d29}
+.tiers .t b{display:block;font:400 34px/1 "Big",Impact,sans-serif;color:var(--fluoro)}
+.tiers .t.s b{color:var(--magenta)}
+.tiers .t span{display:block;margin-top:6px;font:700 10px/1.4 var(--mono);letter-spacing:.1em;color:var(--paper)}
+.tiers .t i{display:block;margin-top:2px;font:400 11.5px/1.5 "Noto Serif SC",serif;color:#a8a394;font-style:normal}
+.tiers .t:hover{border-color:var(--fluoro);transform:translateY(-2px);transition:.12s}
+
+/* 状态：脉冲点 */
+.stats{display:flex;flex-direction:column;gap:7px}
+.stats .s{display:flex;align-items:center;gap:10px;font:700 11.5px/1.5 var(--mono);color:#cfc9b8}
+.stats .s em{font-style:normal;width:9px;height:9px;border-radius:50%;background:#3a3a36;flex:0 0 9px}
+.stats .s.on em{background:var(--fluoro);box-shadow:0 0 0 0 rgba(233,255,46,.5);animation:pulse 1.8s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(233,255,46,.45)}70%{box-shadow:0 0 0 9px rgba(233,255,46,0)}100%{box-shadow:0 0 0 0 rgba(233,255,46,0)}}
+.stats .s span{color:#8f8b7f;font-weight:600}
+
+/* 风险：分段条 */
+.risk{display:flex;gap:4px;margin-bottom:6px}
+.risk i{height:10px;flex:1;background:#1c1c19;border:1px solid #2d2d29}
+.risk i.l{background:#4a7a3a}.risk i.m{background:#e0a92e}.risk i.h{background:var(--magenta)}
+.risk i.r{border-color:#ff1f6b;background:repeating-linear-gradient(45deg,#ff1f6b 0 4px,#0b0b0a 4px 8px);animation:blink 1.4s steps(2) infinite}
+@keyframes blink{50%{opacity:.45}}
+.riskleg{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;font:600 8.5px/1.4 var(--mono);letter-spacing:.08em;color:#8f8b7f}
+
+/* 徽章：邮戳 */
+.badges{display:flex;flex-wrap:wrap;gap:6px}
+.badges span{font:700 9.5px/1.2 var(--mono);letter-spacing:.1em;border:2px solid var(--paper);padding:6px 7px;transform:rotate(-2deg)}
+.badges span:nth-child(even){transform:rotate(2deg)}
+.badges span b{color:var(--fluoro)}
+
+/* 评分：动画条 */
+.score .row{display:grid;grid-template-columns:72px 1fr 36px;gap:8px;align-items:center;margin-bottom:6px;font:600 10px/1 var(--mono);color:#a8a394}
+.score .row i{height:7px;background:#1c1c19;position:relative}
+.score .row i b{position:absolute;left:0;top:0;bottom:0;background:var(--fluoro);width:0;animation:barGrow 1s cubic-bezier(.2,.8,.2,1) forwards}
+.score .row:nth-child(2) i b{animation-delay:.1s}.score .row:nth-child(3) i b{animation-delay:.15s}
+.score .row:nth-child(4) i b{animation-delay:.2s}.score .row:nth-child(5) i b{animation-delay:.25s}
+@keyframes barGrow{to{width:var(--w)}}
+
+/* 操作说明 */
+.keys{display:flex;flex-direction:column;gap:7px;font:600 11px/1.5 var(--mono);color:#b8b3a4}
+.keys b{display:inline-block;min-width:26px;text-align:center;border:1.5px solid #3a3a36;color:var(--fluoro);padding:2px 5px;margin-right:6px}
+/* 加载遮罩 */
+.load{position:fixed;inset:0;z-index:60;background:#080807;display:flex;align-items:center;justify-content:center;
+  font:400 42px/1 "Big",Impact,sans-serif;color:var(--fluoro);letter-spacing:.04em;transition:opacity .25s}
+.load.off{opacity:0;pointer-events:none}
+
+/* 换骨：只在每日精选显示（当前启用 C/D；A/B 实验骨架暂不接入） */
+.skel{position:fixed;left:16px;bottom:14px;z-index:60;display:none;align-items:center;gap:4px;padding:4px;
+  background:#0c0c0b;border:2px solid var(--paper);box-shadow:5px 5px 0 rgba(255,31,107,.35);
+  font:700 9px/1 var(--mono);letter-spacing:.14em}
+.skel.on{display:flex}
+.skel b{color:#6a6a60;padding:6px 5px}
+.skel a{color:var(--paper);text-decoration:none;padding:6px 9px;border:1.5px solid #3a3a36;cursor:pointer}
+.skel a:hover{border-color:var(--paper)}
+.skel a.on{background:var(--fluoro);color:#0a0a0a;border-color:var(--fluoro)}
+
+@media (max-width:720px){
+  .dock a{padding:9px 10px;font-size:9px}
+  .dock a .n{font-size:15px}
+  .dock .k{display:none}
+}
 </style>
+<!-- BUILD-STAMP: build 2026-10-19 18:16 ｜ 数据指纹 04E36F67152A ｜ 15 条 -->
 </head>
 <body>
-<header>
-  <h1>🧰 我的开源工具库 <small>共 15 个工具 ｜ 已评分 14 ｜ 近 7 天有更新 5 ｜ 生成于 2026-10-15 21:36:06</small></h1>
-  <input id="q" placeholder="想干什么？直接说需求，例如：画图 / 做PPT / 替代PS / 聊天机器人 / 本地运行AI（按 / 聚焦）" oninput="render()">
-  <div class="toolbar">
-    <select id="sort" onchange="render()">
-      <option value="stars">按体验评分</option>
-      <option value="gh">按星数</option>
-      <option value="recent">按最近提交</option>
-      <option value="name">按名称</option>
-    </select>
-    <select id="fs" onchange="render()">
-      <option value="">全部状态</option>
-      
-      <option value="active">已收录</option>
-      <option value="using">正在使用</option>
-      <option value="watching">观察中</option>
-      <option value="researching">研究中</option>
-      <option value="dropped">已放弃</option>
-    </select>
-    <select id="fr" onchange="render()">
-      <option value="">全部风险</option><option>低</option><option>中</option><option>高</option>
-    </select>
-    <select id="ft" onchange="render()">
-      <option value="">全部档位</option><option>S</option><option>A</option><option value="unrated">未评档</option>
-    </select>
-    <select id="f5" onchange="render()">
-      <option value="">全部评分</option>
-      <option value="5">五星</option><option value="4">四星以上</option><option value="3">三星以上</option>
-      <option value="0">仅未评分</option>
-    </select>
-    <select id="fa" onchange="render()">
-      <option value="">全部活跃度</option>
-      <option value="30">30 天内有提交</option>
-      <option value="90">90 天内有提交</option>
-      <option value="365">一年内有提交</option>
-    </select>
-    <span class="chip" id="gapChip" style="display:none" onclick="copyGaps()"></span>
-    <span class="chip" id="grpBtn" onclick="toggleGroup()">按用途分组</span>
-    <span class="chip" id="clear" onclick="clearAll()">清空筛选</span>
-  </div>
-</header>
-<div class="wrap">
-  <section id="hero">
-    <h2>👋 欢迎来到你的开源工具库 <em>15 个项目 · 11 个工作方案 · 全部本地、双击即用</em></h2>
-    <div class="catbox">
-      <div class="items">
-        <span class="chip" onclick="document.getElementById('q').value='做视频';render();document.getElementById('q').scrollIntoView({block:'center'})">🔍 试试搜「做视频」</span>
-        <span class="chip" onclick="document.getElementById('q').value='AI绘画';render()">🔍 搜「AI绘画」</span>
-        <span class="chip" onclick="document.getElementById('q').value='找文件';render()">🔍 搜「找文件」</span>
-        <span class="chip" onclick="document.getElementById('planGrid').scrollIntoView({behavior:'smooth'})">🧩 按需求组方案</span>
-        <span class="chip" onclick="document.getElementById('wsSection').scrollIntoView({behavior:'smooth'})">📌 我的工作区</span>
-        <span class="chip" onclick="document.getElementById('catGrid').scrollIntoView({behavior:'smooth'})">🗂 浏览分类</span>
+<div class="load" id="load">ARCHIVE<span style="color:var(--magenta)">//</span>LOADING</div>
+
+<div class="status" hidden>
+  <b>ARCHIVE<i>//</i>15</b>
+  <span>LOCAL · OFFLINE · <span class="dot">●</span> ONLINE</span>
+</div>
+
+<iframe id="view" title="页面"></iframe>
+
+<nav class="dock" id="dock" aria-label="主菜单">
+  <a data-r="home"><span class="n">01</span>首页</a>
+  <a data-r="daily"><span class="n">02</span>每日精选</a>
+  <a data-r="library"><span class="n">03</span>全库</a>
+  <a data-r="plans"><span class="n">04</span>计划与工作区</a>
+  <span class="k"><b>1</b><b>2</b><b>3</b><b>4</b> 切换</span>
+</nav>
+<button class="lbtn" id="lbtn" title="图例（G）" aria-label="打开图例">?</button>
+<div class="skel" id="skel" aria-label="换骨">
+  <b>换骨</b>
+  <a data-l="c" href="#/daily">结构轴版</a>
+</div>
+
+<div class="legend" id="legend" role="dialog" aria-modal="true" aria-label="图例">
+  <div class="mask" id="lgMask"></div>
+  <div class="frame">
+    <div class="panel">
+      <button class="x" id="lgX" aria-label="关闭">×</button>
+      <h3>图例<i>//</i>LEGEND</h3>
+      <p class="sub">ARCHIVE 的读法 · TIER / STATUS / RISK / BADGE / SCORE</p>
+
+      <div class="lgrid">
+        <div class="lbox">
+          <h4>档位 · TIER <i>进不进每日精选看这个</i></h4>
+          <div class="tiers">
+            <div class="t s"><b>S</b><span>立刻能用</span><i>当天就想装来试</i></div>
+            <div class="t"><b>A</b><span>值得一试</span><i>有明确用途，值得花时间</i></div>
+            <div class="t"><b>B</b><span>备用</span><i>特定场景才想起来</i></div>
+            <div class="t"><b>C</b><span>档案</span><i>不推荐，留档观察</i></div>
+            <div class="t"><b>D</b><span>不推荐</span><i>质量不足，仍在库</i></div>
+            <div class="t"><b>×</b><span>不再看</span><i>状态为 dropped，记录保留</i></div>
+          </div>
+        </div>
+
+        <div class="lbox">
+          <h4>状态 · STATUS <i>我对它的态度</i></h4>
+          <div class="stats">
+            <div class="s"><em></em>观望 <span>WATCHING · 先收着，还没用</span></div>
+            <div class="s on"><em></em>活跃 <span>ACTIVE · 正在用 / 跟进</span></div>
+            <div class="s"><em></em>已弃 <span>DROPPED · 用过但不合适（≠ 退稿）</span></div>
+          </div>
+        </div>
+
+        <div class="lbox">
+          <h4>风险 · RISK <i>装之前先看这栏</i></h4>
+          <div class="risk"><i class="l"></i><i class="m"></i><i class="h"></i><i class="r"></i></div>
+          <div class="riskleg"><span>低 · 无副作用</span><span>中 · 要授权/配置</span><span>高 · 碰权限或数据</span><span>红线 · 一律不收录</span></div>
+        </div>
+
+        <div class="lbox">
+          <h4>徽章 · BADGE <i>额外的信号</i></h4>
+          <div class="badges">
+            <span>★ <b>推荐过</b>（PICKED 印章）</span>
+            <span>🏢 <b>官方出品</b></span>
+          </div>
+        </div>
+
+        <div class="lbox score">
+          <h4>评分 · SCORE <i>五项各 20 分 · 合计 100</i></h4>
+          <div class="row"><span>易用性</span><i><b style="--w:90%"></b></i><span>18/20</span></div>
+          <div class="row"><span>文档</span><i><b style="--w:80%"></b></i><span>16/20</span></div>
+          <div class="row"><span>成熟度</span><i><b style="--w:90%"></b></i><span>18/20</span></div>
+          <div class="row"><span>维护</span><i><b style="--w:75%"></b></i><span>15/20</span></div>
+          <div class="row"><span>风险</span><i><b style="--w:50%"></b></i><span>10/20</span></div>
+        </div>
+
+        <div class="lbox">
+          <h4>操作 · KEYS <i>不只是鼠标</i></h4>
+          <div class="keys">
+            <div><b>1</b><b>2</b><b>3</b><b>4</b> 切换 首页 / 每日精选 / 全库 / 计划与工作区</div>
+            <div><b>G</b> 打开这个图例 · <b>ESC</b> 关闭</div>
+            <div><b>点卡片</b> 看完整档案（背景会虚化）</div>
+          </div>
+        </div>
       </div>
     </div>
-    <div style="color:var(--dim);font-size:12.5px;margin-top:8px">
-      不知道怎么用？<b>在搜索框里直接说你想干什么</b>（例如「我想做一个播客频道」），这里会从你自己的库里配一套工具给你。
-      想看整套搭配：点上面的「按需求组方案」。<span class="chip" style="margin-left:6px" onclick="this.closest('section').style.display='none';try{localStorage.setItem('dsh-lib-hero','off')}catch(e){}">知道了，收起</span>
-    </div>
-  </section>
-
-  <section>
-    <h2>🆕 今日新增 <em>每天进货的入口</em></h2>
-    <div class="row-scroll" id="todayRow"></div>
-  </section>
-
-  <section>
-    <h2>🧩 按需求组方案 <em>点一个场景，看这套该怎么配（工具按用途自动匹配，不调 API）</em></h2>
-    <div class="catbox"><div class="items" id="planGrid"></div></div>
-  </section>
-
-  <section id="wsSection">
-    <h2>📌 我的工作区 <em>你正在做的事，和它用到的那套工具</em></h2>
-    <div class="catbox"><div class="items" id="wsGrid"></div></div>
-  </section>
-
-  <section>
-    <h2>🗂 分类浏览 <em>点大类或小类即筛选</em></h2>
-    <div class="catgrid" id="catGrid"></div>
-  </section>
-
-  <section>
-    <h2>📋 全部工具 <em id="countHint"></em></h2>
-    <div id="list"></div>
-  </section>
+  </div>
 </div>
-<div id="panel"></div>
-<div id="cmpBar"></div>
-<div class="foot">
-  数据来自 <code>data/projects.jsonl</code> + <code>data/events.jsonl</code>（由原始来源派生，可全量重建）。<b>本页是只读视图，数据已全部内嵌，双击即可用。</b><br>
-  改状态：编辑 <code>data/seen.jsonl</code> 的 <code>status</code>（白名单 active/using/watching/researching/dropped；saved 为遗留值）并在 <code>data/status-log.jsonl</code> 追加一行，然后跑 <code>sync-projects.ps1</code> 与 <code>build-overview.ps1</code>。<br>
-  改分类：只改 <code>data/taxonomy.json</code>（<b>分类不允许运行时自由创建</b>，新方向先写入 <code>taxonomy-suggestions.json</code> 等人工批准）。
-</div>
+
 <script>
-const P = [{"id":"unslothai/unsloth","desc":null,"lic":null,"lang":"Python","stars":77838,"d7":0,"dtot":0,"pushed":null,"first":"2026-10-12","last":"2026-10-12","rec":false,"rc":0,"tier":null,"risk":null,"status":"watching","origin":"auto","oder":"自动发现","l1":"AI","l2":"模型训练","exp":1,"expSc":36,"part":{"易用性":8,"文档完整度":0,"功能成熟度":10,"维护活跃":8,"风险":10},"t":["AI","库","提效","实验","轻配置","中"],"hs":"complete","one":"这是一个加速大模型微调的工具，可以帮你用更少的显卡显存、更快地训练自己的模型。","prob":"以前自己微调一个大模型，动不动就需要多张高端显卡，显存不够直接跑不起来；这个通过优化训练实现，把门槛降到单张消费级显卡。","ex":"比如你想拿自己的行业数据微调一个 7B 模型，原本要 A100，用它在一张 24G 显存的卡上就能跑完。","fn":["一个大模型微调加速库，兼容主流开源模型。","显著降低显存占用；加快训练速度；支持多种开源模型与常见微调方式","本地微调大模型；做行业专用模型；教学与实验","用自有数据微调 7B 模型；在单卡上做 LoRA 微调；低成本试验不同训练参数","完全不写代码的人；只想直接调用现成模型 API 的场景"],"ft":["模型微调","训练加速","本地训练"],"evc":1,"note":null,"un":[]},{"id":"mudler/LocalAI","desc":null,"lic":null,"lang":"Go","stars":49485,"d7":0,"dtot":0,"pushed":null,"first":"2026-10-12","last":"2026-10-12","rec":false,"rc":0,"tier":null,"risk":null,"status":"watching","origin":"auto","oder":"自动发现","l1":"AI","l2":"本地模型","exp":1,"expSc":36,"part":{"易用性":8,"文档完整度":0,"功能成熟度":10,"维护活跃":8,"风险":10},"t":["AI","CLI","提效","实验","轻配置","中"],"hs":"complete","one":"这是一个在自己电脑上跑 AI 模型的工具，可以帮你把大模型、图像生成、语音都放在本机运行，还兼容 OpenAI 接口。","prob":"以前想本地跑多种 AI 能力，得分别装好几套东西；这个把文本、图像、语音整合成一个服务，接口和 OpenAI 一样，现有代码改个地址就能用。","ex":"比如你写好的程序本来调 OpenAI，把地址换成本机这个服务，就能在断网和不上传数据的情况下继续跑。","fn":["一个本地 AI 推理服务，覆盖大语言模型、图像生成与语音。","提供与 OpenAI 兼容的接口；支持文本、图像、语音多类模型；本地运行，数据不出机器","自建私有 AI 服务；替换云端 API；隐私敏感场景使用 AI","把程序的 API 地址改成本机；断网环境跑模型；自建团队内部推理服务","不愿折腾部署的人；对延迟要求极高的生产场景"],"ft":["本地模型","OpenAI兼容","自建服务"],"evc":1,"note":null,"un":[]},{"id":"storytold/photocraft","desc":null,"lic":"Apache-2.0","lang":"Rust","stars":45892,"d7":596,"dtot":596,"pushed":"2026-10-12T16:20:46Z","first":"2026-10-11","last":"2026-10-12","rec":true,"rc":1,"tier":"A","risk":null,"status":"active","origin":"auto","oder":"自动发现","l1":"设计","l2":"图片处理","exp":4,"expSc":78,"part":{"易用性":18,"文档完整度":20,"功能成熟度":15,"维护活跃":15,"风险":10},"t":["其他","CLI","创作","实验","要编程","中"],"hs":"complete","one":"这是一个免费的修图软件，可以帮你处理照片，而且是用 Rust 从零重写的、不依赖 Adobe。","prob":"以前想不花钱修图，要么用功能缩水的免费软件，要么继续交订阅费；这是一个从零重写、架构现代的替代品。","ex":"比如你要给一批活动照片统一调色、裁剪、导出，可以用它处理，而不用为一次性需求续费。","fn":["用纯 Rust 从零重写的开源照片编辑器。","图片编辑与调整；原生性能、启动快；开源可自行编译","替代订阅制修图软件；批量处理照片；学习 Rust 写的 GUI 应用","活动照片批量调色；简单修图与导出；自托管图像处理流程","需要专业印刷色彩管理的场景；想马上稳定使用、不能容忍早期版本问题的人"],"ft":["图片编辑","修图","照片处理"],"evc":3,"note":null,"un":[]},{"id":"NandhaKishorM/laya","desc":null,"lic":null,"lang":"Python","stars":32298,"d7":30,"dtot":30,"pushed":null,"first":"2026-10-11","last":"2026-10-12","rec":false,"rc":0,"tier":null,"risk":null,"status":"watching","origin":"auto","oder":"自动发现","l1":"其他","l2":"其他工具","exp":1,"expSc":36,"part":{"易用性":8,"文档完整度":0,"功能成熟度":10,"维护活跃":8,"风险":10},"t":["其他","库","提效","实验","轻配置","中"],"hs":"complete","one":"一个专门用来「做选择题」的小模型，一次计算就给答案，33 毫秒出结果，支持一百多种语言。","prob":"没有它的时候，想让 AI 判断「这封邮件该给哪个部门」「这条评论有多生气」，得调一个大模型生成一段文字再解析，慢、贵，还可能瞎编。它直接给出选项和概率，不生成文字，也就没有胡说这一说。","ex":"比如客服系统收到一条投诉，它能同时判断出该分给计费组、紧急程度是「快炸了」、以及这个人有退订风险，一次调用全给出来。","fn":["一个做结构化判断的模型，装上就能用，也能作为服务提供给 AI 助手调用。","三种题型：选项题（该归哪一类）、打分题（有多严重）、是否题（给出 0 到 1 的概率）；能读文本、邮件、工单或结构化数据；批量一次算很多条，比一条条问快；自动识别语言并切换到对应版本；可以在自己的数据上再训练，准确率提升很明显","客服工单自动分流、判定紧急程度；垃圾内容、钓鱼、越狱提示词识别；给 AI 工作流做快速路由和安全护栏","自动把工单分派给对应部门；判断一条评论是好评还是差评；在 AI 流程入口挡住提示词注入攻击","需要写文章、聊天、回答开放问题的场景（它只做判断，不生成文字）；选项特别多的分类任务（超过二十个选项时，官方承认明显弱于同类对手）；期望开箱即用就很准的人——官方自己说基础模型在选择题上接近瞎猜，要靠微调"],"ft":["非自回归决策引擎","需自取权重","上手成本高"],"evc":2,"note":null,"un":[]},{"id":"browser-use/jev-ultrafast","desc":null,"lic":"MIT","lang":"Python","stars":22611,"d7":9,"dtot":9,"pushed":"2026-09-30T01:24:38Z","first":"2026-10-11","last":"2026-10-12","rec":true,"rc":1,"tier":"S","risk":null,"status":"active","origin":"auto","oder":"自动发现","l1":"效率","l2":"自动化","exp":3,"expSc":67,"part":{"易用性":18,"文档完整度":16,"功能成熟度":10,"维护活跃":13,"风险":10},"t":["其他","Web","提效","实验","轻配置","中"],"hs":"complete","one":"这是一个给开发者用的网页自动化代理，可以帮你用最少的钱和时间让 AI 去操作网站。","prob":"以前让 AI 去点网页，要么用大模型逐步截图推理（又慢又贵），要么写一堆脆弱的 CSS 选择器脚本。这个走的是更省 token 的路线。","ex":"比如你要每天从一个后台系统里导出报表，可以让它代替你登录、点菜单、下载文件，而不是自己写脚本盯着网页改版。","fn":["一个主打「最快最便宜」的网页 agent（Python）。","用 AI 驱动浏览器完成操作；针对速度与调用成本做优化；跟随 browser-use 生态","批量操作网页后台；把重复点击交给 AI；做网页数据采集","定期导出后台报表；自动填写表单；跨站点搬运信息","需要长期稳定、网页改版也不坏的生产脚本；对浏览器自动化完全不熟的人"],"ft":["网页自动化","浏览器代理","AI代理"],"evc":2,"note":null,"un":[]},{"id":"Niko1221/Strata","desc":null,"lic":"MIT","lang":"C++","stars":21356,"d7":105,"dtot":105,"pushed":"2026-10-11T14:37:54Z","first":"2026-10-11","last":"2026-10-12","rec":true,"rc":1,"tier":"S","risk":null,"status":"active","origin":"auto","oder":"自动发现","l1":"AI","l2":"本地模型","exp":5,"expSc":85,"part":{"易用性":30,"文档完整度":20,"功能成熟度":10,"维护活跃":15,"风险":10},"t":["AI","框架","提效","实验","轻配置","中"],"hs":"complete","one":"这是一个让你在自己电脑上跑大模型的工具，可以帮你一键装好，并在本机提供一个兼容 OpenAI 接口的服务。","prob":"以前想在本地跑大模型，要自己配环境、下权重、写接口，很容易在依赖上卡住；这个做到一键安装，装完就能像调用云端 API 一样调用本机模型。","ex":"比如你写了一个用 OpenAI 接口的程序，把接口地址改成它给的本地地址，就能在断网情况下继续跑，数据也不出机器。","fn":["一个面向消费级硬件的本地大模型推理引擎，提供 OpenAI / Anthropic 兼容接口。","一键安装（Windows / Linux）；在本地暴露兼容 OpenAI 的接口；支持可选的图像输入","本机跑私有模型；给已有程序换上本地模型；断网/隐私场景使用 AI","把现有代码里的 API 地址换成 localhost；离线做文本处理；自建不给外人用的模型服务","机器显存不足跑不动目标模型的硬件；不想下载几十 GB 权重的人"],"ft":["本地大模型","推理引擎","OpenAI 兼容"],"evc":3,"note":null,"un":[]},{"id":"ImageMagick/ImageMagick","desc":null,"lic":null,"lang":"C","stars":17650,"d7":0,"dtot":0,"pushed":null,"first":"2026-10-12","last":"2026-10-12","rec":false,"rc":0,"tier":null,"risk":null,"status":"watching","origin":"auto","oder":"自动发现","l1":"AI","l2":"AI绘画","exp":1,"expSc":36,"part":{"易用性":8,"文档完整度":0,"功能成熟度":10,"维护活跃":8,"风险":10},"t":["其他","库","提效","实验","轻配置","中"],"hs":"complete","one":"这是一个图像处理工具，可以帮你批量转换、裁剪、压缩图片，也能在命令行里一次处理成千上万张。","prob":"以前要批量改图片格式或尺寸，要么一张张手动点，要么装庞大的图形软件；这个用一行命令就能处理整个文件夹。","ex":"比如你要把一百张 PNG 压成体积更小的 JPG，一行命令就能全部搞定，不用打开任何界面。","fn":["一个老牌的命令行图像处理工具集，几乎支持所有常见图片格式。","格式转换、缩放、裁剪、旋转；批量处理整个文件夹；也能被其他程序当图像处理库调用","批量压缩图片；网站图片处理流水线；自动化脚本里处理图像","批量把 PNG 转 JPG；统一给图片加边框；压缩上传前的图片体积","想用鼠标点点就完成修图的人；需要精细图层编辑的设计工作"],"ft":["图片处理","批量转换","命令行工具"],"evc":1,"note":null,"un":[]},{"id":"HBAI-Ltd/Toonflow-app","desc":null,"lic":null,"lang":"TypeScript","stars":17338,"d7":0,"dtot":0,"pushed":null,"first":"2026-10-12","last":"2026-10-12","rec":false,"rc":0,"tier":null,"risk":null,"status":"watching","origin":"auto","oder":"自动发现","l1":"AI","l2":"AI视频","exp":1,"expSc":36,"part":{"易用性":8,"文档完整度":0,"功能成熟度":10,"维护活跃":8,"风险":10},"t":["其他","插件","提效","实验","轻配置","中"],"hs":"complete","one":"这是一个做短剧和漫画的工具，可以帮你把剧本快速变成连载内容。","prob":"以前做短剧或条漫，从脚本到分镜到成片要好几套工具接力；这个把创作流程整合到一个应用里。","ex":"比如你想把一篇小说改编成短剧，可以用它来管理剧情、生成画面、串成成片，不用在多个软件之间来回导。","fn":["一个开源的短剧/漫剧创作应用。","剧本与分镜管理；生成画面内容；把素材串成完整剧集","做短视频连载；把小说改成短剧；批量产出漫画内容","小说改编短剧；日更条漫；做作品宣发素材","需要专业影视后期精度的制作；只想随手做一张图的人"],"ft":["短剧制作","漫画生成","内容创作"],"evc":1,"note":null,"un":[]},{"id":"robbietilton/Compositor","desc":null,"lic":"MIT","lang":"Swift","stars":15823,"d7":0,"dtot":0,"pushed":"2026-10-12T16:29:26Z","first":"2026-10-12","last":"2026-10-12","rec":true,"rc":1,"tier":"A","risk":"中","status":"active","origin":"auto","oder":"自动发现","l1":"设计","l2":"图片处理","exp":4,"expSc":69,"part":{"易用性":18,"文档完整度":16,"功能成熟度":10,"维护活跃":15,"风险":10},"t":["其他","桌面","替代","实验","轻配置","中"],"hs":"complete","one":"这是一个给 Mac 用户用的修图软件，可以帮你处理照片，而不用按月付 Adobe 的订阅费。","prob":"以前在 Mac 上做基本的照片处理，要么忍受 Adobe 的订阅，要么用功能残缺的免费软件；现在有一个原生的、买断式的替代品。","ex":"比如你要把一张照片调色、去掉多余的路人、再导出成网页用的格式，可以直接用它完成，不需要为偶尔用几次而续费一年订阅。","fn":["一个用 Swift 写的 macOS 原生图像编辑软件，定位是 Photoshop 的免费替代。","图层与常用修图工具；原生性能，启动和响应接近系统应用；常见的图片格式读写","日常照片修整；简单合成与抠图；替代订阅制修图软件","修掉照片里的杂物；给图片加文字和边框；批量调整尺寸","需要专业印刷级色彩管理的人；Windows 或 Linux 用户；重度依赖 Adobe 生态插件的工作流"],"ft":["图片编辑","修图","照片处理"],"evc":2,"note":null,"un":[]},{"id":"easydiffusion/easydiffusion","desc":null,"lic":"NOASSERTION","lang":"JavaScript","stars":10472,"d7":0,"dtot":0,"pushed":"2026-09-11T07:48:39Z","first":"2026-10-12","last":"2026-10-12","rec":false,"rc":0,"tier":null,"risk":null,"status":"watching","origin":"auto","oder":"自动发现","l1":"AI","l2":"AI绘画","exp":5,"expSc":85,"part":{"易用性":30,"文档完整度":20,"功能成熟度":15,"维护活跃":10,"风险":10},"t":["AI","桌面","提效","实验","轻配置","中"],"hs":"complete","one":"这是一个在自己电脑上画 AI 图片的工具，可以帮你不用懂技术就生成图片，全程在浏览器里点。","prob":"以前想本地跑 AI 绘画，要装 Python、配环境、下载模型，卡在某一步就放弃；这个做到的是一键装好，装完打开浏览器就能用。","ex":"比如你想要一张\"傍晚海边的小屋\"的插画，在网页输入框里写下这句话，点生成，几秒后就能看到图。","fn":["一个面向非技术用户的本地 AI 绘画工具，用浏览器界面操作。","文字生成图片（也可以在参考图上继续生成）；一键安装，不用手动配环境；界面简单，参数有默认值","生成配图与插画；体验本地 AI 绘画；给孩子做手工素材","输入一句话生成插画；拿一张草图生成成图；批量出壁纸","没有独立显卡、显存较小的电脑；想要最前沿模型和精细控制的专业用户"],"ft":["AI绘画","本地生成","一键安装"],"evc":1,"note":null,"un":[]},{"id":"storytold/filmcraft","desc":null,"lic":null,"lang":"Rust","stars":9610,"d7":181,"dtot":181,"pushed":null,"first":"2026-10-11","last":"2026-10-12","rec":false,"rc":0,"tier":null,"risk":null,"status":"watching","origin":"auto","oder":"自动发现","l1":"其他","l2":"其他工具","exp":1,"expSc":36,"part":{"易用性":8,"文档完整度":0,"功能成熟度":10,"维护活跃":8,"风险":10},"t":["其他","CLI","提效","实验","轻配置","中"],"hs":"complete","one":"这是一个视频剪辑软件，可以帮你剪片段、拼画面，是免费开源的。","prob":"以前做视频剪辑要么用付费软件，要么用带水印的免费工具；这个是本地运行的免费替代。","ex":"比如你要把几段手机拍的视频剪掉多余部分、拼成一条短片，用它就能完成。","fn":["一个开源视频剪辑软件，用 Rust 编写（与 Photocraft / Wordcraft 同系列）。","视频片段剪辑与拼接；基础特效与转场；本地处理，素材不外传","剪日常视频；做短片；素材粗剪","剪旅行 vlog；拼接多段录制；去头去尾","需要专业调色与多轨合成的制作；要求与 Premiere 工程互通的团队"],"ft":["视频剪辑","剪辑软件","替代Premiere"],"evc":2,"note":null,"un":[]},{"id":"storytold/wordcraft","desc":null,"lic":"Apache-2.0","lang":"Rust","stars":9578,"d7":5219,"dtot":5219,"pushed":"2026-10-12T16:22:14Z","first":"2026-10-11","last":"2026-10-12","rec":false,"rc":0,"tier":null,"risk":null,"status":"watching","origin":"auto","oder":"自动发现","l1":"办公","l2":"文档处理","exp":4,"expSc":73,"part":{"易用性":18,"文档完整度":20,"功能成熟度":10,"维护活跃":15,"风险":10},"t":["其他","CLI","提效","实验","要编程","中"],"hs":"complete","one":"这是一个文字处理软件，可以帮你写文档、写报告，是 Microsoft Word 的免费开源替代品。","prob":"以前写正式文档基本只能用 Word 或在线文档，要么付费要么把内容放在别人服务器上；这个是本地运行的免费替代，文档不出本机。","ex":"比如你要写一份合同或周报，可以用它排版、加标题层级、插入表格，然后导出成通用格式发给别人。","fn":["Microsoft Word 的开源重写版本，用 Rust 编写。","文档撰写与排版；标题/列表/表格等常见格式；导出通用文档格式","写报告与合同；整理长文档；离线办公","写周报并导出；排版一份说明书；起草合同","需要与 Word 宏、复杂域代码完全兼容的场景；要求极致稳定、不能容忍早期版本问题的办公环境"],"ft":["文档编辑","办公软件","替代Word"],"evc":3,"note":null,"un":[]},{"id":"yetone/magpie","desc":null,"lic":null,"lang":"TypeScript","stars":9070,"d7":0,"dtot":0,"pushed":null,"first":"2026-10-13","last":"2026-10-13","rec":true,"rc":1,"tier":"S","risk":"中","status":"active","origin":"auto","oder":"自动发现","l1":"AI","l2":"AI Agent","exp":1,"expSc":36,"part":{"易用性":8,"文档完整度":0,"功能成熟度":10,"维护活跃":8,"风险":10},"t":["其他","插件","提效","实验","轻配置","中"],"hs":"complete","one":"这是一个给开发者用的模型接入层，可以帮你把各家 AI 编程助手接到同一个地方，比如让 Codex 用上 DeepSeek。","prob":"以前每个 AI 编程工具都认自己合作的模型厂商，想换一家就得改一堆配置；这个把\"工具\"和\"模型\"解耦，一处配置就能混用。","ex":"比如你习惯用 Codex 但想用 DeepSeek 的模型，配置一次之后，Codex 那边就像什么都没变一样跑在 DeepSeek 上。","fn":["一个本地运行的模型路由层（TypeScript），把不同 agent 接到不同模型。","一处配置多家模型；让不同 AI 工具混用模型；本地服务，中转在你机器上","让 Codex 接 DeepSeek；多个工具共用一套 Key；快速换模型做对比","Codex 换模型；给 Claude Code 接别的供应商；对比同一问题在不同模型上的效果","完全不用命令行的新手；只需要一家模型、不做切换的人"],"ft":["模型路由","Agent 工具","开发辅助"],"evc":2,"note":null,"un":[]},{"id":"storytold/pdfcraft","desc":null,"lic":"Apache-2.0","lang":"Rust","stars":8993,"d7":0,"dtot":0,"pushed":"2026-10-12T15:55:31Z","first":"2026-10-12","last":"2026-10-12","rec":false,"rc":0,"tier":null,"risk":null,"status":"watching","origin":"auto","oder":"自动发现","l1":"办公","l2":"PDF 与阅读","exp":4,"expSc":81,"part":{"易用性":18,"文档完整度":20,"功能成熟度":18,"维护活跃":15,"风险":10},"t":["其他","CLI","提效","实验","要编程","中"],"hs":"complete","one":"这是一个 PDF 阅读编辑工具，可以帮你看 PDF、也能改里面的内容，是免费开源的。","prob":"以前改 PDF 基本都得买付费软件，免费工具通常只能看不能改；这个把阅读和编辑都做在本地。","ex":"比如你要把一份 PDF 里几页删掉、再合并另一份进去，用它就能完成，不用上传到网页工具。","fn":["一个开源的 PDF 阅读与编辑软件，用 Rust 编写。","阅读 PDF；编辑与生成 PDF；处理页面（增删、合并）","看资料与合同；合并拆分 PDF；给 PDF 做简单修改","合并几份 PDF；删掉不需要的页；导出新的 PDF","需要复杂表单填写与签章的场景；要求与 Adobe 生态完全兼容的工作流"],"ft":["PDF工具","阅读编辑","文档处理"],"evc":1,"note":null,"un":[]},{"id":"Anil-matcha/Open-Generative-AI","desc":null,"lic":null,"lang":"JavaScript","stars":30112,"d7":0,"dtot":0,"pushed":null,"first":"2026-10-12","last":"2026-10-12","rec":false,"rc":0,"tier":"dropped","risk":"高","status":"dropped","origin":"auto","oder":"自动发现","l1":"其他","l2":"其他工具","exp":null,"expSc":null,"part":null,"t":["AI","插件","提效","实验","轻配置","高"],"hs":"partial","one":"描述主打「无内容过滤/uncensored」且首页为付费平台引流，纯营销 + 合规风险","prob":null,"ex":null,"fn":[],"ft":[],"evc":1,"note":null,"un":[]}];
-const E = {"HBAI-Ltd/Toonflow-app":[{"d":"2026-10-12","t":"discovered","x":"首次收录，来源 未知"}],"storytold/filmcraft":[{"d":"2026-10-12","t":"stars_up","x":"+181 星（9429 → 9610）"},{"d":"2026-10-11","t":"discovered","x":"首次收录，来源 未知"}],"storytold/wordcraft":[{"d":"2026-10-13","t":"stars_up","x":"+4818 星（4760 → 9578）"},{"d":"2026-10-12","t":"stars_up","x":"+401 星（4359 → 4760）"},{"d":"2026-10-11","t":"discovered","x":"首次收录，来源 未知"}],"NandhaKishorM/laya":[{"d":"2026-10-12","t":"stars_up","x":"+30 星（32268 → 32298）"},{"d":"2026-10-11","t":"discovered","x":"首次收录，来源 未知"}],"browser-use/jev-ultrafast":[{"d":"2026-10-11","t":"discovered","x":"首次收录，来源 ai-agent"},{"d":"2026-10-11","t":"recommended","x":"S 档"}],"storytold/photocraft":[{"d":"2026-10-12","t":"stars_up","x":"+596 星（45296 → 45892）"},{"d":"2026-10-11","t":"recommended","x":"A 档"},{"d":"2026-10-11","t":"discovered","x":"首次收录，来源 cli"}],"easydiffusion/easydiffusion":[{"d":"2026-10-12","t":"discovered","x":"首次收录，来源 未知"}],"unslothai/unsloth":[{"d":"2026-10-12","t":"discovered","x":"首次收录，来源 未知"}],"robbietilton/Compositor":[{"d":"2026-10-12","t":"discovered","x":"首次收录，来源 其他"},{"d":"2026-10-12","t":"recommended","x":"A 档 · 65 分 · 行动：收藏"}],"Niko1221/Strata":[{"d":"2026-10-12","t":"stars_up","x":"+105 星（21251 → 21356）"},{"d":"2026-10-11","t":"recommended","x":"S 档"},{"d":"2026-10-11","t":"discovered","x":"首次收录，来源 self-hosted"}],"mudler/LocalAI":[{"d":"2026-10-12","t":"discovered","x":"首次收录，来源 未知"}],"yetone/magpie":[{"d":"2026-10-13","t":"discovered","x":"首次收录，来源 开发"},{"d":"2026-10-13","t":"recommended","x":"S 档 · 80 分 · 行动：试玩"}],"ImageMagick/ImageMagick":[{"d":"2026-10-12","t":"discovered","x":"首次收录，来源 未知"}],"Anil-matcha/Open-Generative-AI":[{"d":"2026-10-12","t":"discovered","x":"首次收录，来源 图像专题"}],"storytold/pdfcraft":[{"d":"2026-10-12","t":"discovered","x":"首次收录，来源 未知"}]};
-const PLANS = [{"id":"ai-video","name":"做 AI 视频","triggers":["做视频","短视频","ai视频","视频生成","ai 视频","漫剧","短剧"],"intro":"一条 AI 视频通常要过这几步：先有画面，再剪成片，最后配声音。下面是每一步该看哪类工具。","roles":[{"role":"画面生成","why":"视频的画面素材从这里来（文生图 / 文生视频 / 动画）","l2":["AI视频","AI绘画"],"ft":["视频制作","文生图","动画生成","动态插画"]},{"role":"成片剪辑与后期","why":"把素材拼成片子：剪辑、转场、增强画质","l2":["图片处理"],"ft":["视频剪辑","视频增强","画质增强"]},{"role":"配音与音频","why":"旁白、配音、口播都在这步解决","l2":[],"ft":["语音处理","语音合成","文字转语音","音频编辑"]},{"role":"素材管理","why":"素材一多就要能找得到、理得清","l2":["文件管理"],"ft":["文件搜索","素材"]}]},{"id":"ai-image","name":"AI 绘画 / 出图工作流","triggers":["画图","ai绘画","出图","文生图","生成图片","绘画","ai画图","修图"],"intro":"出图不只是「输入一句话」：模型怎么跑、图怎么改、批量怎么管，各是一步。","roles":[{"role":"出图主体","why":"真正把文字变成图的工具","l2":["AI绘画"],"ft":["文生图","AI绘画","图像生成"]},{"role":"本地运行 / 模型管理","why":"不想付费或用云端，就在本机跑","l2":["本地模型","模型训练"],"ft":["本地模型","模型管理"]},{"role":"改图与后期","why":"生成的图多半要修：抠图、去背景、局部重绘","l2":["图片处理","图片处理"],"ft":["修图","抠图","去背景","局部重绘"]}]},{"id":"product-design","name":"产品设计 / UI","triggers":["产品设计","ui设计","做界面","原型","设计稿","ui"],"intro":"从想法到可看的稿子：灵感与生成、界面素材、结构梳理、文档沉淀。","roles":[{"role":"界面与视觉生成","why":"把想法快速变成可看的界面或配图","l2":["UI设计","AI绘画"],"ft":["UI设计","设计稿","图示生成"]},{"role":"建模 / 三维","why":"涉及实体产品或场景时需要","l2":["建模"],"ft":["建模","CAD"]},{"role":"思路与文档","why":"需求、竞品、说明总得记下来","l2":["笔记","AI办公"],"ft":["笔记","文档编辑"]}]},{"id":"local-ai","name":"本地跑 AI（离线 / 私有）","triggers":["本地运行ai","离线ai","本地跑模型","私有部署","自己电脑跑ai","本地ai"],"intro":"数据不出机器：模型怎么跑、怎么接进现有程序、怎么微调。","roles":[{"role":"推理引擎","why":"在本机把模型跑起来","l2":["本地模型"],"ft":["本地大模型","推理引擎","OpenAI兼容"]},{"role":"训练 / 微调","why":"要用自己的数据调模型","l2":["模型训练"],"ft":["模型微调","训练加速"]},{"role":"服务与部署","why":"让别的程序/别的设备也能用上","l2":["部署托管","自动化"],"ft":["自建服务","自托管"]}]},{"id":"coding","name":"写代码 / 编程助手","triggers":["写代码","编程助手","ai编程","代码助手","coding","重构","看代码"],"intro":"从「帮我写」到「帮我查」：助手、代码理解、工具链。","roles":[{"role":"编程助手","why":"直接在编辑器/终端里帮你写与改","l2":["编程助手"],"ft":["编程助手","代码助手","coding agent"]},{"role":"代码理解与分析","why":"改之前先搞清影响面、依赖、坏味道","l2":["代码分析"],"ft":["代码分析","索引","依赖分析"]},{"role":"开发工具","why":"日常脚手架与效率工具","l2":["开发工具"],"ft":["开发工具","命令行工具"]}]},{"id":"find-files","name":"找文件 / 整理素材","triggers":["找文件","搜文件","文件太多","整理文件","素材管理","搜索文件"],"intro":"东西一多就找不到：先能搜到，再能理清，最后能自动化。","roles":[{"role":"搜索与索引","why":"记得内容却忘了文件名时靠它","l2":["文件管理"],"ft":["文件搜索","语义搜索","本地索引"]},{"role":"系统级效率","why":"剪贴板、启动器、快捷操作","l2":["系统工具"],"ft":["系统工具","快捷"]},{"role":"自动化","why":"重复的整理动作交给脚本","l2":["自动化"],"ft":["自动化","定时任务"]}]},{"id":"office-docs","name":"做 PPT / 写文档","triggers":["做ppt","写文档","汇报","幻灯片","演示文稿","写报告"],"intro":"别只找「生成 PPT 的 AI」——排版、素材、成稿各是一步。","roles":[{"role":"演示与文档成稿","why":"真正产出 ppt / 文档文件","l2":["AI办公"],"ft":["幻灯片","做PPT","文档编辑"]},{"role":"配图与视觉","why":"图文并茂比纯文字好读","l2":["AI绘画","图片处理"],"ft":["配图","插图","图示生成"]},{"role":"素材与知识沉淀","why":"长期写东西要有自己的资料库","l2":["笔记"],"ft":["笔记","知识管理"]}]},{"id":"voice-audio","name":"配音 / 语音处理","triggers":["配音","语音转文字","字幕","音频","转录","朗读"],"intro":"声音这条线：把话说出来（合成）、把话记下来（识别）、把音修好（编辑）。","roles":[{"role":"语音合成 / 朗读","why":"给视频或播客生成旁白","l2":[],"ft":["语音合成","文字转语音","配音"]},{"role":"语音识别 / 字幕","why":"把录音变成可编辑的文字","l2":[],"ft":["语音识别","字幕","转写"]},{"role":"音频编辑","why":"剪掉口误、降噪、调音量","l2":[],"ft":["音频编辑","录音剪辑"]}]},{"id":"dsh-boost","name":"给 DSH 加装能力","triggers":["dsh插件","插件","dsh","扩展dsh","给dsh加"],"intro":"DSH 本体之外的能力都靠插件/技能补：装什么、怎么管、怎么配。","roles":[{"role":"插件与技能","why":"新能力以插件/技能形式加进来","l2":["DSH 插件","DSH 技能"],"ft":["DSH 插件","agent-skills"]},{"role":"配置与观测","why":"装多了要能看清状态、额度、上下文","l2":["DSH 配置"],"ft":["配额管理","配置","上下文"]}]},{"id":"research","name":"查资料 / 学术研究","triggers":["查资料","找论文","学术","research","调研","收集资料"],"intro":"检索、读、整理三段：先找到，再读懂，最后沉淀成自己的。","roles":[{"role":"检索与抓取","why":"把散落的信息拉回来","l2":[],"ft":["网页搜索","检索","抓取","爬取"]},{"role":"理解与整理","why":"长文/论文要能快速读进去","l2":["AI聊天","AI写作"],"ft":["翻译","总结","写作"]},{"role":"知识沉淀","why":"形成可检索的长期资料库","l2":["笔记"],"ft":["笔记","知识管理"]}]},{"id":"ai-agent","name":"用 AI Agent 干活","triggers":["ai agent","智能体","agent","自动化助手","个人助手"],"intro":"让 AI 自己动手：先有个能编排任务的助手，再接上工具与浏览器，最后把过程管起来。","roles":[{"role":"Agent 主程序 / 编排","why":"负责拆任务、调工具、循环推进","l2":["AI Agent"],"ft":["AI代理","AI Agent","个人助手"]},{"role":"浏览器与设备操作","why":"让它真的能点网页、操作设备，而不只是聊天","l2":["自动化"],"ft":["浏览器代理","网页自动化","手机自动化"]},{"role":"运行环境与沙箱","why":"给 agent 一个受限空间跑，避免它乱动你的系统","l2":[],"ft":["沙箱","权限控制","隔离","sandbox"]}]}];
-const SYN = [{"group":"图像生成","terms":["画图","绘画","作图","图片生成","文生图","AI画图","AI画画","绘图","出图","图片制作","text-to-image","t2i","image generation"]},{"group":"图片编辑","terms":["修图","改图","P图","照片处理","图像编辑","抠图","去背景","局部重绘","inpainting","photo editing","背景替换"]},{"group":"本地大模型","terms":["本地跑模型","离线AI","本地AI","本地运行AI","私有模型","自己电脑跑AI","local llm","本地推理","Ollama","GGUF"]},{"group":"编程助手","terms":["写代码","AI写代码","编程助手","代码补全","coding agent","代码助手","自动改代码","AI编程"]},{"group":"网页自动化","terms":["自动点网页","网页操作","爬数据","自动填表","浏览器自动化","RPA","web agent","采集"]},{"group":"文件搜索","terms":["找文件","管理文件","整理文件","搜文件","文件搜索","搜内容","全盘搜索","快速查找","file search","everything"]},{"group":"个人助手","terms":["助手","AI助手","个人助理","私人助手","自建助手","agent","自动化助理","提醒"]},{"group":"数据分析","terms":["分析数据","数据处理","关联表格","数据工作台","BI","数据探索","本地分析"]},{"group":"代码分析","terms":["看代码","代码关系","依赖分析","影响面","重构","代码图谱","静态分析","老项目"]},{"group":"文档配图","terms":["画示意图","做插画","配图","解释图","流程图","插图","diagram"]},{"group":"手机自动化","terms":["自动操作手机","手机签到","真机操作","设备自动化","手机脚本"]},{"group":"车载工具","terms":["车机","投屏","CarPlay","车上导航","车载系统"]},{"group":"语音处理","terms":["语音转文字","文字转语音","语音识别","TTS","ASR","转写"]},{"group":"网页生成","terms":["生成网页","HTML生成","排版回答","做网页","explainer"]},{"group":"办公文档","terms":["做PPT","PPT","幻灯片","演示文稿","做表格","写文档","汇报"],"source":"手工","written_at":"2026-10-14"},{"group":"图片编辑","terms":["替代PS","PS","photoshop","修图","改图","抠图","去背景"],"source":"手工","written_at":"2026-10-14"},{"group":"AI聊天","terms":["聊天机器人","chatbot","对话","问答","AI助手"],"source":"手工","written_at":"2026-10-14"}];   // 同义词组：搜索时按「组内任一命中」算命中
-const WS = [];
-const DIMS = ['领域','形态','用途','成熟度','上手难度','风险等级'];
-const STA = {active:'已收录',using:'正在使用',watching:'观察中',researching:'研究中',dropped:'已放弃'};   // B14：saved 已废弃，不留死映射
-const f = {q:'', sort:'stars', status:'', risk:'', tier:'', five:'', active:'', l1:'', l2:'', tag:''};
-let cmpSel = [];   // 对比选择（最多 2 个，页内纯前端）
-let groupByUse = false;   // 按用途分组（把结果按二级分类聚合，便于按流程挑组合）
-
-function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
-function repoUrl(p){ return 'https://github.com/' + p.id; }
-function when(s){ return s ? String(s).slice(0,10) : '—'; }
-function daysAgo(s){ if(!s) return null; const d=new Date(String(s)); if(isNaN(d)) return null; return Math.floor((Date.now()-d)/86400000); }
-function stars5(n){ if(n===null||n===undefined) return '<span class="stars5" style="color:var(--dim)">未评分</span>'; return '<span class="stars5">'+'★'.repeat(n)+'☆'.repeat(5-n)+'</span>'; }
-function oneText(p){ return p.one || (p.desc ? p.desc : null); }function evCount(p){ const e=E[p.id]; return e? e.length : 0; }
-function hay(p){
-  return [p.id,p.desc||'',p.note||'',p.one||'',p.prob||'',p.ex||'',
-    (p.fn||[]).join(' '),(p.ft||[]).join(' '),(p.un||[]).map(x=>x&&x.note?x.note:'').join(' '),
-    p.t.join(' '),p.l1||'',p.l2||''].join(' ').toLowerCase();
-}
-// —— 搜索词处理：分词 + 错字容错（v3.1 第五节）——
-let CURTOK = [];
-let VOCAB = null;
-function buildVocab(){
-  if(VOCAB) return VOCAB;
-  const set=new Set();
-  P.forEach(p=>{
-    (p.ft||[]).forEach(x=>{ if(x) set.add(String(x).toLowerCase()); });
-    [p.l1,p.l2].forEach(x=>{ if(x) set.add(String(x).toLowerCase()); });
-    String(p.id||'').toLowerCase().split(/[\/\-_.]+/).forEach(x=>{ if(x.length>2) set.add(x); });
-  });
-  VOCAB=Array.from(set);
-  return VOCAB;
-}
-function lev(a,b){
-  const m=a.length,n=b.length; if(!m) return n; if(!n) return m;
-  let prev=[]; for(let j=0;j<=n;j++) prev[j]=j;
-  for(let i=1;i<=m;i++){
-    const cur=[i];
-    for(let j=1;j<=n;j++){
-      const cost=(a[i-1]===b[j-1])?0:1;
-      cur[j]=Math.min(cur[j-1]+1, prev[j]+1, prev[j-1]+cost);
-    }
-    prev=cur;
-  }
-  return prev[n];
-}
-function fuzzyFix(tok){
-  if(!tok || tok.length<3) return null;
-  const v=buildVocab().concat((SYN||[]).reduce(function(a,g){ return a.concat((g.terms||[]).map(function(x){ return String(x).toLowerCase(); })); },[]));   // 1a：把同义词表的词并进容错词表（原来库里没有 photoshop 这类词，photshop 修不到）
-  for(let i=0;i<v.length;i++){
-    const w=v[i];
-    if(Math.abs(w.length-tok.length)<=1 && lev(tok,w)<=1) return w;
-  }
-  return null;
-}
-// 同义词扩展（B2）：命中组内任一词 → 返回整组，搜索按「组内任一命中」判定
-function expandToken(t){
-  const tl=String(t).toLowerCase();
-  for(const g of (SYN||[])){
-    const terms=(g.terms||[]).map(x=>String(x).toLowerCase());
-    if(terms.indexOf(tl)>=0) return terms;
-  }
-  return [tl];
-}function parseQuery(q){
-  if(!q) return [];
-  let toks=q.split(/[\s,，、;；|]+/).filter(x=>x);
-  if(!toks.length) toks=[q];
-  // §2 修复（v5.1.0 测试发现）：中文整句没有空格 → 整句被当成**一个词**去匹配，必然 0 命中
-  // （实测「我想做PPT / 我要画图 / 我要写代码 / 我要找AI助手 / 我要管理文件」= 0/5）。
-  // 策略：剥掉意图前缀，对剩下的短词做同义词扩展；整句也保留（避免误伤正常搜索）。
-  const INTENT = /^(我想|我要|帮我|给我|想要|需要一个|需要|寻找|找找|有没有|求|想|要|找|做个|做)/;
-  return toks.map(function(t){
-    const tl0 = String(t).toLowerCase();
-    if (expandToken(tl0).length > 1) return expandToken(tl0);   // ① 精确命中同义词组 → 不要再容错改写（ppt 被 fuzzyFix 改写就是这个 bug）
-    const f = fuzzyFix(t) || t;   // ② 没命中才容错
-    let s = f; for (let k = 0; k < 2; k++) { s = s.replace(INTENT, ''); }   // 剥两层：「我要找AI助手」→ 我要 → 找 → ai助手
-    let parts = [];
-    if (s && s !== f) { parts = parts.concat(expandToken(s)); }
-    const full = expandToken(f);
-    for (const x of full) { if (parts.indexOf(x) < 0) parts.push(x); }
-    return parts;
-  });
-}
-
-function pass(p){
-  if(f.l1 && p.l1!==f.l1) return false;
-  if(f.l2 && p.l2!==f.l2) return false;
-  if(f.q){
-    // 分词 + 容错后，要求**所有词都命中**（多词查询更精确）；单词查询等价于原来的子串匹配
-    if(CURTOK.length){
-      const h=hay(p);
-      if(!CURTOK.every(set=>set.some(t=>h.indexOf(t)>=0))) return false;   // 词集：组内任一命中即可（B2）
-    }
-  }
-  if(f.tag && (p.ft||[]).indexOf(f.tag)<0) return false;
-  if(f.status && p.status!==f.status) return false;
-  if(f.risk && p.risk!==f.risk) return false;
-  if(f.tier){ if(f.tier==='unrated'){ if(p.tier && p.tier!=='unrated') return false; } else if(p.tier!==f.tier) return false; }
-  if(f.five){ if(+f.five===0){ if(p.exp!==null) return false; } else { if(p.exp===null || p.exp < +f.five) return false; } }
-  if(f.active){ const d=daysAgo(p.pushed); if(d===null || d> +f.active) return false; }
-  return true;
-}
-// 搜索优先级（v3.1 验收）：项目全名 > 简称 > 前缀 > GitHub ID > 功能标签 > 一句话 > 分类
-function matchScore(p,q){
-  if(!q) return 0;
-  const qq=q.toLowerCase();
-  const id=(p.id||'').toLowerCase();
-  const name=id.split('/')[1]||'';
-  if(id===qq) return 100;
-  if(name===qq) return 95;
-  if(name.indexOf(qq)===0) return 85;
-  if(id.indexOf(qq)>=0) return 80;
-  if((p.ft||[]).some(x=>String(x).toLowerCase().indexOf(qq)>=0)) return 65;
-  if((p.one||'').toLowerCase().indexOf(qq)>=0) return 50;
-  if((p.l1||'').toLowerCase()===qq||(p.l2||'').toLowerCase()===qq) return 45;
-  return 25;
-}
-function sorted(arr){
-  const r=arr.slice();
-  const bySort=(a,b)=>{
-    if(f.sort==='stars'){ const x=a.exp===null?-1:a.exp, y=b.exp===null?-1:b.exp; return y-x || (b.expSc||0)-(a.expSc||0) || b.stars-a.stars; }
-    if(f.sort==='gh') return b.stars-a.stars;
-    if(f.sort==='recent') return String(b.pushed||'').localeCompare(String(a.pushed||''));
-    return a.id.localeCompare(b.id);
+(function () {
+  var PAGES = {
+    home: 'home-brutal-token.generated.html',
+    daily: 'daily-layout-c-finsara.generated.html',
+    library: 'library-notebook.generated.html',
+    plans: 'plans-shelf.generated.html'
   };
-  r.sort((a,b)=>{
-    if(f.q){ const d=matchScore(b,f.q)-matchScore(a,f.q); if(d!==0) return d; }
-    return bySort(a,b);
-  });
-  return r;
-}
-function hasNote(p){ return !!(p.note || (p.un && p.un.filter(x=>x&&x.note).length)); }
-function cardHtml(p){
-  const flags=[];
-  if(p.tier==='S'||p.tier==='A') flags.push('<span class="pill tier-'+p.tier+'">'+p.tier+' 档</span>');
-  else if(p.tier==='dropped') flags.push('<span class="pill s-dropped">已淘汰</span>');
-  else flags.push('<span class="pill tier-unrated" title="未经日报评档">未评档</span>');
-  if(p.risk) flags.push('<span class="pill r-'+(p.risk==='低'?'low':p.risk==='高'?'high':'mid')+'">风险 '+p.risk+'</span>');
-  if(p.status!=='active') flags.push('<span class="pill s-'+p.status+'">'+(STA[p.status]||p.status)+'</span>');
-  if(p.origin==='user') flags.push('<span class="pill" style="border-color:#6a4f8a;color:#c9a9f5">用户推荐</span>');
-  const fts=(p.ft||[]).slice(0,2).map(x=>'<span class="pill pill-fn">'+esc(x)+'</span>').join('');
-  const one = oneText(p);
-  // 待补全条目**不隐藏、但降低视觉权重**（GPT 建议）：明确标出来，而不是让用户以为"就这么点东西"
-  const thin = (p.hs!=='complete');
-  // 卡片上没有任何"收藏"元素：收藏功能已整体撤销（用户 2026-10-13 决定：用起来太麻烦繁琐）
-  // 📝 备注标记（2026-10-15 用户要求，方案 A）：该条有台账备注或用户备注时，在标题旁给一个记号 ——
-  // 不用点进详情就知道"这条有备注"。备注**只在详情面板里显示**（页面是只读单文件，不能在页面里编辑）。
-  const noteMark = hasNote(p) ? '<span title="这条有备注（台账备注 / 用户备注）—— 点开卡片看详情" style="margin-left:6px;font-size:12px;color:var(--gold);cursor:help">📝</span>' : '';
-  return '<div class="card'+(thin?' thin':'')+'" onclick="detail(\''+p.id+'\')">'
-    +'<h3><a href="'+repoUrl(p)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">'+esc(p.id)+'</a>'+noteMark
-      +'<span class="cmp'+(cmpSel.indexOf(p.id)>=0?' on':'')+'" onclick="toggleCmp(event,\''+p.id+'\')">'+(cmpSel.indexOf(p.id)>=0?'✓ 已选对比':'对比')+'</span></h3>'
-    +'<div style="margin-bottom:6px">'+stars5(p.exp)+' <span class="pill">'+esc(p.l2)+'</span></div>'
-    +'<p class="one'+(one?'':' none')+'">'+esc(one||'（暂无中文介绍，仅有英文描述或台账备注）')+'</p>'
-    +(thin?'<div class="soon">📌 详细介绍待补全 —— 这个库在长，它还没轮到</div>':'')
-    +'<div class="row" style="display:flex;gap:5px;flex-wrap:wrap">'+fts+'</div>'
-    +'<div class="row" style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">'+flags.join('')+'</div>'
-    +'<div class="meta"><span>★ '+p.stars.toLocaleString()+' ｜ '+esc(p.lang||'')+' ｜ '+esc(p.lic||'许可未知')+'</span>'
-    +'<span title="最近提交">'+when(p.pushed)+'</span></div>'
-    +'</div>';
-}
-// ---------- 项目对比（页内，纯前端；数据已内嵌，不调 API） ----------
-function toggleCmp(ev, id){
-  if(ev && ev.stopPropagation) ev.stopPropagation();
-  const i=cmpSel.indexOf(id);
-  if(i>=0) cmpSel.splice(i,1);
-  else { if(cmpSel.length>=2) cmpSel.shift(); cmpSel.push(id); }
-  render(); renderCmpBar();
-}
-function clearCmp(){ cmpSel=[]; render(); renderCmpBar(); }
-function renderCmpBar(){
-  const bar=document.getElementById('cmpBar');
-  if(!cmpSel.length){ bar.className=''; bar.innerHTML=''; return; }
-  bar.className='on';
-  bar.innerHTML='<span>已选 <b>'+cmpSel.length+'/2</b>：'+cmpSel.map(esc).join('　vs　')+'</span>'
-    +(cmpSel.length===2?'<span class="chip on" onclick="showCompare()">查看对比</span>':'<span style="color:var(--dim)">再选一个</span>')
-    +'<span class="chip" onclick="clearCmp()">清空</span>';
-}
-function cmpCell(p, kind){
-  if(!p) return '';
-  if(kind==='one')   return oneText(p)||'';
-  if(kind==='what')  return (p.fn&&p.fn[0])||'';
-  if(kind==='core')  return (p.fn&&p.fn[1])||'';
-  if(kind==='use')   return (p.fn&&p.fn[2])||'';
-  if(kind==='case')  return (p.fn&&p.fn[3])||'';
-  if(kind==='no')    return (p.fn&&p.fn[4])||'';
-  if(kind==='ease')  return (p.t&&p.t[4])||'';
-  if(kind==='env')   return p.lang||'';
-  if(kind==='exp')   return (p.exp===null||p.exp===undefined)?'':('★'.repeat(p.exp)+'☆'.repeat(5-p.exp)+'（'+p.expSc+'/100）');
-  if(kind==='stars') return p.stars.toLocaleString();
-  if(kind==='pushed')return when(p.pushed);
-  if(kind==='lic')   return p.lic||'';
-  if(kind==='risk')  return p.risk||(p.t&&p.t[5])||'';
-  if(kind==='tier')  return (p.tier==='S'||p.tier==='A')?(p.tier+' 档'):(p.tier==='dropped'?'已淘汰':'未评档');
-  return '';
-}
-function cmpRow(A,B,label,kind){
-  const a=cmpCell(A,kind), b=cmpCell(B,kind);
-  const t=v=>v?esc(v):'<span style="color:var(--dim)">（待补全）</span>';
-  return '<tr><td>'+label+'</td><td>'+t(a)+'</td><td>'+t(b)+'</td></tr>';
-}
-function cmpSuggest(A,B){
-  const s=[];
-  if(A.exp!==null&&B.exp!==null&&A.exp!==undefined&&B.exp!==undefined&&A.exp!==B.exp)
-    s.push('体验评分更高：<b>'+(A.exp>B.exp?esc(A.id):esc(B.id))+'</b>（'+A.exp+'★ vs '+B.exp+'★）');
-  const ra=A.risk||(A.t&&A.t[5]), rb=B.risk||(B.t&&B.t[5]);
-  const rank={'低':1,'中':2,'高':3};
-  if(ra&&rb&&ra!==rb&&rank[ra]&&rank[rb]) s.push('风险更低：<b>'+(rank[ra]<rank[rb]?esc(A.id):esc(B.id))+'</b>（'+ra+' vs '+rb+'）');
-  const da=A.t&&A.t[4], db=B.t&&B.t[4];
-  const rank2={'开箱即用':1,'轻配置':2,'要编程':3,'要部署':4};
-  if(da&&db&&da!==db&&rank2[da]&&rank2[db]) s.push('更易上手：<b>'+(rank2[da]<rank2[db]?esc(A.id):esc(B.id))+'</b>（'+da+' vs '+db+'）');
-  if(!s.length) s.push('两者在评分 / 风险 / 上手难度上没拉开差距，建议按使用场景选（见上面「常见用途」行）');
-  return s;
-}
-function showCompare(){
-  if(cmpSel.length<2) return;
-  const A=P.find(x=>x.id===cmpSel[0]), B=P.find(x=>x.id===cmpSel[1]);
-  if(!A||!B) return;
-  const h='<span class="close" onclick="document.getElementById(\'panel\').classList.remove(\'open\')">×</span>'
-    +'<h2>对比：'+esc(A.id)+' vs '+esc(B.id)+'</h2>'
-    +'<div style="color:var(--dim);font-size:12.5px">数据来自本地知识库（页面已内嵌）｜ 未调用任何 API ｜ 缺失标「（待补全）」</div>'
-    +'<table class="cmpt"><tr><th>维度</th><th>'+esc(A.id)+'</th><th>'+esc(B.id)+'</th></tr>'
-    +cmpRow(A,B,'一句话定位','one')
-    +cmpRow(A,B,'是什么','what')
-    +cmpRow(A,B,'核心功能','core')
-    +cmpRow(A,B,'常见用途（适合谁）','use')
-    +cmpRow(A,B,'使用案例','case')
-    +cmpRow(A,B,'不适合','no')
-    +cmpRow(A,B,'学习成本（上手难度）','ease')
-    +cmpRow(A,B,'运行环境（语言）','env')
-    +cmpRow(A,B,'体验评分（不看 star）','exp')
-    +cmpRow(A,B,'星数','stars')
-    +cmpRow(A,B,'最近提交','pushed')
-    +cmpRow(A,B,'License','lic')
-    +cmpRow(A,B,'风险','risk')
-    +cmpRow(A,B,'档位','tier')
-    +'</table>'
-    +'<div class="sec-h">怎么选（自动判断，仅供参考）</div>'
-    +'<ul style="margin:4px 0 0;padding-left:20px;font-size:13px;line-height:1.8">'+cmpSuggest(A,B).map(x=>'<li>'+x+'</li>').join('')+'</ul>'
-    +'<div class="cmpnote">判断只基于本地数据（体验评分 / 风险 / 上手难度），不构成使用担保；用前请看各自仓库的 License 与最近维护状态。</div>'
-    +'<div class="kv"><a href="'+repoUrl(A)+'" target="_blank" rel="noopener">打开 '+esc(A.id)+' ↗</a>　'
-    +'<a href="'+repoUrl(B)+'" target="_blank" rel="noopener">打开 '+esc(B.id)+' ↗</a></div>';
-  document.getElementById('panel').innerHTML=h;
-  document.getElementById('panel').classList.add('open');
-}
-// ---------- 方案（v3.1 第八节）：需求 → 工具组合 + 为什么 ----------
-function planFor(q){
-  if(!q) return null;
-  const qq=q.toLowerCase();
-  return PLANS.find(function(pl){
-    return (pl.triggers||[]).some(function(t){
-      const tl=String(t).toLowerCase();
-      return qq.indexOf(tl)>=0 || tl.indexOf(qq)>=0;
+  var view = document.getElementById('view'), dock = document.getElementById('dock'), load = document.getElementById('load');
+  var cur = null, first = true;
+
+  function parse() {
+    var h = (location.hash || '#/home').replace('#/', '');
+    var parts = h.split('/');
+    if (parts[0] === 'all') { parts[0] = 'library'; }
+    return { route: PAGES[parts[0]] ? parts[0] : 'home', sub: parts[1] || '' };
+  }
+  function urlFor(route, sub) {
+    var base = PAGES[route] || PAGES.home;
+    if (route === 'library' && sub === 'wall') { base = base + '?view=wall'; }
+    return base;
+  }
+  function render() {
+    var p = parse();
+    var src = urlFor(p.route, p.sub);
+    if (view.getAttribute('data-src') !== src) {
+      view.setAttribute('data-src', src);
+      view.src = src;
+    }
+    [].forEach.call(dock.querySelectorAll('a'), function (a) {
+      a.classList.toggle('on', a.getAttribute('data-r') === p.route);
     });
-  }) || null;
-}
-function planRoleTools(role, max){
-  const out=[];
-  P.forEach(function(p){
-    if(p.status==='dropped') return;
-    let sc=0;
-    let ftHit=0;   // A 方案第三刀：分类命中必须搭配功能标签命中
-    if(role.l2 && role.l2.length && p.l2 && role.l2.indexOf(p.l2)>=0) sc+=3;
-    // 去掉后阈值 >=3 等价于「必须二级分类命中，或 >=2 个功能标签命中」。
-    if(role.ft && role.ft.length){
-      (p.ft||[]).forEach(function(f){
-        const fl=String(f).toLowerCase();
-        role.ft.forEach(function(x){
-          const xl=String(x).toLowerCase();
-          if(fl.indexOf(xl)>=0 || (fl.length>=3 && xl.indexOf(fl)>=0)) sc+=2;   // A 方案：短标签不再反向命中一切
-          ftHit++;
-        });
+    var skel = document.getElementById('skel');
+    if (skel) {
+      skel.classList.toggle('on', p.route === 'daily');
+      var curL = p.sub || 'c';
+      [].forEach.call(skel.querySelectorAll('a'), function (a) {
+        a.classList.toggle('on', p.route === 'daily' && a.getAttribute('data-l') === curL);
       });
     }
-    // A 方案（用户 2026-10-14 决定：宁缺毋滥）——原来 sc>0 就进候选，导致「仅一级分类命中」(1 分)
-// 的工具被塞进不相关场景（如 WeChatBridge 出现在「做 PPT」「查资料」「产品设计」三个场景）。
-// 现在要求 ≥3 分：二级分类命中(3) / 两个功能标签(2+2) / 一个标签+一级分类(2+1)。
-// 分数不够就**不显示**——让页面那句「🔍 这一步现在没有合适的选择」说真话。
-      if(sc>=3 && ftHit>=1) out.push({p:p, sc:sc});
-  });
-  out.sort(function(a,b){
-    if(b.sc!==a.sc) return b.sc-a.sc;
-    const x=(a.p.exp===null||a.p.exp===undefined)?-1:a.p.exp, y=(b.p.exp===null||b.p.exp===undefined)?-1:b.p.exp;
-    return y-x || b.p.stars-a.p.stars;
-  });
-  return out.slice(0, max||2);
-}
-function planWhyPick(p){
-  // **把数据库字段翻成人话**（GPT 评审：不要出现「体验4★｜风险中｜7天提交｜GPL」这种后台串）
-  const good=[], bad=[];
-  const pt=p.part||{};
-  const d=daysAgo(p.pushed);
-  if(pt['易用性']>=24) good.push('装上就能用'); else if(pt['易用性']!==undefined && pt['易用性']<15) bad.push('上手要花点功夫');
-  if(pt['文档完整度']>=16) good.push('文档比较全'); else if(pt['文档完整度']!==undefined && pt['文档完整度']<10) bad.push('文档较少，可能要自己摸索');
-  if(d!==null){ if(d<=30) good.push('最近仍在维护'); else if(d>365) bad.push('很久没更新了'); }
-  if(pt['功能成熟度']>=15) good.push('功能比较成熟'); else if(pt['功能成熟度']!==undefined && pt['功能成熟度']<10) bad.push('还比较早期');
-  if(pt['风险']>=12) good.push('风险低'); else if(pt['风险']!==undefined && pt['风险']<8) bad.push('有风险，先看清楚再用');
-  if(p.lic){ if(/MIT|Apache/i.test(p.lic)) good.push(p.lic+'（可商用）'); else good.push(p.lic); }
-  else bad.push('没有 License，商用要谨慎');
-  if(p.stars>=10000) good.push('社区成熟（'+(p.stars/10000).toFixed(1)+' 万 star）');
-  else if(p.stars<50) bad.push('用的人还少');
-  let out='';
-  if(good.length) out+='<span style="color:#7ee2b8">✅ '+good.map(esc).join(' ｜ ')+'</span>';
-  if(bad.length) out+=(out?'<br>':'')+'<span style="color:#ffd88a">⚠️ '+bad.map(esc).join(' ｜ ')+'</span>';
-  return out || '<span style="color:var(--dim)">资料不足，暂无法判断</span>';
-}
-function planRoleAll(role){
-  // 该角色一共能匹配到多少个（用于「查看全部 N 个同类工具 →」）
-  return planRoleTools(role, 999).length;
-}
-function showL2(l2){
-  f.l2=l2; f.l1=''; f.q='';
-  document.getElementById('q').value='';
-  document.getElementById('panel').classList.remove('open');
-  buildCat(); render();
-  window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
-}
-function buildPlans(){
-  const box=document.getElementById('planGrid');
-  if(!box) return;
-  if(!PLANS.length){ box.innerHTML='<span style="color:var(--dim);font-size:12.5px">没有方案模板（data/plans.json）</span>'; return; }
-  box.innerHTML=PLANS.map(function(pl){ return '<span class="chip" onclick="showPlan(\''+pl.id+'\')">'+esc(pl.name)+'</span>'; }).join('');
-}
-function showPlan(id){
-  const pl=PLANS.filter(function(x){ return x.id===id; })[0];
-  if(!pl) return;
-  let h='<span class="close" onclick="document.getElementById(\'panel\').classList.remove(\'open\')">×</span>'
-    +'<h2>🧩 '+esc(pl.name)+'</h2>'
-    +'<div style="color:var(--dim);font-size:12.5px">工具来自你的本地库，按用途自动匹配 ｜ 未调用 API ｜ <b>步骤顺序由你决定</b></div>';
-  // 摘要先行（商城版：一次给全，但先给能一眼看完的）
-  const roleN=(pl.roles||[]).length;
-  const easeMap={'开箱即用':5,'轻配置':4,'要编程':2,'要部署':1};
-  const eases=[];
-  (pl.roles||[]).forEach(function(r){
-    planRoleTools(r,1).forEach(function(t){
-      const e=easeMap[(t.p.t&&t.p.t[4])||''];
-      if(e) eases.push(e);
+    document.title = '档案站 · ' + ({ home: '首页', daily: '每日精选', library: '全库', plans: '计划' }[p.route]);
+  }
+  window.addEventListener('hashchange', render);
+  [].forEach.call(dock.querySelectorAll('a'), function (a) {
+    a.addEventListener('click', function () {
+      location.hash = '#/' + a.getAttribute('data-r');
+      render();
     });
   });
-  let diff='';
-  if(eases.length){
-    const avg=eases.reduce(function(a,b){return a+b;},0)/eases.length;
-    const lvl=Math.max(1,Math.min(5,Math.round(6-avg)));
-    diff=' ｜ 难度 '+'★'.repeat(lvl)+'☆'.repeat(5-lvl);
+  var lg = document.getElementById('legend'), lbtn = document.getElementById('lbtn');
+  function openLg() { lg.classList.add('on'); lbtn.classList.add('on'); document.body.style.overflow = 'hidden'; }
+  function closeLg() { lg.classList.remove('on'); lbtn.classList.remove('on'); document.body.style.overflow = ''; }
+  lbtn.addEventListener('click', openLg);
+  document.getElementById('lgMask').addEventListener('click', closeLg);
+  document.getElementById('lgX').addEventListener('click', closeLg);
+  function handleKey(k) {
+    if (k === 'g' || k === 'G') { lg.classList.contains('on') ? closeLg() : openLg(); }
+    if (k === 'Escape') { closeLg(); }
+    if (k === '1') { location.hash = '#/home'; }
+    if (k === '2') { location.hash = '#/daily'; }
+    if (k === '3') { location.hash = '#/library'; }
+    if (k === '4') { location.hash = '#/plans'; }
   }
-  h+='<div class="hbody" style="margin-top:10px">'+esc(pl.intro)+'</div>';
-  h+='<div style="color:var(--dim);font-size:12.5px;margin-top:8px">这套要 <b>'+roleN+'</b> 步'
-    +(pl.roles||[]).map(function(r,i){return '　'+(i+1)+'. '+esc(r.role);}).join('')+diff+'</div>';
-  (pl.roles||[]).forEach(function(r,i){
-    const tools=planRoleTools(r,2);
-    const allN=planRoleAll(r);
-    h+='<div class="sec-h">'+(i+1)+'. '+esc(r.role)+'</div>';
-    h+='<div style="color:var(--dim);font-size:12.5px;margin-bottom:6px">为什么需要这一步：'+esc(r.why)+'</div>';
-    if(!tools.length){
-      // 不要像失败（GPT 评审）：给两条可走的路
-      h+='<div class="todo-box">🔍 「'+esc(r.role)+'」这一步，你的工具库现在没有合适的选择。<br>'
-        +'可以：① 我去 GitHub 搜 2–3 个候选给你过目（要花一点 API 额度）　② 先放着，等以后自动收录 —— 这一步不挡着你先做前面的</div>';
+  document.addEventListener('keydown', function (e) {
+    /* 在输入框里打字时不要抢键 */
+    var t = e.target;
+    if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+    handleKey(e.key);
+  });
+  /* iframe 里的页面把 1–4 / G / ESC 转发上来（站内打开时，焦点在页面里也生效） */
+  window.addEventListener('message', function (ev) {
+    if (ev.source !== view.contentWindow) return;
+    var d = ev.data || {};
+    if (d.__archiveRoute) {
+      var h = String(d.__archiveRoute || '');
+      if (h === '#/picks') h = '#/daily';
+      if (h.indexOf('#/legend') === 0) { openLg(); return; }
+      if (h.indexOf('#/') === 0) location.hash = h.slice(1);
       return;
     }
-    h+='<table class="cmpt"><tr><th>工具</th><th>适合谁 / 为什么选它 / 要注意</th></tr>';
-    tools.forEach(function(t,ti){
-      const p=t.p;
-      const medal=ti===0?'🥇':'🥈';
-      const label=ti===0?'首选':'备选（觉得太重可以用这个）';
-      h+='<tr><td style="white-space:normal;min-width:150px">'
-        +medal+' <a href="'+repoUrl(p)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">'+esc(p.id)+'</a>'
-        +'<br><span style="color:var(--dim);font-size:11.5px">'+stars5(p.exp)+' ｜ '+label+'</span>'
-        +'<br><span class="cmp" style="margin-left:0" onclick="detail(\''+p.id+'\')">看详情</span></td>'
-        +'<td style="white-space:normal"><div>'+esc(oneText(p)||'（待补全）')+'</div>'
-        +'<div style="font-size:11.5px;margin-top:5px;line-height:1.7">'+planWhyPick(p)+'</div></td></tr>';
-    });
-    h+='</table>';
-    if(allN>tools.length && r.l2 && r.l2[0]){
-      h+='<div style="margin-top:4px"><span class="chip" onclick="showL2(\''+String(r.l2[0])+'\')">查看全部 '+allN+' 个同类工具 →</span></div>';
-    }
+    if (d.__archiveKey) handleKey(d.__archiveKey);
   });
-  h+='<div class="cmpnote">这是「按用途归类」的建议，不构成使用担保；每个工具用前请看它的 License 与最近维护状态。想看两个的差别：在卡片上点「对比」。</div>';
-  document.getElementById('panel').innerHTML=h;
-  document.getElementById('panel').classList.add('open');
-}
 
-// —— 搜索缺口：搜不到就记下来（页面是本地静态文件，写不了工作区，所以「记下 + 复制」交给用户转给我）——
-let gapList = [];
-function loadGaps(){
-  try{ const s=localStorage.getItem('dsh-lib-gaps'); if(s) gapList=JSON.parse(s)||[]; }catch(e){ gapList=[]; }
-  renderGapChip();
-}
-function saveGaps(){ try{ localStorage.setItem('dsh-lib-gaps', JSON.stringify(gapList)); }catch(e){} }
-function addGap(term){
-  const t=(term||'').trim(); if(!t) return;
-  if(gapList.indexOf(t)<0) gapList.push(t);
-  saveGaps(); renderGapChip();
-  try{ navigator.clipboard.writeText(t); }catch(e){}
-  const el=document.getElementById('gapHint');
-  if(el) el.innerHTML='已记下「'+esc(t)+'」（同时复制到剪贴板）。攒几个后点右上角「⚠ 搜索缺口」一次性复制给我，我补进同义词表。';
-}
-function copyGaps(){
-  if(!gapList.length) return;
-  const txt=gapList.join('\n');
-  try{ navigator.clipboard.writeText(txt); }catch(e){}
-  const el=document.getElementById('gapHint');
-  if(el) el.innerHTML='已复制 '+gapList.length+' 个缺口词：'+esc(txt.replace(/\n/g,' / '))+'　→ 发给我即可补词表。';
-  else alert('已复制 '+gapList.length+' 个缺口词：\n'+txt+'\n\n发给我即可补进同义词表。');
-}
-function clearGaps(){ gapList=[]; saveGaps(); renderGapChip(); }
-function renderGapChip(){
-  const c=document.getElementById('gapChip');
-  if(!c) return;
-  if(!gapList.length){ c.style.display='none'; return; }
-  c.style.display='inline-block';
-  c.textContent='⚠ 搜索缺口 '+gapList.length+'（点我复制）';
-}
-function render(){
-  f.q=document.getElementById('q').value.trim().toLowerCase();
-  CURTOK=parseQuery(f.q);
-  f.status=document.getElementById('fs').value;
-  f.risk=document.getElementById('fr').value;
-  f.tier=document.getElementById('ft').value;
-  f.five=document.getElementById('f5').value;
-  f.active=document.getElementById('fa').value;
-  f.sort=document.getElementById('sort').value;
-  const r=sorted(P.filter(pass));
-  const hint=document.getElementById('countHint');
-  const scope = f.l1 ? ('　分类：'+f.l1+(f.l2?(' → '+f.l2):'')) : '';
-  const sortedNote = f.q ? '　（已按匹配度排序：项目名 > 简称 > 标签 > 描述）' : '';
-  hint.textContent='命中 '+r.length+' / '+P.length+' 个工具'+scope+sortedNote;
-  const list=document.getElementById('list');
-  if(!r.length){
-    const qt=document.getElementById('q').value.trim();
-    list.innerHTML=planHintHtml() + '<div class="empty">没有匹配的工具。<br>'
-      +(qt?('<span class="chip" onclick="addGap(document.getElementById(\'q\').value.trim())">记下这个词</span> '):'')
-      +'<span class="chip" onclick="clearAll()">清空筛选</span>'
-      +'<div id="gapHint" style="margin-top:12px;color:var(--dim);font-size:12.5px;line-height:1.8">搜不到？点「记下这个词」存起来，'
-      +'攒几个后点顶部「⚠ 搜索缺口」一次性复制给我 —— 我把它补进同义词表，<b>词表就这样随库增长</b>，而不是一成不变。</div></div>';
-    return;
-  }
-  if(groupByUse){
-    // 按用途分组：把命中的工具按其二级分类聚在一起，便于按流程挑组合（组合是否合适由用户判断）
-    const byL2={};
-    r.forEach(p=>{ const k=p.l2||'其他工具'; if(!byL2[k]) byL2[k]=[]; byL2[k].push(p); });
-    const keys=Object.keys(byL2).sort((a,b)=>byL2[b].length-byL2[a].length);
-    list.innerHTML=planHintHtml()+ '<div class="grpNote">按用途分组：同组工具通常可以配合使用（是否真的合适由你判断，这里只做归类，不替你决定流程）</div>'
-      + keys.map(k=>'<div class="grpHead">'+esc(k)+'<em>'+byL2[k].length+' 个</em></div>'+byL2[k].map(cardHtml).join('')).join('');
-    return;
-  }
-  list.innerHTML = planHintHtml() + r.map(cardHtml).join('');
-}
-// 搜到的词像一个「场景」时，主动提示可以看成套方案
-function planHintHtml(){
-  if(!f.q) return '';
-  const pl=planFor(f.q);
-  if(!pl) return '';
-  return '<div class="grpNote">💡 这像是一个场景，不只是单个工具 —— '
-    +'<span class="chip on" onclick="showPlan(\''+pl.id+'\')">看「'+esc(pl.name)+'」该怎么配</span></div>';
-}
-function toggleGroup(){
-  groupByUse=!groupByUse;
-  const b=document.getElementById('grpBtn');
-  b.className='chip'+(groupByUse?' on':'');
-  b.textContent=groupByUse?'分组中（点此取消）':'按用途分组';
-  render();
-}
-function quickStatus(s){ f.status=s; document.getElementById('fs').value=s; render(); window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}); }
-function setL1(g){ f.l1=(f.l1===g?'':g); f.l2=''; buildCat(); render(); }
-function setL2(g){ f.l2=(f.l2===g?'':g); buildCat(); render(); }
-function setTag(t){ f.tag=(f.tag===t?'':t); buildCat(); render(); }
-function clearAll(){
-  f.q='';f.status='';f.risk='';f.tier='';f.five='';f.active='';f.l1='';f.l2='';f.tag='';
-  document.getElementById('q').value='';['fs','fr','ft','f5','fa'].forEach(id=>document.getElementById(id).value='');
-  buildCat(); render();
-}
-function miniHtml(p){
-  return '<div class="mini" onclick="detail(\''+p.id+'\')">'
-    +'<div class="n">'+esc(p.id)+(hasNote(p)?' <span title="这条有备注" style="color:var(--gold);cursor:help">📝</span>':'')+'</div>'
-    +'<div style="margin:2px 0">'+stars5(p.exp)+'</div>'
-    +'<div class="d">'+esc(oneText(p)||'（暂无中文介绍）')+'</div>'
-    +'<div class="m"><span>★ '+p.stars.toLocaleString()+'</span><span>'+when(p.pushed)+'</span></div></div>';
-}
-function buildToday(){
-  const today=new Date().toISOString().slice(0,10);
-  let r=P.filter(p=>p.first===today);
-  if(!r.length){ r=sorted(P).slice(0,10); }
-  document.getElementById('todayRow').innerHTML = r.length
-    ? r.map(miniHtml).join('')
-    : '<div style="color:var(--dim);font-size:12.5px">今天没有新增工具</div>';
-}
-// ---------- 我的工作区（用户实例，非官方模板）----------
-function buildWorkspaces(){
-  const box=document.getElementById('wsGrid');
-  if(!box) return;
-  if(!WS.length){
-    box.innerHTML='<span style="color:var(--dim);font-size:12.5px">还没有工作区。工作区 = 「我正在做的一件事 + 它用到的那套工具」。'
-      +'让助手建一个（例如「给我建个工作区：B站视频制作」），或跑 tools\\workspace.ps1。也可以先点上面的「按需求组方案」找个模板试试。</span>';
-    return;
-  }
-  box.innerHTML=WS.map(function(w){
-    const n=(w.tools||[]).length;
-    const done=Array.isArray(w.done)?w.done.length:0;   // 加固：手写 JSONL 把 done 写成对象/字符串时不再崩
-    return '<span class="chip" onclick="showWorkspace(\''+esc(String(w.id).replace(/'/g,''))+'\')">'
-      +'📌 '+esc(w.name)+' <b style="color:var(--dim);font-weight:400">'+(w.status||'')+(n?(' · '+done+'/'+n):'')+'</b></span>';
-  }).join('');
-}
-function showWorkspace(id){
-  const w=WS.filter(function(x){ return String(x.id)===String(id); })[0];
-  if(!w) return;
-  const done=Array.isArray(w.done)?w.done:[];   // 加固（同上）
-  let h='<span class="close" onclick="document.getElementById(\'panel\').classList.remove(\'open\')">×</span>'
-    +'<h2>📌 '+esc(w.name)+'</h2>'
-    +'<div style="color:var(--dim);font-size:12.5px">状态：'+esc(w.status||'进行中')+'　｜　建于 '+esc(w.created||'')+'</div>';
-  if(w.goal) h+='<div class="hbody" style="margin-top:10px">目标：'+esc(w.goal)+'</div>';
-  if(w.note) h+='<div style="color:var(--dim);font-size:12.5px;margin-top:6px">我的备注：'+esc(w.note)+'</div>';
-  const wanted=(w.tools||[]);
-  const tools=wanted.map(function(t){ return P.filter(function(p){ return p.id===t; })[0]; }).filter(Boolean);
-  const missing=wanted.filter(function(t){ return !P.some(function(p){ return p.id===t; }); });   // B15：不静默丢弃
-  h+='<div class="sec-h">这个工作区用到的工具（'+tools.length+' 个）</div>'
-    +(missing.length? ('<div class="soon">⚠ 有 '+missing.length+' 个工具在库里找不到（可能已删或名字写错）：'+esc(missing.join('、'))+'</div>') : '');
-  if(!tools.length) h+='<div class="todo-box">还没往里加工具。可以在「🧩 按需求组方案」里找一套，然后让助手加进来。</div>';
-  else {
-    h+='<table class="cmpt"><tr><th>工具</th><th>用它做什么</th></tr>';
-    tools.forEach(function(p){
-      const isDone=done.indexOf(p.id)>=0;
-      h+='<tr><td style="white-space:normal">'+(isDone?'✅ ':'⬜ ')+'<a href="'+repoUrl(p)+'" target="_blank" rel="noopener">'+esc(p.id)+'</a>'
-        +'<br><span style="color:var(--dim);font-size:11.5px">'+stars5(p.exp)+' ｜ '+esc(p.l2)+'</span></td>'
-        +'<td style="white-space:normal">'+esc(oneText(p)||'（待补全）')+'</td></tr>';
-    });
-    h+='</table>';
-  }
-  h+='<div class="cmpnote">工作区是你自己的记录，不是官方模板；勾选进度请让助手更新（页面写不了文件）。</div>';
-  document.getElementById('panel').innerHTML=h;
-  document.getElementById('panel').classList.add('open');
-}
-function buildCat(){
-  const grid=document.getElementById('catGrid'); let h='';
-  // 一级 / 二级 两级分类（二级只在此一级下展示）
-  const byL1={};
-  P.forEach(p=>{ const k1=p.l1||'未分类', k2=p.l2||'未分类'; if(!byL1[k1]) byL1[k1]={n:0,l2:{}}; byL1[k1].n++; byL1[k1].l2[k2]=(byL1[k1].l2[k2]||0)+1; });   // B9：空分类不再变成字面量 null
-  const l1s=Object.keys(byL1).sort((a,b)=>byL1[b].n-byL1[a].n);
-  h+='<div class="catbox"><h3>全部</h3><div class="items"><span class="chip '+(f.l1===''?'on':'')+'" onclick="clearAll()">全部工具 <b style="color:var(--dim);font-weight:400">'+P.length+'</b></span></div></div>';
-  l1s.forEach(l1=>{
-    h+='<div class="catbox"><h3>'+esc(l1)+' <b style="color:var(--dim);font-weight:400">'+byL1[l1].n+'</b></h3><div class="items">';
-    h+='<span class="chip '+(f.l1===l1&&!f.l2?'on':'')+'" onclick="setL1(\''+esc(l1)+'\')">全部</span>';
-    Object.keys(byL1[l1].l2).sort((a,b)=>byL1[l1].l2[b]-byL1[l1].l2[a]).forEach(l2=>{
-      const on = (f.l2===l2) ? 'on' : '';
-      h+='<span class="chip '+on+'" onclick="setL2(\''+esc(l2)+'\')">'+esc(l2)+' <b style="color:var(--dim);font-weight:400">'+byL1[l1].l2[l2]+'</b></span>';
-    });
-    h+='</div></div>';
+  /* 页面内部的锚点（#/daily、#/all、#/plans…）转成站点路由 */
+  view.addEventListener('load', function () {
+    if (load && !load.classList.contains('off')) { setTimeout(function () { load.classList.add('off'); }, 120); }
+    try {
+      var w = view.contentWindow, d = view.contentDocument;
+      w.addEventListener('hashchange', function () {
+        var h = w.location.hash.replace('#/', '');
+        var map = { daily: 'daily', all: 'library', library: 'library', plans: 'plans', home: 'home', picks: 'daily' };
+        if (h.indexOf('legend') === 0) { openLg(); return; }
+        var key = map[h.split('/')[0]];
+        if (key) { location.hash = '#/' + key; }
+      });
+      /* 页面里的外链改成新窗口，别把 iframe 带走 */
+      [].forEach.call(d.querySelectorAll('a[href^="http"]'), function (a) { a.target = '_blank'; a.rel = 'noopener'; });
+    } catch (e) { /* file:// 下拿不到 contentWindow 时忽略 */ }
   });
-  // 功能标签云
-  const tagCount={};
-  P.forEach(p=>(p.ft||[]).forEach(x=>tagCount[x]=(tagCount[x]||0)+1));
-  const topTags=Object.keys(tagCount).sort((a,b)=>tagCount[b]-tagCount[a]).slice(0,16);
-  if(topTags.length){
-    h+='<div class="catbox"><h3>功能标签</h3><div class="items">';
-    topTags.forEach(t=>{ h+='<span class="chip '+(f.tag===t?'on':'')+'" onclick="setTag(\''+esc(t)+'\')">'+esc(t)+' <b style="color:var(--dim);font-weight:400">'+tagCount[t]+'</b></span>'; });
-    h+='</div></div>';
-  }
-  grid.innerHTML=h;
-}
-function detail(id){
-  const p=P.find(x=>x.id===id); if(!p) return;
-  const evs=(E[id]||[]);
-  let human='';
-  if(p.one) human+='<div class="sec-h">💡 一句话理解（它是什么）</div><div class="hbody">'+esc(p.one)+'</div>';
-  if(p.prob) human+='<div class="sec-h">🎯 它解决什么问题</div><div class="hbody">'+esc(p.prob)+'</div>';
-  if(p.ex) human+='<div class="sec-h">🧪 举个例子</div><div class="hbody">'+esc(p.ex)+'</div>';
-  if(p.note) human+='<div class="sec-h">📝 为什么值得留意</div><div class="hbody">'+esc(p.note)+'</div>';
-  if(p.hs==='partial') human+='<div class="todo-box">该工具的更多说明<b>待补全</b>：它在 2026-10-13 之前收录，当时没有落盘英文描述。<br>上面两段来自当日台账，是<b>唯一可用素材</b>，未做任何推断。</div>';
-  if(p.hs==='missing') human+='<div class="todo-box">该工具<b>暂无介绍素材</b>，仅有仓库名与自动推断的分类。</div>';
-  const fnLabels=['是什么','核心功能','常见用途','使用案例','不适合什么场景'];
-  let fnHtml=''; (p.fn||[]).forEach((v,i)=>{ if(v) fnHtml+='<div class="fnrow"><b>'+fnLabels[i]+'</b><span>'+esc(v)+'</span></div>'; });
-  const fnBlock = fnHtml ? ('<div class="sec-h">📘 功能说明</div>'+fnHtml) : '';
-  // 功能备注：多维星级（v3.1 验收要求；**与 star 数无关**）
-  let expBlock='';
-  if(p.exp!==null && p.part){
-    const to5=(v,m)=>((typeof v==='number'&&isFinite(v))?Math.max(1,Math.min(5,Math.round(v/m*5))):null);
-    const num=(v,u)=>((typeof v==='number'&&isFinite(v))?(v+u):'暂无数据');   // B4：缺键不再显示 undefined
-    const easeMap={'开箱即用':5,'轻配置':4,'要编程':2,'要部署':1};
-    const easeTag=(p.t&&p.t[4])||'';
-    const dims=[
-      ['上手难度', easeMap[easeTag]||null, easeTag?('按分类标签「'+easeTag+'」折算'):'分类标签未定'],
-      ['本地运行难度', to5(p.part['易用性'],30), num(p.part['易用性'],'/30')],
-      ['文档质量', to5(p.part['文档完整度'],20), num(p.part['文档完整度'],'/20')],
-      ['功能成熟度', to5(p.part['功能成熟度'],20), num(p.part['功能成熟度'],'/20')],
-      ['活跃程度', to5(p.part['维护活跃'],15), num(p.part['维护活跃'],'/15')],
-      ['推荐程度', p.exp, p.expSc+'/100 综合']
-    ];
-    expBlock='<div class="sec-h">📊 功能备注（多维评分）</div>';
-    dims.forEach(d=>{
-      if(d[1]===null||d[1]===undefined) return;
-      expBlock+='<div class="fnrow"><b>'+d[0]+'</b><span>'+stars5(d[1])+' <span style="color:var(--dim);font-size:11.5px">'+d[2]+'</span></span></div>';
-    });
-    expBlock+='<div class="todo-box" style="background:#1c222c;border-color:var(--line);color:var(--dim)">评分构成：易用性 30 ｜ 文档完整 20 ｜ 功能成熟 20 ｜ 维护活跃 15 ｜ 风险 15（满分 100）。<b>不看 star 数</b>——500 star 但装上就能用的工具可以五星，5 万 star 但要配半天环境的只能三星。</div>';
-  } else {
-    expBlock='<div class="sec-h">📊 功能备注（多维评分）</div><div class="todo-box">信息不足，<b>暂不评分</b>。资料完整后会补上。</div>';
-  }
-  const tags=(p.ft||[]).map(x=>'<span class="pill pill-fn">'+esc(x)+'</span>').join('');
-  const rows=DIMS.map((d,i)=>'<div><b>'+d+'</b>'+esc(p.t[i])+'</div>').join('');
-  const evHtml=evs.length? evs.map(e=>'<div class="ev"><time>'+e.d+'</time><span><b>'+esc(e.t)+'</b> '+esc(e.x)+'</span></div>').join('') : '<div class="ev">暂无事件记录</div>';
-  document.getElementById('panel').innerHTML='<span class="close" onclick="document.getElementById(\'panel\').classList.remove(\'open\')">×</span>'
-    +'<h2>'+esc(p.id)+'</h2>'
-    +'<div style="margin:6px 0 2px">'+stars5(p.exp)+'　<span class="pill pill-fn">'+esc(p.l1)+' / '+esc(p.l2)+'</span>'
-      +((p.tier==='S'||p.tier==='A')?('　<span class="pill tier-'+p.tier+'">'+p.tier+' 档推荐</span>'):(p.tier==='dropped'?'　<span class="pill s-dropped">已淘汰</span>':'　<span class="pill tier-unrated">未评档</span>'))
-      +'</div>'
-    +human
-    +fnBlock
-    +expBlock
-    +(tags?('<div class="sec-h">🏷 功能与搜索词</div><div style="display:flex;gap:5px;flex-wrap:wrap">'+tags+'</div>'):'')
-    +'<div class="sec-h">📈 成长记录</div>'+evHtml
-    +'<div class="sec-h">🔧 详细信息</div><div class="kv">'
-    +'<div><b>英文描述</b>'+esc(p.desc||'（未落盘）')+'</div>'
-    +'<div><b>星数</b>'+p.stars.toLocaleString()+'　<b>语言</b>'+esc(p.lang||'—')+'</div>'
-    +'<div><b>许可</b>'+esc(p.lic||'未知（历史数据缺失）')+'</div>'
-    +'<div><b>最近提交</b>'+when(p.pushed)+'　<b>首次收录</b>'+p.first+'</div>'
-    +'<div><b>来源</b>'+esc(p.oder||'自动发现')+'　<b>推荐</b>'+(p.rec?(p.tier+' 档 ｜ '+p.rc+' 次'):((p.rc>0)?('历史推荐 '+p.rc+' 次'):'未推荐'))+'</div>'
-    +'<div><b>台账备注</b>'+esc(p.note||'—')+'</div>'
-    +((p.un&&p.un.filter(x=>x).length)?('<div><b>用户备注</b>'+p.un.filter(x=>x).map(x=>'【'+(x.date||'')+'】'+esc(x.note||'')).join('；')+'</div>'):'')
-    +'<div><b>事件数</b>'+evCount(p)+' 条</div>'
-    +rows+'</div>'
-    +'<div class="kv"><a href="'+repoUrl(p)+'" target="_blank" rel="noopener">在 GitHub 打开 ↗</a></div>';
-  document.getElementById('panel').classList.add('open');
-}
-document.addEventListener('keydown',e=>{
-  if(e.key==='/' && document.activeElement!==document.getElementById('q')){ e.preventDefault(); document.getElementById('q').focus(); }
-  if(e.key==='Escape'){ document.getElementById('panel').classList.remove('open'); clearCmp(); }
-});
-buildToday(); buildPlans(); buildWorkspaces(); buildCat(); loadGaps(); render(); renderCmpBar();
-try{ if(localStorage.getItem('dsh-lib-hero')==='off'){ const hs=document.getElementById('hero'); if(hs) hs.style.display='none'; } }catch(e){}
+
+  render();
+  if ((location.hash || '').indexOf('legend') >= 0) { setTimeout(openLg, 260); }
+})();
 </script>
 </body>
 </html>
