@@ -700,6 +700,8 @@ $html = @"
 "@
 
 $out = P 'legacy\overview-v5.html'
+# 2026-10-19：发布包不带 legacy/ 目录，直接写会报 "Could not find a part of the path"
+New-Item -ItemType Directory -Force -Path (Split-Path -Parent $out) | Out-Null
 [System.IO.File]::WriteAllText($out, $html, (New-Object System.Text.UTF8Encoding($false)))
 $sz = [math]::Round((Get-Item $out).Length/1KB,1)
 $per = (Get-Item $out).Length / [Math]::Max($rows.Count,1)

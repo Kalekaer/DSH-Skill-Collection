@@ -7,8 +7,8 @@
 
 | 项 | 值 |
 |---|---|
-| SKILL.md | 466 行 / 48858 B |
-| SHA256 | E686C2AAAA12BBA31E6D4680FE74F4FD965575946691ECC0C787585FEFE6E415 |
+| SKILL.md | 466 行 / 49002 B |
+| SHA256 | 381057F9A832F6440965E226EFA54F2256156B46C457B2F9564D24621749FD61 |
 | 校验 | 166 项全通过（`audit.ps1`） |
 | 定版日期 | 2026-10-19 |
 
@@ -28,6 +28,15 @@
 
 ---
 
+## [5.1.1] — 2026-10-19 · 发布包依赖补齐（用户流程不再撞缺文件）✓
+
+- **补进包**：`rebuild-page.ps1`（6 个写入器 + 日报第 7 步）、`add-rows.ps1`（日报写 picks/CSV）、`run-manifest.ps1` + `reconcile.ps1`（日报第 8 步对账）、`mark-status.ps1`、`TABLE.md`（CSV 列说明）。
+- **`check-drift.ps1`**：上述脚本从 `$devOnly` 移出；新增「包内引用缺失」检查——扫包内 `*.ps1/*.md` 里真正执行的 `& (P 'tools\…')` / `& ".\tools\…"`，目标不存在即红；注释与 here-string 里的说明不算。
+- **`build-overview.ps1`**：写盘前 `New-Item -ItemType Directory` 建 `legacy/`——发布包不带该目录，旧代码会报 `Could not find a part of the path`。
+- **`run-manifest.ps1`**：写清单前自动建 `data/runs/`（包内没有该目录，原样会报同样的路径错误）。
+- **`reconcile.ps1`**：`reports/` 里没有当天日报时跳过「日报 vs CSV」，不再把 CSV 全报成「B 独有」；demo 的 `recommend-log.csv` 改成与 picks 同日（2026-10-19）的 5 条 S/A，首次装包跑对账即 0 问题。
+- **移除 `check-page` 引用**：`SKILL.md` 三处改成 `audit.ps1` 第 22 节 / `validate-lib`；`add-intro`、`add-plan` 的 `-Sync` 分支改为提示（兼容参数保留）；`make-demo` 的示例命令改成 `validate-lib.ps1`。
+
 ## [5.1.0] — 2026-10-19 · 发布包同步：站点版 + demo 重建 ✓
 
 - **发布形态**：D1=A，只发新站点 —— 根 `index.html`（外壳 + `<base href="data/site/">`）+ `data/site/` 5 页；旧单页 `legacy/overview-v5.html` 不再随包，`overview.html` 保留为同一入口的别名。
@@ -35,7 +44,7 @@
 - **demo 重建**：15 条项目 / 5 条主推荐 / 9 条 picks / 5 行 `recommend-log.csv` / 15 行 `seen.jsonl` / 1 份 `meta`；`make-demo` 改为「个人字段置空（note / user_notes）而不是删字段」，保证投影层字段齐全。
 - **audit 166 项**：第 22 节 18 条页面检查从旧单页改指站点（入口 / 4 路由 / 日报 01–05 / 全库搜索分类 / 计划页 / BUILD-STAMP / 首页条数 / 图表 aria / 未评档与收藏残留）；`build-samples` 统一注入 `BUILD-STAMP`，首页图表补 `role="img"` + `aria-label` + `chart-note`。
 - **文档与素材**：README / QUICKSTART 改为站点口径；3 张截图重拍为 `docs/screenshots/1-home.jpg`、`2-daily.jpg`、`3-plans.jpg`；新增 `THIRD-PARTY.md`（字体 OFL + NASA 公有领域图）。
-- **已知差异**：包内 `audit.ps1` 是「站点版」（第 22 节与库内单页版不同）；库内仍保留查 `legacy/overview-v5.html` 的版本。
+- **已知差异**：包内 `audit.ps1` 是「站点版」（第 22 节与库内单页版不同）。
 
 ## [4.10.46] — 2026-10-19 · P1 收尾：唯一写入器 + 快照 round ✓
 
@@ -871,7 +880,7 @@ GPT 判断：143 条里只有 45 条有完整人话层，**98 条只有一句话
 
 ### ① 新指令 `/tool-stack`（独立 skill）
 
-`<你的工作区>\.dsh\skills\tool-stack\SKILL.md` —— DSH 的 `/` 指令即 skill，所以它现在是可调用的 `/tool-stack`。
+`E:\工作区\GitHub日报\.dsh\skills\tool-stack\SKILL.md` —— DSH 的 `/` 指令即 skill，所以它现在是可调用的 `/tool-stack`。
 
 - **触发**：「我要做 ___」「做 ___ 需要哪些工具」「帮我配一套」「/tool-stack」。
 - **流程**：复述需求 → **优先复用 `data/plans.json` 已有场景的角色划分** → 逐角色从本地库填工具（每角色≤2 个，排除已淘汰）→ 每个工具给「选它因为」（体验/风险/活跃/许可证，全部来自数据）。

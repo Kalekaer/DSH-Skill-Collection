@@ -1,4 +1,4 @@
-﻿# add-plan.ps1 — 把对话里配好的一套搭配，固化成网页里的固定方案
+# add-plan.ps1 — 把对话里配好的一套搭配，固化成网页里的固定方案
 #
 # 用途：`/tool-stack` 给出一套搭配后，用户说「写进网页里」→ 本脚本把它加进 data/plans.json，
 #       之后 overview.html 的「🧩 按需求组方案」就多一个场景，用户自己点一下就能看。
@@ -65,4 +65,4 @@ Write-Host "   下一步：页面会自动重建（见下）；想额外做一�
 # P1-16：**默认**写盘后自动重建页面（原来是加 -Sync 才重建 → 用户要的是"写完页面就变"）
 #   -Sync 保留兼容（额外跑一次页面自检）；$env:DSH_SKIP_REBUILD=1 可临时关闭自动重建
 & (P 'tools\rebuild-page.ps1')
-if ($Sync) { & (P 'tools\check-page.ps1') }
+if ($Sync) { Write-Host "   （-Sync 兼容参数：页面检查已并入 audit.ps1 第 22 节）" -ForegroundColor DarkGray }

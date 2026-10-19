@@ -145,6 +145,7 @@ github-daily-picks/                 ← 解压出来的仓库根目录
 ├─ index.html                       ← 站点入口（外壳 + <base href="data/site/">，双击即用）
 ├─ overview.html                    ← 同一入口的别名（兼容旧书签）
 ├─ THIRD-PARTY.md                   ← 第三方素材：字体 OFL + NASA 公有领域图片
+├─ TABLE.md                         ← 累积表格字段与 CSV 列口径
 ├─ RUNBOOK.md                       ← 运维手册：改时间、加源、限流、失败、回滚
 ├─ SOURCES.md                       ← 数据源与检索式（含 URL、限流额度、已排除的源）
 ├─ RUBRIC.md                        ← 筛选与打分标准（决定日报质量的核心文件）
@@ -201,7 +202,7 @@ github-daily-picks/                 ← 解压出来的仓库根目录
 | `data/picks/YYYY-MM-DD.jsonl` | 机器可读推荐档案（评分 / 风险 / 行动），每天一份 |
 | `data/runs/` `data/push/` | 运行日志 / 短版推送文案 |
 | `reports/` `精品项目/` | 中文日报（含 `index.md` 索引）与推荐条目的可读卡片 |
-| `TABLE.md` `GitHub推荐记录.univer` | 累积表格的字段说明与表格本体（未生成时流程自动跳过并记日志，**不报错、不自创文件名**） |
+| `GitHub推荐记录.univer` | 累积表格本体（未生成时流程自动跳过并记日志，**不报错、不自创文件名**；字段说明见随包的 `TABLE.md`） |
 
 ---
 

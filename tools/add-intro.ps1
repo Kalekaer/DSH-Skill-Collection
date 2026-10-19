@@ -1,4 +1,4 @@
-﻿# add-intro.ps1 — 批量写入人话层介绍（配合 humanize-next.ps1 使用）
+# add-intro.ps1 — 批量写入人话层介绍（配合 humanize-next.ps1 使用）
 #
 # 用法：
 #   & ".\tools\add-intro.ps1" -File "data\_batch\2026-10-13-intro.jsonl"      # 预览
@@ -86,4 +86,4 @@ Write-Host ("✅ 已写入 {0} 条 → data\human\repo-intro.jsonl（去重：�
 #   人话层变了要用 -Force 让投影一定重算；本批次 0 条新记录就不重建
 if ($uniq.Count -gt 0) { & (P 'tools\rebuild-page.ps1') -Force }
 else { Write-Host "   （本批次 0 条新记录：页面无需重建）" -ForegroundColor DarkGray }
-if ($Sync) { & (P 'tools\check-page.ps1') }
+if ($Sync) { Write-Host "   （-Sync 兼容参数：页面检查已并入 audit.ps1 第 22 节）" -ForegroundColor DarkGray }

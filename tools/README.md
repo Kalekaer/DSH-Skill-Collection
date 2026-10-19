@@ -6,6 +6,11 @@
 | 脚本 | 作用 | 何时跑 |
 |---|---|---|
 | `sync-projects.ps1` | 从原始来源重建 `projects.jsonl` + `events.jsonl`（幂等，输入没变自动跳过；`-Force` 强制）。**开头自动备份 tools/ 到 `data/_backup/YYYY-MM-DD/`** | 每次改了原始来源之后 |
+| `rebuild-page.ps1` | **写盘后统一重建**：sync → build-overview → build-samples → 自检页面确实变新。写入器（add-repo / add-intro / add-plan / workspace / auto-tag / mark-status）都会自动调它 | 一般不用手跑 |
+| `add-rows.ps1` | **picks / CSV 唯一写入口**：写入前校验字段 + 判重；已存在默认拒绝，`-Update` 刷新旧行 | 写 `data/picks/` 或 `recommend-log.csv` 时 |
+| `run-manifest.ps1` | 日报七件事的进度清单（`ok/fail/pending`）→ `data/runs/<date>.manifest.json` | 日报开工 / 收工 |
+| `reconcile.ps1` | **跨存储对账（只读）**：picks ↔ CSV ↔ 日报 ↔ 快照/事件重复键；退出码 0/1 | 日报收尾 |
+| `mark-status.ps1` | 改项目状态（active / using / watching / researching / dropped），写后自动重建 | 用户说「标记我在用」 |
 | `build-samples.ps1` | **站点生成器**：读 `data/` → 注入 5 个模板 → 写 `data/site/` + 根 `index.html`（每页带 `BUILD-STAMP`） | sync 之后 / 改页面之后 |
 | `build-overview.ps1` | 生成旧版单页 `legacy/overview-v5.html`（单文件全内嵌，历史页；本包默认不带产物） | 想单独要一个单文件页时 |
 | `query.ps1` | 命令行查询项目库（`-Tag/-Status/-Text/-Top`，支持同义词扩展） | 需要快速查库时 |
@@ -40,7 +45,7 @@
 
 ## 调用约定
 
-- 全部在工作区根目录用 `& ".\tools\xxx.ps1"` 调用（沙箱下 `pwsh -File` 不可用）。
+- 全部在工作区根目录用 `& ".\tools\<脚本名>.ps1"` 调用（沙箱下 `pwsh -File` 不可用）。
 - `sync-projects.ps1` → `build-samples.ps1` 是**标准重建链**，可随时全量重建；
   `add-repo.ps1` 写的是**原始来源**（seen / meta / snapshots / user-notes），写错要手工修对应行。
 - 脚本本体**不可再生**——sync 每次运行会自动备份到 `data\_backup\`，误改后从那里复制回来。

@@ -103,8 +103,8 @@ $readme = @"
 
 ``````powershell
 & ".\tools\sync-projects.ps1" -Force
-& ".\tools\build-overview.ps1"
-& ".\tools\check-page.ps1"
+& ".\tools\build-samples.ps1"
+& ".\tools\validate-lib.ps1"
 ``````
 
 页面会只剩这 $($picked.Count) 个项目 —— 足够看清结构，也足够验证"换一份数据照样能跑"。
