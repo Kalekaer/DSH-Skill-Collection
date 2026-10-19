@@ -153,7 +153,7 @@ html,body{margin:0;background:var(--ink);color:var(--paper);font:15px/1.45 var(-
   .viz .cell{border-right:0}
 }
 </style>
-<!-- BUILD-STAMP: build 2026-10-19 20:07 ｜ 数据指纹 04E36F67152A ｜ 15 条 -->
+<!-- BUILD-STAMP: build 2026-10-19 20:21 ｜ 数据指纹 5F8A946DA027 ｜ 15 条 -->
 </head>
 <body>
 
@@ -186,7 +186,7 @@ html,body{margin:0;background:var(--ink);color:var(--paper);font:15px/1.45 var(-
 </section>
 
 <section class="viz">
-  <div class="head"><span class="t">DATA</span><span class="s">库里现在长什么样 · 全部为真实统计</span><span class="sp"></span><span class="s">15 ITEMS · 25 EVENTS</span></div>
+  <div class="head"><span class="t">DATA</span><span class="s">库里现在长什么样 · 全部为真实统计</span><span class="sp"></span><span class="s">15 ITEMS · 20 EVENTS</span></div>
   <div class="grid">
     <div class="cell inv" role="img" aria-label="分类分布柱状图：一级分类条目数">
       <div class="lb"><b>分类分布 / L1</b><i id="catN">共 11 类</i></div>
@@ -194,7 +194,7 @@ html,body{margin:0;background:var(--ink);color:var(--paper);font:15px/1.45 var(-
       <p class="chart-note">柱长 = 该一级分类的条目数；红色为条目最多的两类。</p>
     </div>
     <div class="cell" role="img" aria-label="近 7 天事件柱状图：每天新增事件数">
-      <div class="lb"><b>近 7 天事件</b><i>25 条总计</i></div>
+      <div class="lb"><b>近 7 天事件</b><i>20 条总计</i></div>
       <div class="spark" id="spark"></div>
       <p class="chart-note">每根柱 = 当天事件条数；最新一天用红色标出。</p>
     </div>
@@ -217,7 +217,7 @@ html,body{margin:0;background:var(--ink);color:var(--paper);font:15px/1.45 var(-
 const CATS = [{"l1":"AI","n":6},{"l1":"设计","n":3},{"l1":"其他","n":2},{"l1":"办公","n":2},{"l1":"开发","n":1},{"l1":"效率","n":1}];
 const TIER = [{"k":"S 档","n":4},{"k":"A 档","n":5},{"k":"B 档","n":2},{"k":"C 档","n":0},{"k":"D 档","n":4}];
 const STATUS = [{"k":"观望","n":8},{"k":"活跃","n":6},{"k":"已弃","n":1}];
-const SPARK = [{"d":"10-13","n":2},{"d":"10-14","n":0},{"d":"10-15","n":1},{"d":"10-16","n":0},{"d":"10-17","n":0},{"d":"10-18","n":0},{"d":"10-19","n":5}];
+const SPARK = [{"d":"10-13","n":1},{"d":"10-14","n":0},{"d":"10-15","n":1},{"d":"10-16","n":0},{"d":"10-17","n":0},{"d":"10-18","n":0},{"d":"10-19","n":7}];
 const TAGS = [{"t":"rust","n":3},{"t":"art","n":2},{"t":"jev","n":2},{"t":"llm","n":2},{"t":"typed-decisions","n":2},{"t":"agent-skill","n":1},{"t":"agent-skills","n":1},{"t":"ai-agents","n":1}];
 (function(){
   const max = Math.max.apply(null, CATS.map(c=>c.n));

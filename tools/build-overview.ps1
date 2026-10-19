@@ -97,7 +97,7 @@ foreach ($l in Get-Content $projPath -Encoding UTF8) {
       fn     = $fn
       ft     = $ftArr
       evc    = [int]$p.events_count
-      note   = $p.note
+      note   = ([string]$p.note).Replace('未评档，不进推荐区', '默认老朋友动态，不占主推荐').Replace('未评档', 'SABCD 档').Replace('未评', '待评估')
       un     = $unArr
     }
   } catch { Write-Warning "跳过损坏行" }
@@ -280,7 +280,7 @@ $riskItems = @(
   [pscustomobject]@{ label = '低';   n = $nLow;    cls = 'sg-white' },
   [pscustomobject]@{ label = '中';   n = $nMid;    cls = 'sg-gray' },
   [pscustomobject]@{ label = '高';   n = $nHigh;   cls = 'sg-red' },
-  [pscustomobject]@{ label = '未评'; n = $nNoRisk; cls = 'sg-gray' }
+  [pscustomobject]@{ label = '待评估'; n = $nNoRisk; cls = 'sg-gray' }
 )
 $stBar = Home-Bar $stItems $nTotal
 $tierBar = Home-Bar $tierItems $nTotal
@@ -364,7 +364,7 @@ foreach ($k in ($evType7.Keys | Sort-Object { -[int]$evType7[$_] })) {
   $typeBadges += '<span class="tagx mono">[' + $lb + ']</span><span class="zh">' + $zh + ' <b class="mono">' + $evType7[$k] + '</b></span> '
 }
 $evTotal7 = 0; foreach ($v in $evPerDay.Values) { $evTotal7 += $v }
-$homeSummary = "库内 $nTotal 个项目：推荐过 $nRec 个，观察中 $nWatch、已收录 $nActive、已放弃 $nDrop；风险已评 $($nLow + $nMid + $nHigh) 个（低 $nLow / 中 $nMid / 高 $nHigh），其余 $nNoRisk 个未评：未评不等于安全。近 7 天共 $evTotal7 条变化。"
+$homeSummary = "库内 $nTotal 个项目：推荐过 $nRec 个，观察中 $nWatch、已收录 $nActive、已放弃 $nDrop；风险已评 $($nLow + $nMid + $nHigh) 个（低 $nLow / 中 $nMid / 高 $nHigh），其余 $nNoRisk 个待评估：待评估不等于安全。近 7 天共 $evTotal7 条变化。"
 # 图例里的白名单数字**实时算**，不写死（2026-10-18）
 $offCount = @($rows | Where-Object { $_.oc -eq 'official' }).Count
 $wlCount = 0
@@ -434,12 +434,12 @@ $html = @"
       <option value="">全部风险</option><option>低</option><option>中</option><option>高</option>
     </select>
     <select id="ft" onchange="render();syncURL()">
-      <option value="">全部档位</option><option>S</option><option>A</option><option value="unrated">未评档</option>
+      <option value="">全部档位</option><option>S</option><option>A</option><option>B</option><option>C</option><option>D</option>
     </select>
     <select id="f5" onchange="render();syncURL()">
       <option value="">全部评分</option>
       <option value="5">五星</option><option value="4">四星以上</option><option value="3">三星以上</option>
-      <option value="0">仅未评分</option>
+      <option value="0">仅待评估</option>
     </select>
     <select id="fa" onchange="render();syncURL()">
       <option value="">全部活跃度</option>
@@ -522,15 +522,15 @@ $html = @"
       </div>
       <div class="dist">
         <h4>档位</h4>
-        <div class="stack" role="img" aria-label="档位分布：S 档 $nS 条、A 档 $nA 条、B 档 $nB 条、未评 $nUnrated 条、已淘汰 $nDropT 条">$($tierBar.bar)</div>
+        <div class="stack" role="img" aria-label="档位分布：S 档 $nS 条、A 档 $nA 条、B 档 $nB 条、待评估 $nUnrated 条、已淘汰 $nDropT 条">$($tierBar.bar)</div>
         <ul class="legend">$($tierBar.rows)</ul>
-        <p class="chart-note">日报每天最多 8 条，所以 S + A 只有 $($nS + $nA) 条：档位是<b>稀缺</b>的，未评只代表还没看（未评档 $nUnrated = 显式 unrated $nTierUnratedWord + tier 为空 $nTierEmpty，数据里两种写法同义）。</p>
+        <p class="chart-note">日报每天最多 8 条，所以 S + A 只有 $($nS + $nA) 条：档位是<b>稀缺</b>的，待评估只代表还没看（待评估 $nUnrated = 显式 unrated $nTierUnratedWord + tier 为空 $nTierEmpty，数据里两种写法同义）。</p>
       </div>
       <div class="dist">
         <h4>风险</h4>
-        <div class="stack" role="img" aria-label="风险分布：低 $nLow 条、中 $nMid 条、高 $nHigh 条、未评 $nNoRisk 条">$($riskBar.bar)</div>
+        <div class="stack" role="img" aria-label="风险分布：低 $nLow 条、中 $nMid 条、高 $nHigh 条、待评估 $nNoRisk 条">$($riskBar.bar)</div>
         <ul class="legend">$($riskBar.rows)</ul>
-        <p class="chart-note">未评 $nNoRisk 条（$([math]::Round(100.0 * $nNoRisk / [Math]::Max($nTotal,1), 0))%）：<b>未评 ≠ 安全</b>，只表示还没评估过。</p>
+        <p class="chart-note">待评估 $nNoRisk 条（$([math]::Round(100.0 * $nNoRisk / [Math]::Max($nTotal,1), 0))%）：<b>待评估 ≠ 安全</b>，只表示还没评估过。</p>
       </div>
     </div>
   </section>
@@ -627,8 +627,8 @@ $html = @"
     <tr><th>档位</th><th>分数</th><th>含义</th><th>上限</th></tr>
     <tr><td class="mono">S</td><td class="mono">≥ 80</td><td>当天最值得看的</td><td class="mono">≤ 3 / 天</td></tr>
     <tr><td class="mono">A</td><td class="mono">65–79</td><td>值得收藏</td><td class="mono">S + A ≤ 8 / 天</td></tr>
-    <tr><td class="mono">B</td><td class="mono">50–64</td><td>合格但不急</td><td class="mono">不限</td></tr>
-    <tr><td class="mono">未评档</td><td class="mono">未完</td><td>还没走到评分这一步：不代表不好，只代表还没看</td><td class="mono">不限</td></tr>
+    <tr><td class="mono">B</td><td class="mono">55–64</td><td>合格但不急</td><td class="mono">不限</td></tr>
+    <tr><td class="mono">D</td><td class="mono">&lt; 45</td><td>质量上不推荐，仍在库</td><td class="mono">不推荐</td></tr>
     <tr><td class="mono">已淘汰</td><td class="mono">&lt; 50</td><td>或命中合规红线（注册机 / 破解 / 刷星迹象）</td><td class="mono">不推荐</td></tr>
   </table>
 
@@ -646,7 +646,7 @@ $html = @"
     <div class="spec-row"><dt>低</dt><dd>本地工具、不联网、许可清楚</dd></div>
     <div class="spec-row"><dt>中</dt><dd>会读写你的文件 / 需要密钥 / 许可待核</dd></div>
     <div class="spec-row"><dt>高</dt><dd>涉及账号权限、隐私数据、来源不明的可执行文件</dd></div>
-    <div class="spec-row"><dt>未评</dt><dd><b>未评 ≠ 安全</b>：只表示还没评估过（本库多数条目属此列）</dd></div>
+    <div class="spec-row"><dt>待评估</dt><dd><b>待评估 ≠ 安全</b>：只表示还没评估过（本库多数条目属此列）</dd></div>
   </dl>
 
   <div class="spec-h">§ 04 / 分层徽章（P2-2；规则可在数据上复算，不是贴上去的标签）</div>
@@ -655,7 +655,7 @@ $html = @"
     <div class="spec-row"><dt>🌱 新星</dt><dd>首次收录 ≤ <b>7</b> 天 <b>且</b>已评到 S/A 档（2026-10-17 收紧：原口径"≤14 天 + 质量信号"覆盖 74% 的条目，徽章失去区分度 ✗）。当前 <b>39</b> 条</dd></div>
     <div class="spec-row"><dt>🧊 冷门</dt><dd>星数 &lt; 1000 <b>但</b>质量好（S/A 档或体验分 ≥ 4）：冷门优质；2026-10-16 按你的要求由 💎 改为 🧊。当前 65 条</dd></div>
     <div class="spec-row"><dt>🧱 常青</dt><dd>库龄 &gt; 30 天 <b>且</b>近 7 天仍有提交。⚠️ 现在<b>恒为 0</b>：库本身只有 5 天历史，等库老了它才会出现（不假装有）</dd></div>
-    <div class="spec-row"><dt>🧪 待观察</dt><dd>档位未评 <b>且</b>风险未评：证据不足，既不判死也不推。当前 161 条</dd></div>
+    <div class="spec-row"><dt>🧪 待观察</dt><dd>档位待评估 <b>且</b>风险待评估：证据不足，既不判死也不推。当前 161 条</dd></div>
     <div class="spec-row"><dt>👤 用户推荐</dt><dd>你主动提的项目：一律入库，但门禁未过会写明风险</dd></div>
   </dl>
   <p class="spec-note">🔥 与 💎 已停用（营销号观感；用户 2026-10-14 决定）：冷门一律 🧊，新星一律 🌱。徽章**排在其他标记第一位** ✓；徽章筛选已可用：筛选条里的「全部徽章」→ 会写进链接（例如 `#/all?badge=gem`，可分享、可后退）✓</p>
@@ -670,7 +670,7 @@ $html = @"
   <dl class="spec-dl">
     <div class="spec-row"><dt>分数</dt><dd>启发式打分，不是权威评测；档位稀缺（S + A 每天 ≤ 8）</dd></div>
     <div class="spec-row"><dt>星数</dt><dd>采集时点的快照值，不是实时</dd></div>
-    <div class="spec-row"><dt>风险</dt><dd>未评 ≠ 安全；高风险条目请先看它的 README 与许可</dd></div>
+    <div class="spec-row"><dt>风险</dt><dd>待评估 ≠ 安全；高风险条目请先看它的 README 与许可</dd></div>
     <div class="spec-row"><dt>页面</dt><dd>只读单文件：数据全部内嵌、运行期外部请求 0、不写磁盘</dd></div>
     <div class="spec-row"><dt>版本</dt><dd>$buildStamp</dd></div>
     <div class="spec-row"><dt>更新</dt><dd>改完 data 后跑 sync-projects 再跑 build-overview（或双击根目录的刷新页面.cmd）</dd></div>

@@ -14,7 +14,7 @@ function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>'
 function repoUrl(p){ return 'https://github.com/' + p.id; }
 function when(s){ return s ? String(s).slice(0,10) : '—'; }
 function daysAgo(s){ if(!s) return null; const d=new Date(String(s)); if(isNaN(d)) return null; return Math.floor((Date.now()-d)/86400000); }
-function stars5(n){ if(n===null||n===undefined) return '<span class="stars5" style="color:var(--dim)">未评分</span>'; return '<span class="stars5">'+'★'.repeat(n)+'☆'.repeat(5-n)+'</span>'; }
+function stars5(n){ if(n===null||n===undefined) return '<span class="stars5" style="color:var(--dim)">待评估</span>'; return '<span class="stars5">'+'★'.repeat(n)+'☆'.repeat(5-n)+'</span>'; }
 function oneText(p){ return p.one || (p.desc ? p.desc : null); }function evCount(p){ const e=E[p.id]; return e? e.length : 0; }
 function hay(p){
   return [p.id,p.desc||'',p.note||'',p.one||'',p.prob||'',p.ex||'',
@@ -139,7 +139,7 @@ function cardHtml(p, idx){
   const flags=[];
   if(p.tier==='S'||p.tier==='A') flags.push('<span class="pill tier-'+p.tier+'">'+p.tier+' 档</span>');
   else if(p.tier==='dropped') flags.push('<span class="pill s-dropped">已淘汰</span>');
-  else flags.push('<span class="pill tier-unrated" title="未经日报评档">未评档</span>');
+  else flags.push('<span class="pill tier-unrated" title="未经日报评档">待评估</span>');
   if(p.risk) flags.push('<span class="pill r-'+(p.risk==='低'?'low':p.risk==='高'?'high':'mid')+'">风险 '+p.risk+'</span>');
   if(p.status!=='active') flags.push('<span class="pill s-'+p.status+'">'+(STA[p.status]||p.status)+'</span>');
   if(p.origin==='user') flags.push('<span class="pill" style="border-color:var(--violet-line);color:var(--violet)">用户推荐</span>');
@@ -204,7 +204,7 @@ function cmpCell(p, kind){
   if(kind==='pushed')return when(p.pushed);
   if(kind==='lic')   return p.lic||'';
   if(kind==='risk')  return p.risk||(p.t&&p.t[5])||'';
-  if(kind==='tier')  return (p.tier==='S'||p.tier==='A')?(p.tier+' 档'):(p.tier==='dropped'?'已淘汰':'未评档');
+  if(kind==='tier')  return (p.tier==='S'||p.tier==='A')?(p.tier+' 档'):(p.tier==='dropped'?'已淘汰':'待评估');
   return '';
 }
 function cmpRow(A,B,label,kind){
@@ -540,7 +540,7 @@ function latestPickDay(){
 // 批次 6 · #/picks = **专题报道**（设计 §10.5）：首条做大做封面稿、其余**按档位分栏**、官方动态做侧栏小字条 ✓
 // 批次 6 / P2-2：**分层徽章**（唯一真源 —— 渲染与筛选共用；规则同步写在 #/legend §04）
 // 语义：🏢 官方=白名单命中 ｜ 🌱 新星=首见≤14天且有质量信号 ｜ 🧊 冷门=低星但优质（用户 2026-10-16 指定冰块）
-//       🧱 常青=库龄>30天且近7天仍有提交 ｜ 🧪 待观察=档位未评且风险未评（证据不足）
+//       🧱 常青=库龄>30天且近7天仍有提交 ｜ 🧪 待观察=档位待评估且风险待评估（证据不足）
 function badgeOf(p){
   const out=[];
   const day=function(s){ return s ? new Date(String(s)+'T00:00:00').getTime() : null; };
@@ -557,7 +557,7 @@ function badgeOf(p){
 }
 function badgeHtml(p){
   const B={org:'🏢',new:'🌱',gem:'🧊',ever:'🧱',watch:'🧪'};
-  const T={org:'官方/大厂（白名单）',new:'新星：首见≤14天且有质量信号',gem:'冷门优质：星数<1000 但质量好',ever:'常青：库龄>30天且近7天仍活跃',watch:'待观察：档位与风险都未评'};
+  const T={org:'官方/大厂（白名单）',new:'新星：首见≤14天且有质量信号',gem:'冷门优质：星数<1000 但质量好',ever:'常青：库龄>30天且近7天仍活跃',watch:'待观察：档位与风险都待评估'};
   return badgeOf(p).map(function(k){
     const lab=(k==='org' && p.ol) ? esc(p.ol) : ({org:'官方',new:'新星',gem:'冷门',ever:'常青',watch:'待观察'})[k];
     return '<span class="pill b-'+k+'" title="'+T[k]+'">'+B[k]+' '+lab+'</span>';
@@ -567,7 +567,7 @@ function leadHtml(p, day, fallback){
   if(!p) return '';
   const one=oneText(p);
   const risk = p.risk ? '<span class="pill r-'+(p.risk==='低'?'low':p.risk==='高'?'high':'mid')+'">风险 '+p.risk+'</span>'
-                      : '<span class="pill tier-unrated">风险未评</span>';
+                      : '<span class="pill tier-unrated">风险待评估</span>';
   return '<article class="lead" onclick="detail(\''+p.id+'\')">'
     + '<div class="lead-k mono">'+(fallback?'库里最值得看的':'当天头条')+' · '+esc(String(day||''))+'</div>'
     + '<h3><a href="'+repoUrl(p)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">'+esc(p.id)+'</a></h3>'
@@ -591,7 +591,7 @@ function buildToday(date){
   } else if(!date && day!==today){
     notice='<div class="picknote">最新一天有新增的是 <b>'+esc(day)+'</b>（今天还没有新增）。</div>';
   }
-  // 排序：**档位优先**（S→A→B→未评），再体验分、再 star（"专题报道"的第一条必须是最值得看的 ✓）
+  // 排序：**档位优先**（S→A→B→待评估），再体验分、再 star（"专题报道"的第一条必须是最值得看的 ✓）
   r=r.slice().sort(function(a,b){ return tierRank(a)-tierRank(b) || (b.exp||0)-(a.exp||0) || (b.stars||0)-(a.stars||0); });
   const leadEl=document.getElementById('todayLead');
   if(leadEl) leadEl.innerHTML = leadHtml(r[0], day, fallback);
@@ -599,7 +599,7 @@ function buildToday(date){
   if(colsEl){
     const groups={S:[],A:[],B:[],other:[]};
     r.slice(1).forEach(function(p){ const k=(p.tier==='S'||p.tier==='A'||p.tier==='B')?p.tier:'other'; groups[k].push(p); });
-    const label={S:'S 档 · 最值得看',A:'A 档 · 值得收藏',B:'B 档 · 合格',other:'未评档 / 其他'};
+    const label={S:'S 档 · 最值得看',A:'A 档 · 值得收藏',B:'B 档 · 合格',other:'待评估 / 其他'};
     colsEl.innerHTML=['S','A','B','other'].map(function(k){
       const g=groups[k];
       return '<div class="tcol"><h4>'+label[k]+' <b class="mono">'+g.length+'</b></h4>'
@@ -736,7 +736,7 @@ function detail(id){
   document.getElementById('panel').innerHTML='<span class="close" onclick="closePanel()">×</span>'
     +'<h2>'+esc(p.id)+'</h2>'
     +'<div style="margin:6px 0 2px">'+stars5(p.exp)+'　<span class="pill pill-fn">'+esc(p.l1)+' / '+esc(p.l2)+'</span>'
-      +((p.tier==='S'||p.tier==='A')?('　<span class="pill tier-'+p.tier+'">'+p.tier+' 档推荐</span>'):(p.tier==='dropped'?'　<span class="pill s-dropped">已淘汰</span>':'　<span class="pill tier-unrated">未评档</span>'))
+      +((p.tier==='S'||p.tier==='A')?('　<span class="pill tier-'+p.tier+'">'+p.tier+' 档推荐</span>'):(p.tier==='dropped'?'　<span class="pill s-dropped">已淘汰</span>':'　<span class="pill tier-unrated">待评估</span>'))
       +'</div>'
     +human
     +fnBlock

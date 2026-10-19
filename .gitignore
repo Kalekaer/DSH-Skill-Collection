@@ -9,4 +9,6 @@ data/_pip-cache/
 legacy/
 data/runs/
 data/push/
+# 用户自己的日报正文不随包；只放行演示包自带的样例
 reports/*.md
+!reports/2026-10-19.md

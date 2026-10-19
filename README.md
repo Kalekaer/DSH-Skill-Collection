@@ -31,7 +31,7 @@
 | 项目数 | 15 条公开项目 demo | 从 0 开始，每天长 |
 | 页面 | `index.html` + `data/site/` 5 页已生成，直接能看 | 每次重建后用 `build-samples.ps1` 重新生成 |
 | 原始层 | 含 **15 行 demo 版** `data/seen.jsonl` | 跑过一次日报后长成你自己的台账，是唯一可手工编辑的文件 |
-| 日报 / 快照 / 推荐记录 | 只含 demo 的 `data/picks/2026-10-19.jsonl` 与 5 行 `recommend-log.csv`；不含 `reports/`、`data/snapshots/` 数据 | `reports/`、`data/snapshots/`、`data/picks/`、`data/recommend-log.csv` |
+| 日报 / 快照 / 推荐记录 | 含 demo 的 `data/picks/2026-10-19.jsonl`、5 行 `recommend-log.csv`、**一份样例日报** `reports/2026-10-19.md`；不含 `data/snapshots/` 数据 | `reports/`、`data/snapshots/`、`data/picks/`、`data/recommend-log.csv` |
 | 个人内容（笔记 / 工作区） | **不含**（空文件桩） | `data/user-notes.jsonl`、`data/workspaces.jsonl` |
 
 ---
@@ -208,11 +208,11 @@ github-daily-picks/                 ← 解压出来的仓库根目录
 
 ## 4. 日报在哪看
 
-**本包不含日报历史**（那属于个人数据），下面这些是**你自己跑起来之后**的产物：
+**本包只带一份样例日报**（`reports/2026-10-19.md`，内容来自 demo 项目）；你自己的日报历史属于个人数据，跑起来之后才会生成：
 
 | 想看什么 | 打开（运行后生成） |
 |---|---|
-| 今天的日报正文 | `reports/YYYY-MM-DD.md` |
+| 今天的日报正文 | `reports/YYYY-MM-DD.md`（本包已带 2026-10-19 样例） |
 | 全部日报索引 | `reports/index.md` |
 | **站点总览** | `index.html`（双击，离线可用；本包已带 demo 版） |
 | **今天的日报页（结构轴版）** | `data/site/daily-layout-c-finsara.generated.html`（本包已带 demo 版：5 条主推荐） |
@@ -321,7 +321,7 @@ github-daily-picks/                 ← 解压出来的仓库根目录
 | 消息推送 | DSH 没有通用 HTTP POST 工具 | 推送文案生成到 `data/push/`，**手动复制粘贴** |
 | `.univer` 累积表格 | 尚未生成 | 每次运行自动跳过并记日志，不影响日报 |
 | **演示包的「我的工作区」是空的** | `data/workspaces.jsonl` 为空桩（README 第 3 张图是计划页的预设区） | 想看效果：跟 Agent 说「给我建个工作区：___」 |
-| **演示包没有日报历史** | `reports/` 按设计不含（只有 demo 的 picks / 推荐记录） | 说一句「跑今天的日报」生成第一份 |
+| **演示包只有一份样例日报** | `reports/2026-10-19.md` 是 demo 内容，不是作者历史 | 说一句「跑今天的日报」生成你自己的第一份 |
 | **站点页检查是静态的** | `audit.ps1` 第 22 节查 HTML 结构，不执行 JS | 想真机点一遍：用浏览器打开 `index.html` 手动点四个入口 |
 
 ---

@@ -28,6 +28,16 @@
 
 ---
 
+## [5.1.2] — 2026-10-19 · 日报页 B 档占位格 + demo 样例日报 ✓
+
+- `daily-layout-c-finsara.html`：B 档不足 4 列时补「**NO FURTHER B / 结构留白 / 不凑数**」斜纹格（`.b-cell.b-blank`），不再露出黑底像“漏加载”。
+- 新增 `reports/2026-10-19.md` **样例日报**（内容全部来自 demo 项目）：日报页期号从 `00` 变 `01`，「完整日报」浮层有内容；`.gitignore` 只放行这一份，用户自己的日报仍不随包。
+- 「完整日报」浮层标题改成**动态日期**（原来写死 `2026.10.18`）；真机探针确认浮层能打开、正文 1271 字。
+- demo 数据补 2 条 `first_seen=2026-10-19`（`NandhaKishorM/laya`、`storytold/pdfcraft`）：日报头 `ENTRIES` 从 `0` 变 `2`，「当日入库全名单」不再空；`examples/demo` 同步重建（事件 20 条）。
+- README / QUICKSTART / examples/demo/README 同步改口径（有样例日报、没有快照）。
+- 旧单页生成器（`build-overview.ps1` / `templates/overview.js`）清掉「未评档」文案：筛选项、图表注释、规则表统一改成「待评估」/ 补 D 档行；数据里的旧备注也做替换；`audit` 对应检查改为「页面无未评残留」。
+- 同步重建库内与包内日报页；`audit` 两边仍 0 红。
+
 ## [5.1.1] — 2026-10-19 · 发布包依赖补齐（用户流程不再撞缺文件）✓
 
 - **补进包**：`rebuild-page.ps1`（6 个写入器 + 日报第 7 步）、`add-rows.ps1`（日报写 picks/CSV）、`run-manifest.ps1` + `reconcile.ps1`（日报第 8 步对账）、`mark-status.ps1`、`TABLE.md`（CSV 列说明）。

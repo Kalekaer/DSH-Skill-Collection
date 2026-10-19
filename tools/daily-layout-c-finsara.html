@@ -181,6 +181,9 @@ button{font:inherit;color:inherit}
 .b-matrix{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--ink);border:1px solid var(--ink)}
 .b-cell{background:var(--concrete);border:0;text-align:left;padding:0;cursor:pointer;display:flex;flex-direction:column;min-width:0}
 .b-cell:hover{background:var(--paper)}
+/* 2026-10-19：B 不足 4 列时的结构留白格（替代露黑底） */
+.b-cell.b-blank{background:var(--concrete2);background-image:var(--hatch);cursor:default;justify-content:flex-end;align-items:flex-end;padding:12px 12px 10px;font:700 10px/1.5 var(--mono);letter-spacing:.12em;color:var(--steel);min-height:86px}
+.b-cell.b-blank:hover{background:var(--concrete2)}
 .b-cell .b-thumb{position:relative;display:block;height:86px;border-bottom:1px solid var(--ink);background-size:cover;background-position:center;filter:grayscale(1) contrast(1.18) brightness(.92)}
 .b-cell .b-thumb::after{content:"";position:absolute;inset:0;background:radial-gradient(circle,rgba(13,13,12,.5) 0 1.1px,transparent 1.3px) 0 0/6px 6px;mix-blend-mode:multiply;opacity:.5}
 .b-cell .b-body{padding:9px 10px 11px;display:flex;flex-direction:column;gap:5px;min-width:0}
@@ -498,6 +501,8 @@ var D = /*__DAILY__*/null;
 
   document.getElementById('issueNo').textContent = String(D.issue||'08').padStart(2,'0');
   document.getElementById('issueDate').textContent = (D.iso||'') + ' / ' + (D.week||'');
+  var frT = document.getElementById('frTitle');
+  if (frT) { frT.textContent = ((D.iso||'').replace(/-/g,'.') || '当前') + ' · 结构日报'; }
   document.getElementById('tbDate').textContent = (D.iso||'').replace(/-/g,'.');
   document.getElementById('tbNew').textContent = ST.new==null?ST.cand:ST.new;
   document.getElementById('tbRec').textContent = ST.rec;
@@ -560,7 +565,7 @@ var D = /*__DAILY__*/null;
   function renderB(limit){
     var shown=B.slice(0,limit);
     document.getElementById('bCount').textContent=(B.length>B_LIMIT?shown.length+' / '+B.length:shown.length)+' MODULES / 4 COL';
-    document.getElementById('bMatrix').innerHTML=shown.map(function(p,i){
+    var bHtml=shown.map(function(p,i){
       return '<button class="b-cell" type="button" data-pid="'+esc(p.id)+'">'
         +'<span class="b-thumb" aria-hidden="true" style="background-image:url(\''+PLATES[i%PLATES.length].src+'\')"></span>'
         +'<span class="b-body"><span class="b-no">B-'+String(i+1).padStart(2,'0')+'</span>'
@@ -568,6 +573,10 @@ var D = /*__DAILY__*/null;
         +'<span class="b-repo">'+esc(p.id)+'</span>'
         +'<p class="b-one">'+esc(p.one||'')+'</p></span></button>';
     }).join('');
+    // 2026-10-19：不足 4 列时补斜纹占位格——否则空列露出黑底，看起来像"漏加载"
+    var bPad=(4-(shown.length%4))%4;
+    for(var k=0;k<bPad;k++){ bHtml+='<div class="b-cell b-blank" aria-hidden="true"><span>NO FURTHER B<br>结构留白 / 不凑数</span></div>'; }
+    document.getElementById('bMatrix').innerHTML=bHtml;
     var fold=document.getElementById('bFold');
     if(B.length<=B_LIMIT){ fold.innerHTML=''; return; }
     fold.innerHTML='<button class="foldbtn" id="bFoldBtn" type="button">'+(bExpanded?'收起 B':'查看全部 B（'+B.length+'）')+'</button>';

@@ -1,25 +1,20 @@
 {"id":"browser-use/jev-ultrafast","full_name":"browser-use/jev-ultrafast","date":"2026-10-11","type":"discovered","detail":"首次收录，来源 自动化","src":"seen"}
-{"id":"browser-use/jev-ultrafast","full_name":"browser-use/jev-ultrafast","date":"2026-10-11","type":"recommended","detail":"S 档","src":"csv(兜底)"}
-{"id":"NandhaKishorM/laya","full_name":"NandhaKishorM/laya","date":"2026-10-11","type":"discovered","detail":"首次收录，来源 demo","src":"seen"}
 {"id":"Niko1221/Strata","full_name":"Niko1221/Strata","date":"2026-10-11","type":"discovered","detail":"首次收录，来源 本地模型","src":"seen"}
-{"id":"Niko1221/Strata","full_name":"Niko1221/Strata","date":"2026-10-11","type":"recommended","detail":"S 档","src":"csv(兜底)"}
 {"id":"storytold/filmcraft","full_name":"storytold/filmcraft","date":"2026-10-11","type":"discovered","detail":"首次收录，来源 未知","src":"seen"}
 {"id":"storytold/photocraft","full_name":"storytold/photocraft","date":"2026-10-11","type":"discovered","detail":"首次收录，来源 图片处理","src":"seen"}
-{"id":"storytold/photocraft","full_name":"storytold/photocraft","date":"2026-10-11","type":"recommended","detail":"A 档","src":"csv(兜底)"}
 {"id":"storytold/wordcraft","full_name":"storytold/wordcraft","date":"2026-10-11","type":"discovered","detail":"首次收录，来源 未知","src":"seen"}
 {"id":"HBAI-Ltd/Toonflow-app","full_name":"HBAI-Ltd/Toonflow-app","date":"2026-10-12","type":"discovered","detail":"首次收录，来源 未知","src":"seen"}
 {"id":"ImageMagick/ImageMagick","full_name":"ImageMagick/ImageMagick","date":"2026-10-12","type":"discovered","detail":"首次收录，来源 demo","src":"seen"}
 {"id":"mudler/LocalAI","full_name":"mudler/LocalAI","date":"2026-10-12","type":"discovered","detail":"首次收录，来源 未知","src":"seen"}
 {"id":"robbietilton/Compositor","full_name":"robbietilton/Compositor","date":"2026-10-12","type":"discovered","detail":"首次收录，来源 图片处理","src":"seen"}
-{"id":"robbietilton/Compositor","full_name":"robbietilton/Compositor","date":"2026-10-12","type":"recommended","detail":"A 档","src":"csv(兜底)"}
-{"id":"storytold/pdfcraft","full_name":"storytold/pdfcraft","date":"2026-10-12","type":"discovered","detail":"首次收录，来源 demo","src":"seen"}
 {"id":"unslothai/unsloth","full_name":"unslothai/unsloth","date":"2026-10-12","type":"discovered","detail":"首次收录，来源 demo","src":"seen"}
 {"id":"wheresryan22/anatomy","full_name":"wheresryan22/anatomy","date":"2026-10-12","type":"discovered","detail":"首次收录，来源 未知","src":"seen"}
 {"id":"yetone/magpie","full_name":"yetone/magpie","date":"2026-10-13","type":"discovered","detail":"首次收录，来源 AI Agent","src":"seen"}
-{"id":"yetone/magpie","full_name":"yetone/magpie","date":"2026-10-13","type":"recommended","detail":"S 档","src":"csv(兜底)"}
 {"id":"AbdelStark/awesome-typesafe-jev","full_name":"AbdelStark/awesome-typesafe-jev","date":"2026-10-15","type":"discovered","detail":"首次收录，来源 未知","src":"seen"}
-{"id":"browser-use/jev-ultrafast","full_name":"browser-use/jev-ultrafast","date":"2026-10-19","type":"re_recommended","detail":"第 2 次推荐，S 档","src":"picks"}
-{"id":"Niko1221/Strata","full_name":"Niko1221/Strata","date":"2026-10-19","type":"re_recommended","detail":"第 2 次推荐，S 档","src":"picks"}
-{"id":"robbietilton/Compositor","full_name":"robbietilton/Compositor","date":"2026-10-19","type":"re_recommended","detail":"第 2 次推荐，A 档 · 65 分","src":"picks"}
-{"id":"storytold/photocraft","full_name":"storytold/photocraft","date":"2026-10-19","type":"re_recommended","detail":"第 2 次推荐，A 档","src":"picks"}
-{"id":"yetone/magpie","full_name":"yetone/magpie","date":"2026-10-19","type":"re_recommended","detail":"第 2 次推荐，S 档 · 80 分","src":"picks"}
+{"id":"browser-use/jev-ultrafast","full_name":"browser-use/jev-ultrafast","date":"2026-10-19","type":"recommended","detail":"S 档 · 行动：收藏","src":"picks"}
+{"id":"NandhaKishorM/laya","full_name":"NandhaKishorM/laya","date":"2026-10-19","type":"discovered","detail":"首次收录，来源 demo","src":"seen"}
+{"id":"Niko1221/Strata","full_name":"Niko1221/Strata","date":"2026-10-19","type":"recommended","detail":"S 档 · 行动：收藏","src":"picks"}
+{"id":"robbietilton/Compositor","full_name":"robbietilton/Compositor","date":"2026-10-19","type":"recommended","detail":"A 档 · 65 分 · 行动：收藏","src":"picks"}
+{"id":"storytold/pdfcraft","full_name":"storytold/pdfcraft","date":"2026-10-19","type":"discovered","detail":"首次收录，来源 demo","src":"seen"}
+{"id":"storytold/photocraft","full_name":"storytold/photocraft","date":"2026-10-19","type":"recommended","detail":"A 档 · 行动：收藏","src":"picks"}
+{"id":"yetone/magpie","full_name":"yetone/magpie","date":"2026-10-19","type":"recommended","detail":"S 档 · 80 分 · 行动：试玩","src":"picks"}
