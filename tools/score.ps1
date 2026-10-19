@@ -114,7 +114,7 @@ function Test-DailyCap {
   [CmdletBinding()]
   param([Parameter(Mandatory)][int]$Count, [switch]$Extra)
   $c = Get-Criteria
-  $cap = if ($Extra) { [int]$c.'日报上限'.'大厂附加区' } else { [int]$c.'日报上限'.'精品' }
+  $cap = if ($Extra) { [int]$c.'日报上限'.'特别栏目' } else { [int]$c.'日报上限'.'主推荐' }
   return @{ 上限 = $cap; 数量 = $Count; 通过 = ($Count -le $cap) }
 }
 

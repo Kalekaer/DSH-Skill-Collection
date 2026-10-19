@@ -7,7 +7,7 @@
   "_更新": "2026-10-19",
   "$defs": {
     "status": { "enum": ["watching", "active", "using", "researching", "dropped"] },
-    "tier": { "enum": ["S", "A", "B", "C", "D", "unrated", "dropped", ""] },
+    "tier": { "enum": ["S", "A", "B", "C", "D"] },
     "risk": { "enum": ["低", "中", "高", ""] },
     "picks_action": { "enum": ["试玩", "收藏", "研究", "放弃", "观察", "继续观察"] },
     "daily_status": { "enum": ["published", "over_quota"] },
@@ -163,6 +163,6 @@
     "status 必须在白名单内": true,
     "category.l1/l2 必须能在 taxonomy.json 找到": true,
     "数组字段不得含 null 元素": true,
-    "picks 下限流上限：精品 ≤8 / 大厂附加区 ≤3": true
+    "picks 下限流上限：主推荐 ≤8 / 特别栏目 ≤3": true
   }
 }

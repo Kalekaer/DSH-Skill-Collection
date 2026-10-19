@@ -663,7 +663,7 @@ Chk "标准代码化：tools/score.ps1 存在且含关键函数" ((Test-Path (Jo
 if ($crit) {
   $rub = Get-Content (Join-Path $root 'RUBRIC.md') -Raw -Encoding UTF8
   Chk "P0-4 分档阈值一致（criteria ↔ RUBRIC）" (([int]$crit.'分档阈值'.S -eq 80) -and ($rub -match '≥\s*80') -and ($rub -match '65')) "criteria S=$($crit.'分档阈值'.S)"
-  Chk "P0-4 日报上限一致（criteria ↔ RUBRIC/TEMPLATES）" (([int]$crit.'日报上限'.'精品' -eq 8) -and ([int]$crit.'日报上限'.'大厂附加区' -eq 3) -and ($rub -match '8\s*条')) "criteria 精品=$($crit.'日报上限'.'精品')"
+  Chk "P0-4 日报上限一致（criteria ↔ RUBRIC/TEMPLATES）" (([int]$crit.'日报上限'.'主推荐' -eq 8) -and ([int]$crit.'日报上限'.'特别栏目' -eq 3) -and ($rub -match '8\s*条')) "criteria 主推荐=$($crit.'日报上限'.'主推荐')"
   Chk "P0-9 红线两级齐备（明确违规 + 歧义信号）" ((@($crit.'合规红线_明确违规').Count -ge 20) -and (@($crit.'合规红线_歧义信号'.'词').Count -ge 5)) "明确=$( @($crit.'合规红线_明确违规').Count ) 歧义=$( @($crit.'合规红线_歧义信号'.'词').Count )"
   Chk "P0-9 歧义词不许判死（codex-on-crack 不得被 dropped）" ($true) ""   # 具体样本检查见下
 }
@@ -676,8 +676,8 @@ if (Test-Path $rlPath) {
   $rows = @(Import-Csv $rlPath -Encoding UTF8)
   # 图像专题（方向=图像专题）不占当日 8 条名额，单独排除。
   $fine = @($rows | Where-Object { $_.'档位' -in @('S','A','B') -and $_.'方向' -ne '图像专题' }); $byDate = $fine | Group-Object '首次推荐日' | ForEach-Object { [pscustomobject]@{ d = $_.Name; n = $_.Count } }
-  $over = @($byDate | Where-Object { $_.n -gt [int]$crit.'日报上限'.'精品' })
-  Chk "P0-3 精品上限 ≤8（recommend-log 仅算 S/A/B 档）" ($over.Count -eq 0) ("超限日期: " + (($over | ForEach-Object { $_.d + '=' + $_.n }) -join ', '))
+  $over = @($byDate | Where-Object { $_.n -gt [int]$crit.'日报上限'.'主推荐' })
+  Chk "P0-3 主推荐上限 ≤8（recommend-log 仅算 S/A/B 档）" ($over.Count -eq 0) ("超限日期: " + (($over | ForEach-Object { $_.d + '=' + $_.n }) -join ', '))
 } else {
   Chk "P0-3 recommend-log.csv 存在" $false "缺 data\recommend-log.csv"
 }
@@ -691,7 +691,7 @@ foreach ($f in @(Get-ChildItem (Join-Path $root 'reports') -Filter '*.md' -File 
     if ($n -gt 3) { $repOver += ($f.Name + '=' + $n) }
   }
 }
-Chk "P0-3 大厂附加区 ≤3（reports 解析）" ($repOver.Count -eq 0) ($repOver -join ', ')
+Chk "P0-3 特别栏目 ≤3（reports 解析）" ($repOver.Count -eq 0) ($repOver -join ', ')
 # 数据契约（P0-8）
 Chk "P0-8 data/schema.json 存在" (Test-Path (Join-Path $root 'data\schema.json')) "缺 data\schema.json"
 Chk "P0-8 tools/validate-lib.ps1 存在（内置零依赖校验）" (Test-Path (Join-Path $root 'tools\validate-lib.ps1')) "缺 tools\validate-lib.ps1"

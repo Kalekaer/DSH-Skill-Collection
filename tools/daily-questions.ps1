@@ -1,4 +1,4 @@
-﻿# daily-questions.ps1 — 跑完日报后，生成「该问用户的几个问题」
+# daily-questions.ps1 — 跑完日报后，生成「该问用户的几个问题」
 #
 # 用户要的效果：自动化跑完后，不要只丢一份日报，而是**主动问几件需要他决定的事**。
 # 本脚本扫描当天的产物与待办，输出 3–6 条具体问题（每条都带数据依据）——不猜、不空问。
@@ -65,9 +65,9 @@ $planN = Count-Lines 'data\plan-suggestions.jsonl'
 if ($planN) { $q += "**方案候选有 $planN 条**：库里有几个用途方向工具攒够了但没有对应场景。要不要我加进 data/plans.json？" }
 
 # ---- ④ 用户推荐的项目是否要处理 ----
-$userNew = @($proj | Where-Object { $_.origin -eq 'user' -and $_.tier -eq 'unrated' -and $_.status -ne 'dropped' })
+$userNew = @($proj | Where-Object { $_.origin -eq 'user' -and $_.tier -notin @('S','A','B','C','D') -and $_.status -ne 'dropped' })
 if ($userNew.Count) {
-  $q += "你推荐入库的 **$($userNew.Count) 条还是「未评档」**（没进过日报评分）。要不要挑几条走一遍完整评估，或者用 compare.ps1 -Similar 看它们的同类？"
+  $q += "你推荐入库的 **$($userNew.Count) 条还没有 S/A/B/C/D 档位**（没进过日报评分）。要不要挑几条走一遍完整评估，或者用 compare.ps1 -Similar 看它们的同类？"
 }
 $savedN = @($proj | Where-Object { $_.status -eq 'saved' }).Count
 if ($savedN) { $q += "你收藏了 **$savedN 条**。要不要我按「按用途分组」给这些收藏也配一套方案（`/tool-stack`）？" }

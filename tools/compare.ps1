@@ -1,4 +1,4 @@
-﻿# compare.ps1 — 项目对比（第二阶段功能 ⑦，2026-10-13 产品决策）
+# compare.ps1 — 项目对比（第二阶段功能 ⑦，2026-10-13 产品决策）
 #
 # 两种用法：
 #   & ".\tools\compare.ps1" ownerA/repoA ownerB/repoB      # A vs B 对比表（Markdown，输出到控制台）
@@ -54,7 +54,7 @@ function FnVal($p, [string]$key) {
 }
 
 function ExpText($p) {
-  if ($null -eq $p.experience -or $null -eq $p.experience.stars) { return '未评分' }
+  if ($null -eq $p.experience -or $null -eq $p.experience.stars) { return '暂无体验分' }
   $s = '★' * [int]$p.experience.stars + '☆' * (5 - [int]$p.experience.stars)
   return "$s（$($p.experience.score)/100）"
 }
@@ -140,7 +140,7 @@ $lines += Row ('星数（' + $pa.stars.last_snapshot + ' 快照）') $pa.stars.c
 $lines += Row '最近提交' ($(if ($pa.pushed_at) { try { '{0:yyyy-MM-dd}' -f [datetime]$pa.pushed_at } catch { "$($pa.pushed_at)" } })) ($(if ($pb.pushed_at) { try { '{0:yyyy-MM-dd}' -f [datetime]$pb.pushed_at } catch { "$($pb.pushed_at)" } }))
 $lines += Row 'License' $pa.license $pb.license
 $lines += Row '风险' ($(if ($pa.risk) { $pa.risk } else { $pa.tags.'风险等级' })) ($(if ($pb.risk) { $pb.risk } else { $pb.tags.'风险等级' }))
-$lines += Row '档位' ($(if ($pa.tier) { if ($pa.tier -eq 'unrated') { '未评档' } else { "$($pa.tier) 档" } } else { '未评档' })) ($(if ($pb.tier) { if ($pb.tier -eq 'unrated') { '未评档' } else { "$($pb.tier) 档" } } else { '未评档' }))
+$lines += Row '档位' ($(if ($pa.tier) { "$($pa.tier) 档" } else { '—' })) ($(if ($pb.tier) { "$($pb.tier) 档" } else { '—' }))
 
 # 怎么选（自动判断，只基于数据，不做价值背书）
 $sugg = @()

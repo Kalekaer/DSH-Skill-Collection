@@ -28,6 +28,21 @@
 
 ---
 
+## [5.1.6] — 2026-10-19 · 清理 `unrated` 语义债 ✓
+
+- `data/criteria.json`：删除“用户推荐项目 / 附加区”两处无用的 `tier` 旧字段；冷却键 `已淘汰`→`D档`、`红线淘汰`→`合规剔除`、`_淘汰`→`_D档`。
+- `data/schema.json`：`tier` 枚举收紧为 **S/A/B/C/D**（`dropped` 归 `status`）。
+- `sync-projects.ps1` 注释、`compare.ps1` 档位显示、`daily-questions.ps1` 过滤、`build-sim-daily.ps1` 硬编码、`build-samples.ps1` 提示语同步改成“没有档位 / 暂无体验分”。
+- 库内 `term-check.ps1` 纳入 `data/criteria.json`、`data/schema.json`、`TEMPLATES/daily.md`；当前 PASS。
+- 包内 `audit` 164/2/0 不变。
+
+## [5.1.5] — 2026-10-19 · criteria 术语迁移 ✓
+
+- `data/criteria.json` 的日报上限键：`精品` → `主推荐`、`大厂附加区` → `特别栏目`；4 处说明文字同步。
+- `data/schema.json`、`tools/score.ps1`、`audit.ps1`（键读取 + 检查名）、`tests/criteria.Tests.ps1`（用例名）同步迁移。
+- 库内新增 `tests/term-check.Tests.ps1`（tests 77 → 78）；包内不含 tests。
+- 包内 `audit` 164/2/0 不变。
+
 ## [5.1.4] — 2026-10-19 · 周报模板 2.0 ✓
 
 - `TEMPLATES/weekly.md` 重写：**每周一第一次日报后产出上一周**（周一~周日，`W01` 起）。

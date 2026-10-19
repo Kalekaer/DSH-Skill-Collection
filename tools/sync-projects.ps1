@@ -227,9 +227,9 @@ function Get-ExperienceRating {
 
   # **信息不足 → 不评分**。否则"没落盘描述"会被误判成"难用"，
   # 出现"60% 的项目都是 1 星"这种没有信息量的结果。
-  # 判定：既没有 API 描述，也没有人话层 → 返回 null，页面显示「未评分」。
+  # 判定：既没有 API 描述，也没有人话层 → 返回 null，页面显示「暂无体验分」。
   if (-not $d -and $HumanStatus -ne 'complete') {
-    return [pscustomobject]@{ stars = $null; score = $null; parts = $null; reason = '信息不足，未评分' }
+    return [pscustomobject]@{ stars = $null; score = $null; parts = $null; reason = '信息不足，暂无体验分' }
   }
 
   # ① 易用性 30：有一键安装线索 + 不需要自建服务
@@ -653,7 +653,7 @@ foreach ($s in $seen) {
 
   # --- 来源与评级状态 ---
   # origin 与 source **不是一回事**：source=来自哪个检索式（Q1/专题…）；origin=谁引入的（自动发现/用户推荐）
-  # 用户主动推荐的项目未经日报流程筛选，故 tier 记 'unrated'，不伪装成 S/A/B。
+  # 用户主动推荐的项目若没进过日报，档位由当日 pick / 备注档位 / 体验分补成 SABCD；不写空档位。
   $origin = if ($s.PSObject.Properties['origin'] -and $s.origin) { $s.origin } else { 'auto' }
   $isUserAdded = ($origin -eq 'user')
   # 库内档位：有当日 pick 用 pick；没有 pick 的库内项目（用户自推/历史空白）用

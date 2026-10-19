@@ -242,7 +242,7 @@ $cdCount = $cdShown.Count
 $cdFound = $cdPool.Count
 $cdHidden = $cdFound - $cdCount
 $bHidden = $bAll.Count - $bCount
-# 新入库 = 当天 first_seen 的项目数；日报不再允许“未评档”。
+# 新入库 = 当天 first_seen 的项目数；日报不再允许没有档位。
 $newCount = @($all | Where-Object { $_.first_seen -eq $Date }).Count
 $evaluated = @($picksAll).Count + $bAll.Count + $cAll.Count + $dAll.Count
 $unCount = 0
@@ -361,7 +361,7 @@ if ($reportMd) {
   }
 }
 
-# ---------- 今日新入库、但没有评分（未评档）----------
+# ---------- 今日新入库、但没有档位----------
 $officialIds = @($officialCards | ForEach-Object { [string]$_.id })
 # 二次推荐只进“老朋友动态”，绝不进主推荐/主跨；与特别栏目重合时特别栏目优先。
 foreach ($rc in @($repeatCards)) {
@@ -369,17 +369,17 @@ foreach ($rc in @($repeatCards)) {
     $oldFriendCards += $rc
   }
 }
-$unratedCards = @($all | Where-Object {
+$noTierCards = @($all | Where-Object {
     [string]$_.first_seen -eq $Date -and
     ($evalIds -notcontains [string]$_.id) -and
     ($officialIds -notcontains [string]$_.id) -and
     [string]$_.origin -ne 'user'
   })
-if ($unratedCards.Count -gt 0) {
-  $names = (@($unratedCards | ForEach-Object { [string]$_.id }) -join '、')
-  Fail "今日有 $($unratedCards.Count) 条自动发现未评分：$names。日报不允许“未评档”；先补 picks 再重建。"
+if ($noTierCards.Count -gt 0) {
+  $names = (@($noTierCards | ForEach-Object { [string]$_.id }) -join '、')
+  Fail "今日有 $($noTierCards.Count) 条自动发现没有档位：$names。先补 picks 再重建。"
 }
-$unratedCards = @()
+$noTierCards = @()
 $unCount = 0
 
 # ---------- 本日报相关项目（picks / 退稿 / 老朋友 / 报告里提到的，全部可点开详情）----------
@@ -430,7 +430,7 @@ $cAllJson = '[' + (($cAll | ForEach-Object { & $J $_ }) -join ',') + ']'
 $watchJson = '[' + (($watch | ForEach-Object { & $J $_ }) -join ',') + ']'
 $overflowJson = '[' + (($overflow | ForEach-Object { & $J $_ }) -join ',') + ']'
 $allInSeen = @{}; $allInCards = @()
-foreach ($c in @(@($picksAll) + @($bAll) + @($cAll) + @($dAll) + @($unratedCards))) {
+foreach ($c in @(@($picksAll) + @($bAll) + @($cAll) + @($dAll) + @($noTierCards))) {
   if ([string]$c.first -ne $Date) { continue }
   if (-not $allInSeen.ContainsKey([string]$c.id)) { $allInSeen[[string]$c.id] = $true; $allInCards += $c }
 }
