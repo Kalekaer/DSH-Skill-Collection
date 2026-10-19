@@ -75,7 +75,7 @@ foreach ($l in Get-Content $projPath -Encoding UTF8) {
       tier   = $p.tier
       risk   = $p.risk
       status = $p.status
-      dr     = $p.drop_reason   # 淘汰原因（2026-10-16 新增投影；建议调整项 13）
+      dr     = $p.drop_reason   # D 档/剔除原因（2026-10-16 新增投影；建议调整项 13）
       origin = $p.origin
       oder   = $p.origin_note
   oc     = $p.owner_class   # $/all 与 $/picks 的官方标记（P1-2 校订后才有 official-bigtech）
@@ -87,7 +87,7 @@ foreach ($l in Get-Content $projPath -Encoding UTF8) {
       part   = $p.experience.parts
       t      = @($p.tags.'领域', $p.tags.'形态', $p.tags.'用途', $p.tags.'成熟度', $p.tags.'上手难度', $p.tags.'风险等级')
       hs     = if ($h) { $h.status } else { 'missing' }
-      one    = if ($h) { $h.one_liner } else { $null }
+      one    = if ($h) { ([string]$h.one_liner).Replace('淘汰原因','D 档原因').Replace('淘汰','剔除').Replace('精品','主推荐').Replace('候选','检索结果').Replace('跟踪','记录') } else { $null }
       aud    = if ($h) { $h.audience } else { $null }   # P1-13：适合谁（推荐过的条目才有；页面在 #/picks 头条与详情显示）
       # v3.1 验收要求「它解决什么问题」与「比如」必须可见，故重新内嵌（约 +60 B/条）
       prob   = if ($h) { $h.problem } else { $null }
@@ -97,7 +97,7 @@ foreach ($l in Get-Content $projPath -Encoding UTF8) {
       fn     = $fn
       ft     = $ftArr
       evc    = [int]$p.events_count
-      note   = ([string]$p.note).Replace('未评档，不进推荐区', '默认老朋友动态，不占主推荐').Replace('未评档', 'SABCD 档').Replace('未评', '待评估')
+      note   = ([string]$p.note).Replace('未评档，不进推荐区', '默认老朋友动态，不占主推荐').Replace('未评档', 'SABCD 档').Replace('未评', '待评估').Replace('淘汰原因', 'D 档原因').Replace('淘汰', '剔除').Replace('候选', '检索结果').Replace('跟踪', '记录')
       un     = $unArr
     }
   } catch { Write-Warning "跳过损坏行" }
@@ -243,7 +243,7 @@ $nS      = @($rows | Where-Object { $_.tier -eq 'S' }).Count
 $nA      = @($rows | Where-Object { $_.tier -eq 'A' }).Count
 $nB      = @($rows | Where-Object { $_.tier -eq 'B' }).Count
 $nDropT  = @($rows | Where-Object { $_.tier -eq 'dropped' }).Count
-$nUnrated= @($rows | Where-Object { $_.tier -ne 'S' -and $_.tier -ne 'A' -and $_.tier -ne 'B' -and $_.tier -ne 'dropped' }).Count
+$nOtherTier = @($rows | Where-Object { $_.tier -notin @('S','A','B','C','D','dropped') }).Count
 $nLow    = @($rows | Where-Object { $_.risk -eq '低' }).Count
 $nMid    = @($rows | Where-Object { $_.risk -eq '中' }).Count
 $nHigh   = @($rows | Where-Object { $_.risk -eq '高' }).Count
@@ -264,17 +264,17 @@ function Home-Bar($items, $tot) {
   return @{ bar = $bar; rows = $rowsHtml }
 }
 $stItems = @(
-  [pscustomobject]@{ label = '观察中';   n = $nWatch;  cls = 'sg-gray' },
+  [pscustomobject]@{ label = '继续观察';   n = $nWatch;  cls = 'sg-gray' },
   [pscustomobject]@{ label = '已收录';   n = $nActive; cls = 'sg-white' },
-  [pscustomobject]@{ label = '正在使用'; n = $nUsing;  cls = 'sg-white' },
-  [pscustomobject]@{ label = '研究中';   n = $nRes;    cls = 'sg-gray' },
-  [pscustomobject]@{ label = '已放弃';   n = $nDrop;   cls = 'sg-red' }
+  [pscustomobject]@{ label = '正在用'; n = $nUsing;  cls = 'sg-white' },
+  [pscustomobject]@{ label = '正在研究';   n = $nRes;    cls = 'sg-gray' },
+  [pscustomobject]@{ label = '不再看';   n = $nDrop;   cls = 'sg-red' }
 )
 $tierItems = @(
   [pscustomobject]@{ label = 'S 档';    n = $nS;       cls = 'sg-yellow' },
   [pscustomobject]@{ label = 'A 档';    n = $nA;       cls = 'sg-white' },
   [pscustomobject]@{ label = 'B 档';    n = $nB;       cls = 'sg-gray' },
-  [pscustomobject]@{ label = '已淘汰';  n = $nDropT;   cls = 'sg-red' }
+  [pscustomobject]@{ label = 'D 档';    n = $nDropT;   cls = 'sg-red' }
 )
 $riskItems = @(
   [pscustomobject]@{ label = '低';   n = $nLow;    cls = 'sg-white' },
@@ -287,14 +287,13 @@ $tierBar = Home-Bar $tierItems $nTotal
 $riskBar = Home-Bar $riskItems $nTotal
 
 $libDays = ((Get-Date) - [datetime](($rows | Measure-Object first -Minimum).Minimum)).Days
-$nTierUnratedWord = @($rows | Where-Object { $_.tier -eq 'unrated' }).Count
 $nTierEmpty = @($rows | Where-Object { -not $_.tier }).Count
 $new7Note = if ($nNew7 -ge $nTotal) { "库只有 $libDays 天历史 · 全部都在窗口内" } else { '首次收录进台账' }# KPI 4 卡（只有"推荐过"用黄块 —— 黄是稀缺资源 ✓）
 $kpiHtml = (@(
   @{ n = $nTotal;     label = '库内项目';     note = '全部本地 · 可全量重建';     cls = '' },
   @{ n = $nRec;       label = '推荐过';       note = "S 档 $nS · A 档 $nA";        cls = 'is-yellow' },
   @{ n = $nNew7;      label = '近 7 天新增';  note = $new7Note;                   cls = '' },
-  @{ n = ($nWatch + $nActive + $nUsing); label = '在跟 + 在用'; note = "观察中 $nWatch · 已收录 $nActive" ; cls = '' }
+  @{ n = ($nWatch + $nActive + $nUsing); label = '在跟 + 在用'; note = "继续观察 $nWatch · 已收录 $nActive" ; cls = '' }
 ) | ForEach-Object {
   '<div class="kpi ' + $_.cls + '"><b class="mono">' + $_.n + '</b><span>' + $_.label + '</span><em>' + $_.note + '</em></div>'
 }) -join ''
@@ -364,7 +363,7 @@ foreach ($k in ($evType7.Keys | Sort-Object { -[int]$evType7[$_] })) {
   $typeBadges += '<span class="tagx mono">[' + $lb + ']</span><span class="zh">' + $zh + ' <b class="mono">' + $evType7[$k] + '</b></span> '
 }
 $evTotal7 = 0; foreach ($v in $evPerDay.Values) { $evTotal7 += $v }
-$homeSummary = "库内 $nTotal 个项目：推荐过 $nRec 个，观察中 $nWatch、已收录 $nActive、已放弃 $nDrop；风险已评 $($nLow + $nMid + $nHigh) 个（低 $nLow / 中 $nMid / 高 $nHigh），其余 $nNoRisk 个待评估：待评估不等于安全。近 7 天共 $evTotal7 条变化。"
+$homeSummary = "库内 $nTotal 个项目：推荐过 $nRec 个，继续观察 $nWatch、已收录 $nActive、不再看 $nDrop；风险已评 $($nLow + $nMid + $nHigh) 个（低 $nLow / 中 $nMid / 高 $nHigh），其余 $nNoRisk 个待评估：待评估不等于安全。近 7 天共 $evTotal7 条变化。"
 # 图例里的白名单数字**实时算**，不写死（2026-10-18）
 $offCount = @($rows | Where-Object { $_.oc -eq 'official' }).Count
 $wlCount = 0
@@ -421,10 +420,10 @@ $html = @"
       <option value="">全部状态</option>
       
       <option value="active">已收录</option>
-      <option value="using">正在使用</option>
-      <option value="watching">观察中</option>
-      <option value="researching">研究中</option>
-      <option value="dropped">已放弃</option>
+      <option value="using">正在用</option>
+      <option value="watching">继续观察</option>
+      <option value="researching">正在研究</option>
+      <option value="dropped">不再看</option>
     </select>
     <select id="fb" onchange="render();syncURL()">
   <option value="">全部徽章</option>
@@ -481,7 +480,7 @@ $html = @"
     <a class="hub-node hub-picks" href="#/picks">
       <b class="hub-no">01</b>
       <span class="hub-t">每日精选</span>
-      <span class="hub-d">日报与精选是同一件事：按天看新增，或按档位看精品。含来源说明与「适合谁」。</span>
+      <span class="hub-d">日报与精选是同一件事：按天看新增，或按档位看主推荐。含来源说明与「适合谁」。</span>
       <span class="hub-n mono">$($nS + $nA) 条已推荐 ｜ $recentN 条近 7 天有更新</span>
     </a>
     <a class="hub-node hub-all" href="#/all">
@@ -516,15 +515,15 @@ $html = @"
     <div class="dist-grid">
       <div class="dist">
         <h4>状态</h4>
-        <div class="stack" role="img" aria-label="状态分布：观察中 $nWatch 条、已收录 $nActive 条、已放弃 $nDrop 条">$($stBar.bar)</div>
+        <div class="stack" role="img" aria-label="状态分布：继续观察 $nWatch 条、已收录 $nActive 条、不再看 $nDrop 条">$($stBar.bar)</div>
         <ul class="legend">$($stBar.rows)</ul>
-        <p class="chart-note">「正在使用 / 研究中」现在是 0：这两态还没启用（待 P1-3），不是"没有问题"。</p>
+        <p class="chart-note">「正在用 / 正在研究」现在是 0：这两态还没启用（待 P1-3），不是"没有问题"。</p>
       </div>
       <div class="dist">
         <h4>档位</h4>
-        <div class="stack" role="img" aria-label="档位分布：S 档 $nS 条、A 档 $nA 条、B 档 $nB 条、待评估 $nUnrated 条、已淘汰 $nDropT 条">$($tierBar.bar)</div>
+        <div class="stack" role="img" aria-label="档位分布：S 档 $nS 条、A 档 $nA 条、B 档 $nB 条、其他档位 $nOtherTier 条、不再看 $nDropT 条">$($tierBar.bar)</div>
         <ul class="legend">$($tierBar.rows)</ul>
-        <p class="chart-note">日报每天最多 8 条，所以 S + A 只有 $($nS + $nA) 条：档位是<b>稀缺</b>的，待评估只代表还没看（待评估 $nUnrated = 显式 unrated $nTierUnratedWord + tier 为空 $nTierEmpty，数据里两种写法同义）。</p>
+        <p class="chart-note">日报每天最多 8 条，所以 S + A 只有 $($nS + $nA) 条：档位是<b>稀缺</b>的；库内项目全部 SABCD。</p>
       </div>
       <div class="dist">
         <h4>风险</h4>
@@ -625,20 +624,21 @@ $html = @"
   <div class="spec-h">§ 01 / 推荐档位（满分 100，口径来自 RUBRIC.md）</div>
   <table class="spec-tbl">
     <tr><th>档位</th><th>分数</th><th>含义</th><th>上限</th></tr>
-    <tr><td class="mono">S</td><td class="mono">≥ 80</td><td>当天最值得看的</td><td class="mono">≤ 3 / 天</td></tr>
-    <tr><td class="mono">A</td><td class="mono">65–79</td><td>值得收藏</td><td class="mono">S + A ≤ 8 / 天</td></tr>
-    <tr><td class="mono">B</td><td class="mono">55–64</td><td>合格但不急</td><td class="mono">不限</td></tr>
+    <tr><td class="mono">S</td><td class="mono">≥ 80</td><td>今天最值得先看</td><td class="mono">≤ 3 / 天</td></tr>
+    <tr><td class="mono">A</td><td class="mono">65–79</td><td>值得看</td><td class="mono">S + A ≤ 8 / 天</td></tr>
+    <tr><td class="mono">B</td><td class="mono">55–64</td><td>可以留意，不推荐</td><td class="mono">不限</td></tr>
+    <tr><td class="mono">C</td><td class="mono">45–54</td><td>进档案，不推荐</td><td class="mono">不推荐</td></tr>
     <tr><td class="mono">D</td><td class="mono">&lt; 45</td><td>质量上不推荐，仍在库</td><td class="mono">不推荐</td></tr>
-    <tr><td class="mono">已淘汰</td><td class="mono">&lt; 50</td><td>或命中合规红线（注册机 / 破解 / 刷星迹象）</td><td class="mono">不推荐</td></tr>
   </table>
+  <p class="spec-note">合规红线（注册机 / 破解 / 刷星迹象）命中即合规剔除，不是档位，不给链接。</p>
 
   <div class="spec-h">§ 02 / 状态（台账五态白名单）</div>
   <dl class="spec-dl">
-    <div class="spec-row"><dt>观察中</dt><dd>已收录，先盯着看（默认态）</dd></div>
-    <div class="spec-row"><dt>已收录</dt><dd>确认可用</dd></div>
-    <div class="spec-row"><dt>正在使用</dt><dd>你自己已经在用（当前 0 条，这一态待启用）</dd></div>
-    <div class="spec-row"><dt>研究中</dt><dd>证据不足，待复核：既不判死也不推荐（当前 0 条，待 P1-3）</dd></div>
-    <div class="spec-row"><dt>已放弃</dt><dd>试过或评估过，不再跟</dd></div>
+    <div class="spec-row"><dt>继续观察</dt><dd><code>watching</code> · 先放着，以后再看</dd></div>
+    <div class="spec-row"><dt>已收录</dt><dd><code>active</code> · 在库里，没特别处理（默认）</dd></div>
+    <div class="spec-row"><dt>正在用</dt><dd><code>using</code> · 我真的在用它</dd></div>
+    <div class="spec-row"><dt>正在研究</dt><dd><code>researching</code> · 我在研究它</dd></div>
+    <div class="spec-row"><dt>不再看</dt><dd><code>dropped</code> · 以后不继续关注；记录保留</dd></div>
   </dl>
 
   <div class="spec-h">§ 03 / 风险等级</div>

@@ -22,7 +22,7 @@
   --gold:#cfcbb4;                                                  /* 星标：暖灰纸色（黄留给真强调 ✓）*/
   --ok:#f4f2ec; --ok-line:#4a4a46;                                 /* S 档/低风险：中性，靠文字传意 ✓ */
   --warn:#e8ff2a; --warn-line:#5c5c2a; --warn-bg:#14140a;         /* 待补全＝缺失要显式画出来（设计 §0-6）*/
-  --danger:#ff2d20; --danger-line:#ff2d20;                         /* 警示红：高风险 / 淘汰 / 门禁 */
+  --danger:#ff2d20; --danger-line:#ff2d20;                         /* 警示红：高风险 / 合规剔除 / 门禁 */
   --info:#f4f2ec; --info-line:#3d3d3a;                             /* 中性（设计里没有蓝/紫 ✗）*/
   --violet:#f4f2ec; --violet-line:#3d3d3a;                         /* 原「用户推荐 / researching」紫 → 中性 */
   /* 兼容别名（老代码/JS 内联样式仍在用；新代码请用角色名） */

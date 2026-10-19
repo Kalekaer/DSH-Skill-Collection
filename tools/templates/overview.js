@@ -5,7 +5,7 @@ const PLANS = {{PLANS}};
 const SYN = {{SYN}};   // 同义词组：搜索时按「组内任一命中」算命中
 const WS = {{WS}};
 const DIMS = ['领域','形态','用途','成熟度','上手难度','风险等级'];
-const STA = {active:'已收录',using:'正在使用',watching:'观察中',researching:'研究中',dropped:'已放弃'};   // B14：saved 已废弃，不留死映射
+const STA = {active:'已收录',using:'正在用',watching:'继续观察',researching:'正在研究',dropped:'不再看'};   // B14：saved 已废弃，不留死映射
 const f = {q:'', sort:'stars', status:'', risk:'', tier:'', five:'', active:'', l1:'', l2:'', tag:'', badge:''};
 let cmpSel = [];   // 对比选择（最多 2 个，页内纯前端）
 let groupByUse = false;   // 按用途分组（把结果按二级分类聚合，便于按流程挑组合）
@@ -100,7 +100,7 @@ function pass(p){
   if(f.tag && (p.ft||[]).indexOf(f.tag)<0) return false;
   if(f.status && p.status!==f.status) return false;
   if(f.risk && p.risk!==f.risk) return false;
-  if(f.tier){ if(f.tier==='unrated'){ if(p.tier && p.tier!=='unrated') return false; } else if(p.tier!==f.tier) return false; }
+  if(f.tier){ if(p.tier!==f.tier) return false; }
   if(f.five){ if(+f.five===0){ if(p.exp!==null) return false; } else { if(p.exp===null || p.exp < +f.five) return false; } }
   if(f.active){ const d=daysAgo(p.pushed); if(d===null || d> +f.active) return false; }
   return true;
@@ -138,8 +138,8 @@ function hasNote(p){ return !!(p.note || (p.un && p.un.filter(x=>x&&x.note).leng
 function cardHtml(p, idx){
   const flags=[];
   if(p.tier==='S'||p.tier==='A') flags.push('<span class="pill tier-'+p.tier+'">'+p.tier+' 档</span>');
-  else if(p.tier==='dropped') flags.push('<span class="pill s-dropped">已淘汰</span>');
-  else flags.push('<span class="pill tier-unrated" title="未经日报评档">待评估</span>');
+  else if(p.tier==='dropped') flags.push('<span class="pill s-dropped">D 档</span>');
+  else flags.push('<span class="pill tier-unrated">D 档</span>');
   if(p.risk) flags.push('<span class="pill r-'+(p.risk==='低'?'low':p.risk==='高'?'high':'mid')+'">风险 '+p.risk+'</span>');
   if(p.status!=='active') flags.push('<span class="pill s-'+p.status+'">'+(STA[p.status]||p.status)+'</span>');
   if(p.origin==='user') flags.push('<span class="pill" style="border-color:var(--violet-line);color:var(--violet)">用户推荐</span>');
@@ -204,7 +204,7 @@ function cmpCell(p, kind){
   if(kind==='pushed')return when(p.pushed);
   if(kind==='lic')   return p.lic||'';
   if(kind==='risk')  return p.risk||(p.t&&p.t[5])||'';
-  if(kind==='tier')  return (p.tier==='S'||p.tier==='A')?(p.tier+' 档'):(p.tier==='dropped'?'已淘汰':'待评估');
+  if(kind==='tier')  return (p.tier==='S'||p.tier==='A')?(p.tier+' 档'):(p.tier==='dropped'?'D 档':'D 档');
   return '';
 }
 function cmpRow(A,B,label,kind){
@@ -552,7 +552,7 @@ function badgeOf(p){
   if(ageD!==null && ageD<=7 && (p.tier==='S' || p.tier==='A')) out.push('new');   // 收紧（2026-10-17）：原来 14 天+质量信号 ⇒ 覆盖 74%，徽章失去区分度 ✗
   if(p.stars<1000 && good) out.push('gem');
   if(ageD!==null && ageD>30 && pushD!==null && pushD<=7) out.push('ever');
-  if((!p.tier || p.tier==='unrated') && !p.risk) out.push('watch');
+  if(!p.tier && !p.risk) out.push('watch');
   return out;
 }
 function badgeHtml(p){
@@ -736,7 +736,7 @@ function detail(id){
   document.getElementById('panel').innerHTML='<span class="close" onclick="closePanel()">×</span>'
     +'<h2>'+esc(p.id)+'</h2>'
     +'<div style="margin:6px 0 2px">'+stars5(p.exp)+'　<span class="pill pill-fn">'+esc(p.l1)+' / '+esc(p.l2)+'</span>'
-      +((p.tier==='S'||p.tier==='A')?('　<span class="pill tier-'+p.tier+'">'+p.tier+' 档推荐</span>'):(p.tier==='dropped'?'　<span class="pill s-dropped">已淘汰</span>':'　<span class="pill tier-unrated">待评估</span>'))
+      +((p.tier==='S'||p.tier==='A')?('　<span class="pill tier-'+p.tier+'">'+p.tier+' 档推荐</span>'):(p.tier==='dropped'?'　<span class="pill s-dropped">D 档</span>':'　<span class="pill tier-unrated">D 档</span>'))
       +'</div>'
     +human
     +fnBlock
@@ -749,7 +749,7 @@ function detail(id){
     +'<div><b>许可</b>'+esc(p.lic||'未知（历史数据缺失）')+'</div>'
     +'<div><b>最近提交</b>'+when(p.pushed)+'　<b>首次收录</b>'+p.first+'</div>'
     +'<div><b>来源</b>'+esc(p.oder||'自动发现')+'　<b>推荐</b>'+(p.rec?(p.tier+' 档 ｜ '+p.rc+' 次'):((p.rc>0)?('历史推荐 '+p.rc+' 次'):'未推荐'))+'</div>'
-    +((p.dr)?('<div><b>淘汰原因</b><span style="color:var(--danger)">'+esc(p.dr)+'</span></div>'):'')
+    +((p.dr)?('<div><b>D 档原因</b><span style="color:var(--danger)">'+esc(p.dr)+'</span></div>'):'')
     +'<div><b>台账备注</b>'+esc(p.note||'—')+'</div>'
     +((p.un&&p.un.filter(x=>x).length)?('<div><b>用户备注</b>'+p.un.filter(x=>x).map(x=>'【'+(x.date||'')+'】'+esc(x.note||'')).join('；')+'</div>'):'')
     +'<div><b>事件数</b>'+evCount(p)+' 条</div>'

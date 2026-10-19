@@ -142,7 +142,7 @@ function Get-DownrankedScore {
 
 function Test-ExplorationQuota {
   <#
-    P1-4 探索配额：8 条精品里至少 2 条应为"未推荐过且首次发现 ≤14 天"的新星。
+    P1-4 探索配额：8 条主推荐里至少 2 条应为"未推荐过且首次发现 ≤14 天"的新星。
     返回 @{ 需要; 已有; 通过 }
   #>
   [CmdletBinding()]

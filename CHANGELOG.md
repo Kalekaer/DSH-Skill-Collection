@@ -28,6 +28,12 @@
 
 ---
 
+## [5.1.3] — 2026-10-19 · 术语清扫同步 + 旧单页修正 ✓
+
+- 同步库内术语清扫：`build-overview.ps1`、`build-samples.ps1`、`score.ps1`、`templates/overview.js|css`；包内 5 页重建。
+- 旧单页生成器（包内不发布产物）：档位表补 C 档、D 档改 `<45`、合规红线单独成注；状态五态与 `STA` 映射改成术语表口径。
+- 库内新增 `tools/term-check.ps1` 并接入 `verify-handoff`（15 项），发布包仍只带运行层检查（term-check 为库内专用）。
+
 ## [5.1.2] — 2026-10-19 · 日报页 B 档占位格 + demo 样例日报 ✓
 
 - `daily-layout-c-finsara.html`：B 档不足 4 列时补「**NO FURTHER B / 结构留白 / 不凑数**」斜纹格（`.b-cell.b-blank`），不再露出黑底像“漏加载”。

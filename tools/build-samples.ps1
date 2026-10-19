@@ -102,7 +102,7 @@ function New-Card($p, $pk) {
   $stCn = if ($statusMap.ContainsKey($st)) { $statusMap[$st] } else { $st }
 
   $note = [string]$p.note
-  $note = $note.Replace('未评档，不进推荐区', '默认老朋友动态，不占主推荐').Replace('未评档', 'SABCD 档')
+  $note = $note.Replace('未评档，不进推荐区', '默认老朋友动态，不占主推荐').Replace('未评档', 'SABCD 档').Replace('淘汰', 'D 档').Replace('候选', '检索结果').Replace('跟踪', '以后还看不看').Replace('退稿', 'D 档原因').Replace('回锅', '二次推荐')
   if ($note.Length -gt 1600) { $note = $note.Substring(0, 1600) + '…' }
 
   $card = [ordered]@{
@@ -119,7 +119,7 @@ function New-Card($p, $pk) {
     lang    = [string]$p.language
     l1      = [string]$p.category.l1
     l2      = [string]$p.category.l2
-    one     = if ($h -and $h.one_liner) { [string]$h.one_liner } else { [string]$p.description }
+    one     = if ($h -and $h.one_liner) { ([string]$h.one_liner).Replace('淘汰原因','D 档原因').Replace('淘汰','剔除').Replace('精品','主推荐').Replace('候选','检索结果').Replace('跟踪','记录') } else { ([string]$p.description).Replace('淘汰原因','D 档原因').Replace('淘汰','剔除').Replace('精品','主推荐').Replace('候选','检索结果').Replace('跟踪','记录') }
     problem = if ($h) { [string]$h.problem } else { '' }
     example = if ($h) { [string]$h.example } else { '' }
     aud     = if ($h) { [string]$h.audience } else { '' }
@@ -553,7 +553,7 @@ foreach ($pl in $plansArr) {
           name = [string]$_.id
           tier = [string]$_.tier
           stars = if ($_.stars) { [int]$_.stars.current } else { 0 }
-          one  = if ($hh -and $hh.one_liner) { [string]$hh.one_liner } elseif ($_.description) { [string]$_.description } else { '' }
+          one  = if ($hh -and $hh.one_liner) { ([string]$hh.one_liner).Replace('淘汰原因','D 档原因').Replace('淘汰','剔除').Replace('精品','主推荐').Replace('候选','检索结果').Replace('跟踪','记录') } elseif ($_.description) { ([string]$_.description).Replace('淘汰原因','D 档原因').Replace('淘汰','剔除').Replace('精品','主推荐').Replace('候选','检索结果').Replace('跟踪','记录') } else { '' }
           lic  = [string]$_.license
         }
       })
