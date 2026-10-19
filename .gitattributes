@@ -1,0 +1,14 @@
+# 统一 LF：audit 用 SKILL.md 的字节数/SHA256 做指纹，CRLF 转换会让 Windows clone 直接报红
+* text=auto eol=lf
+
+# 二进制：不要做行尾/编码转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.woff2 binary
+*.woff binary
+*.ttf binary
+*.otf binary
+*.7z binary
+*.zip binary
