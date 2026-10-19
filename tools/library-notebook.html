@@ -553,7 +553,7 @@ body{background:#0a0a0a;background-image:
         <div class="airmail"></div><div class="airmail b"></div>
         <div class="titlebox">
           <div class="t">本地开源项目<br>收藏册</div>
-          <div class="s">GitHub 精品 · 每日精选 · 手账式归档</div>
+          <div class="s">GitHub 日报 · 每日精选 · 手账式归档</div>
           <div class="m">NO./*__ISSUE__*/0 · /*__TOTAL__*/0 条档案 · 2026</div>
         </div>
         <div class="stamp s1"><div class="in"><b>LOCAL</b><i>/*__TOTAL__*/0</i><span>items filed</span></div></div>
@@ -697,7 +697,7 @@ function buildCard(p, i, pi, variant, gi) {
     + '<p class="use">' + p.one + '</p>'
     + '<div class="foot"><span>' + (p.l2 || p.l1 || '') + '</span><span class="star">★ ' + p.stars + '</span></div>'
     + '<span class="tp a"></span><span class="tp b"></span>'
-    + '<span class="lbl l1">' + p.l1 + (p.tier ? ' · ' + ({ S: 'S 档', A: 'A 档', B: 'B 档', C: 'C 档', D: 'D 档', dropped: 'D 档', unrated: 'D 档' }[p.tier] || p.tier) : '') + '</span>'
+    + '<span class="lbl l1">' + p.l1 + (p.tier ? ' · ' + ({ S: 'S 档', A: 'A 档', B: 'B 档', C: 'C 档', D: 'D 档', dropped: 'D 档' }[p.tier] || p.tier) : '') + '</span>'
     + '<span class="pm ' + (i % 2 ? 'p2' : 'p1') + '">' + PM[(i + pi) % PM.length] + '<br>' + CR[(i + pi) % 3].split('/')[1] + '</span>'
     + '<span class="hintx">点开</span>';
   var open = function (ev) { ev.stopPropagation(); showPop(p, el); };
@@ -841,7 +841,7 @@ document.getElementById('next').onclick = function () {
   ];
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function h32(x) { var h = 0; x = String(x); for (var i = 0; i < x.length; i++) { h = (h * 31 + x.charCodeAt(i)) | 0; } return Math.abs(h); }
-  function tierCn(t) { var m = { S: 'S 档', A: 'A 档', B: 'B 档', C: 'C 档', D: 'D 档', dropped: 'D 档', unrated: 'D 档' }; return m[t] || (t ? t + ' 档' : 'D 档'); }
+  function tierCn(t) { var m = { S: 'S 档', A: 'A 档', B: 'B 档', C: 'C 档', D: 'D 档', dropped: 'D 档' }; return m[t] || (t ? t + ' 档' : 'D 档'); }
 
   function buildWall() {
     var secs = {}, order = [];

@@ -119,7 +119,7 @@
 .frbody th,.frbody td{border:1px solid #cfc6b4;padding:4px 6px;text-align:left}
 .frbody a{color:#a3234a}
 
-/* 日报相关项目（picks / 退稿 / 老朋友，全部可点开详情） */
+/* 日报相关项目（picks / D 档 / 老朋友，全部可点开详情） */
 .relbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:14px 0 4px;padding-top:10px;border-top:1px dashed var(--pd-rule,#c9c2b0)}
 .relh{font:700 9px/1.4 var(--pd-mono,monospace);letter-spacing:.18em;text-transform:uppercase;color:var(--pd-ink2,#5a5a52);margin-right:4px}
 .relchip{font:600 10px/1.2 var(--pd-mono,monospace);letter-spacing:.02em;border:1px solid currentColor;background:transparent;color:inherit;padding:5px 7px;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -129,7 +129,7 @@
 .fr-relbar{margin:0 0 16px;padding:0 0 12px;border-top:0;border-bottom:2px solid #0a0a0a;background:#efe8d6;padding:10px 12px}
 .fr-relbar .relh{color:#5a5a52}
 
-/* 官方 / 大厂附加区（不计入 S/A/B；只在报告有这一节时显示） */
+/* 官方 / 特别栏目（不计入 S/A/B；只在报告有这一节时显示） */
 .official{margin:16px 0 6px;padding:10px 12px;border:2px solid var(--pd-ink,#141412);border-left:8px solid #ff1f6b;background:var(--pd-note,#efe7d2)}
 .ofhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin:0 0 8px}
 .ofhead b{font:700 12px/1.2 var(--pd-mono,monospace);letter-spacing:.1em}
@@ -503,13 +503,13 @@ button{font:inherit;color:inherit}
 /* 2026-10-19 可读性下限：功能性等宽标注 ≥11px（检测器 48 条 undersized 的收敛） */
 .corner,.mast-kicker,.mast-no .no-label,.mast-no .no-sub,.titleblock dt,.titleblock dd.small,.bay-note,.lead-type,.no-s,.module .mod-tier,.module .repo,.mod-meta,.b-cell .b-no,.b-head span,.arc-col h4,.arc-row b,.special-card .sp-id,.mem-col h4,.mem-more,.mem-row .tag,.colophon dt,.plate figcaption,.plate .dim,.fr-kicker,.fr-close-hint,.relbar .relh,.relchip,.frbtn,.spine-vert,.spine-bottom{font-size:11px!important}
 </style>
-<!-- BUILD-STAMP: build 2026-10-19 21:59 ｜ 数据指纹 5F8A946DA027 ｜ 15 条 -->
+<!-- BUILD-STAMP: build 2026-10-19 22:18 ｜ 数据指纹 5F8A946DA027 ｜ 15 条 -->
 </head>
 <body>
 <div class="frame">
   <aside class="spine" aria-hidden="true">
     <div class="spine-top">GITHUB<br>DAILY</div>
-    <div class="spine-vert">STRUCTURAL SECTION — 2026.10.18 — ISSUE 08</div>
+    <div class="spine-vert">STRUCTURAL SECTION — <span id="spineDate"></span> — ISSUE <span id="spineIssue"></span></div>
     <ol class="spine-bays"><li class="on">01</li><li>02</li><li>03</li><li>04</li><li>05</li></ol>
     <div class="spine-bottom">CC0 / OFL / NO TRACKING</div>
   </aside>
@@ -747,7 +747,7 @@ var D = {"date":"2026-10-19","iso":"2026-10-19","shortDate":"2026.10.19","week":
     if (has(p.last)) { m('最近更新', p.last); }
     if (has(p.evc)) { m('成长记录', p.evc + ' 条'); }
     if (has(p.status)) { m('状态', p.status); }
-    if (has(p.drop)) { m('退稿原因', p.drop); }
+    if (has(p.drop)) { m('D 档原因', p.drop); }
 
     var fit = (has(p.aud) || list(p.unfit).length)
       ? '<div class="pd-fit">' +
@@ -808,7 +808,7 @@ var D = {"date":"2026-10-19","iso":"2026-10-19","shortDate":"2026.10.19","week":
     return null;
   }
 
-  /* 日报「本日报相关」里的项目按钮（老朋友 / 退稿等，库里有卡片就直接复用） */
+  /* 日报「本日报相关」里的项目按钮（老朋友 / D 档 等，库里有卡片就直接复用） */
   document.addEventListener('click', function (e) {
     var el = e.target && e.target.closest ? e.target.closest('.relchip[data-pid]') : null;
     if (!el) { return; }
@@ -888,6 +888,9 @@ var D = {"date":"2026-10-19","iso":"2026-10-19","shortDate":"2026.10.19","week":
   document.getElementById('issueDate').textContent = (D.iso||'') + ' / ' + (D.week||'');
   var frT = document.getElementById('frTitle');
   if (frT) { frT.textContent = ((D.iso||'').replace(/-/g,'.') || '当前') + ' · 结构日报'; }
+  var sd = document.getElementById('spineDate'), si = document.getElementById('spineIssue');
+  if (sd) { sd.textContent = (D.iso||'').replace(/-/g,'.'); }
+  if (si) { si.textContent = String(D.issue||'').padStart(2,'0'); }
   document.getElementById('tbDate').textContent = (D.iso||'').replace(/-/g,'.');
   document.getElementById('tbNew').textContent = ST.new==null?ST.cand:ST.new;
   document.getElementById('tbRec').textContent = ST.rec;
@@ -986,7 +989,7 @@ var D = {"date":"2026-10-19","iso":"2026-10-19","shortDate":"2026.10.19","week":
     var shown=CD_ALL.slice(0,limit);
     var cs=shown.filter(function(p){return p.tier==='C'});
     var ds=shown.filter(function(p){return p.tier==='D'||p.tier==='dropped'});
-    document.getElementById('archive').innerHTML = arcCol('C / 观察',cs,'c')+arcCol('D / 淘汰',ds,'d');
+    document.getElementById('archive').innerHTML = arcCol('C / 观察',cs,'c')+arcCol('D / 不推荐',ds,'d');
     var fold=document.getElementById('cdFold');
     if(CD_ALL.length<=CD_LIMIT){ fold.innerHTML=''; return; }
     fold.innerHTML='<button class="foldbtn" id="cdFoldBtn" type="button">'+(cdExpanded?'收起 C/D':'查看全部 C/D（'+CD_ALL.length+'）')+'</button>';

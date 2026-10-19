@@ -93,7 +93,17 @@ html,body{margin:0;height:100%;background:#080807;color:var(--paper);font:14px/1
 .risk i.l{background:#4a7a3a}.risk i.m{background:#e0a92e}.risk i.h{background:var(--magenta)}
 .risk i.r{border-color:#ff1f6b;background:repeating-linear-gradient(45deg,#ff1f6b 0 4px,#0b0b0a 4px 8px);animation:blink 1.4s steps(2) infinite}
 @keyframes blink{50%{opacity:.45}}
-.riskleg{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;font:600 8.5px/1.4 var(--mono);letter-spacing:.08em;color:#8f8b7f}
+.riskleg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;font:600 8.5px/1.4 var(--mono);letter-spacing:.08em;color:#8f8b7f}
+/* 图例补充说明：一行小注 */
+.lg-note{margin:8px 0 0;font:600 9px/1.55 var(--mono);letter-spacing:.04em;color:#8f8b7f}
+/* 推荐层级：四个词 */
+.quotas{display:flex;flex-direction:column;gap:6px}
+.quotas .q{display:flex;gap:10px;align-items:baseline;font:600 10.5px/1.5 var(--mono);color:#cfc9b8}
+.quotas .q b{flex:0 0 74px;color:var(--fluoro);font:700 10px/1.4 var(--mono);letter-spacing:.08em}
+.quotas .q span{color:#8f8b7f;font-weight:600}
+/* 日报结构：01–05 */
+.blocks{margin:2px 0 0;font:700 12px/1.9 var(--mono);color:#cfc9b8;letter-spacing:.04em}
+.blocks b{color:var(--fluoro);font-weight:400}
 
 /* 徽章：邮戳 */
 .badges{display:flex;flex-wrap:wrap;gap:6px}
@@ -133,7 +143,7 @@ html,body{margin:0;height:100%;background:#080807;color:var(--paper);font:14px/1
   .dock .k{display:none}
 }
 </style>
-<!-- BUILD-STAMP: build 2026-10-19 21:59 ｜ 数据指纹 5F8A946DA027 ｜ 15 条 -->
+<!-- BUILD-STAMP: build 2026-10-19 22:18 ｜ 数据指纹 5F8A946DA027 ｜ 15 条 -->
 </head>
 <body>
 <div class="load" id="load">ARCHIVE<span style="color:var(--magenta)">//</span>LOADING</div>
@@ -164,34 +174,38 @@ html,body{margin:0;height:100%;background:#080807;color:var(--paper);font:14px/1
     <div class="panel">
       <button class="x" id="lgX" aria-label="关闭">×</button>
       <h3>图例<i>//</i>LEGEND</h3>
-      <p class="sub">ARCHIVE 的读法 · TIER / STATUS / RISK / BADGE / SCORE</p>
+      <p class="sub">ARCHIVE 的读法 · TIER / STATUS / RISK / BADGE / SCORE / QUOTA / BLOCKS</p>
 
       <div class="lgrid">
         <div class="lbox">
-          <h4>档位 · TIER <i>进不进每日精选看这个</i></h4>
+          <h4>档位 · TIER <i>质量档位，不是版次</i></h4>
           <div class="tiers">
-            <div class="t s"><b>S</b><span>立刻能用</span><i>当天就想装来试</i></div>
-            <div class="t"><b>A</b><span>值得一试</span><i>有明确用途，值得花时间</i></div>
-            <div class="t"><b>B</b><span>备用</span><i>特定场景才想起来</i></div>
-            <div class="t"><b>C</b><span>档案</span><i>不推荐，留档观察</i></div>
-            <div class="t"><b>D</b><span>不推荐</span><i>质量不足，仍在库</i></div>
-            <div class="t"><b>×</b><span>不再看</span><i>状态为 dropped，记录保留</i></div>
+            <div class="t s"><b>S</b><span>今天最值得先看</span><i>≥80 分 · 主推荐头版默认给它</i></div>
+            <div class="t"><b>A</b><span>值得看</span><i>65–79 · 有明确用途</i></div>
+            <div class="t"><b>B</b><span>可以留意</span><i>55–64 · 不推荐进主推荐</i></div>
+            <div class="t"><b>C</b><span>进档案</span><i>45–54 · 不推荐，留档观察</i></div>
+            <div class="t"><b>D</b><span>不推荐</span><i>&lt;45 · 质量不足，仍在库</i></div>
           </div>
+          <p class="lg-note">S+A 进主推荐，还受「≤8 条」名额约束；D 档 ≠ 不再看（那是状态）。</p>
         </div>
 
         <div class="lbox">
           <h4>状态 · STATUS <i>我对它的态度</i></h4>
           <div class="stats">
-            <div class="s"><em></em>观望 <span>WATCHING · 先收着，还没用</span></div>
-            <div class="s on"><em></em>活跃 <span>ACTIVE · 正在用 / 跟进</span></div>
-            <div class="s"><em></em>已弃 <span>DROPPED · 用过但不合适（≠ 退稿）</span></div>
+            <div class="s"><em></em>已收录 <span>ACTIVE · 在库里，没特别处理（默认）</span></div>
+            <div class="s on"><em></em>正在用 <span>USING · 我真的在用它</span></div>
+            <div class="s"><em></em>继续观察 <span>WATCHING · 先放着，以后再看</span></div>
+            <div class="s"><em></em>正在研究 <span>RESEARCHING · 我在研究它</span></div>
+            <div class="s"><em></em>不再看 <span>DROPPED · 以后不继续关注；记录保留</span></div>
           </div>
+          <p class="lg-note">「不再看」≠ 删除；也 ≠ D 档（D 档是质量，状态是态度）。</p>
         </div>
 
         <div class="lbox">
           <h4>风险 · RISK <i>装之前先看这栏</i></h4>
-          <div class="risk"><i class="l"></i><i class="m"></i><i class="h"></i><i class="r"></i></div>
-          <div class="riskleg"><span>低 · 无副作用</span><span>中 · 要授权/配置</span><span>高 · 碰权限或数据</span><span>红线 · 一律不收录</span></div>
+          <div class="risk"><i class="l"></i><i class="m"></i><i class="h"></i></div>
+          <div class="riskleg"><span>低 · 无副作用</span><span>中 · 要授权/配置</span><span>高 · 碰权限或数据</span></div>
+          <p class="lg-note">红线不是第四档：命中合规红线（盗版/破解/外挂等）直接排除，不进入风险等级。</p>
         </div>
 
         <div class="lbox">
@@ -199,16 +213,36 @@ html,body{margin:0;height:100%;background:#080807;color:var(--paper);font:14px/1
           <div class="badges">
             <span>★ <b>推荐过</b>（PICKED 印章）</span>
             <span>🏢 <b>官方出品</b></span>
+            <span><b>SELF</b> 用户自推</span>
+            <span><b>REPEAT</b> 二次推荐</span>
           </div>
+          <p class="lg-note">SELF = 你自己带进库的（默认进记忆层，不占主推荐）；REPEAT = 满 7 天 + 新信号，仍不占名额。</p>
         </div>
 
         <div class="lbox score">
-          <h4>评分 · SCORE <i>五项各 20 分 · 合计 100</i></h4>
-          <div class="row"><span>易用性</span><i><b style="--w:90%"></b></i><span>18/20</span></div>
-          <div class="row"><span>文档</span><i><b style="--w:80%"></b></i><span>16/20</span></div>
-          <div class="row"><span>成熟度</span><i><b style="--w:90%"></b></i><span>18/20</span></div>
-          <div class="row"><span>维护</span><i><b style="--w:75%"></b></i><span>15/20</span></div>
-          <div class="row"><span>风险</span><i><b style="--w:50%"></b></i><span>10/20</span></div>
+          <h4>规则分 · SCORE <i>满分 100 · 权重 35/15/20/20/10</i></h4>
+          <div class="row"><span>实用性</span><i><b style="--w:80%"></b></i><span>28/35</span></div>
+          <div class="row"><span>上手成本</span><i><b style="--w:80%"></b></i><span>12/15</span></div>
+          <div class="row"><span>活跃度</span><i><b style="--w:80%"></b></i><span>16/20</span></div>
+          <div class="row"><span>热度</span><i><b style="--w:60%"></b></i><span>12/20</span></div>
+          <div class="row"><span>可信度</span><i><b style="--w:70%"></b></i><span>7/10</span></div>
+          <p class="lg-note">这是规则分 score；体验分 experience.score 是另一套，两者不混用。</p>
+        </div>
+
+        <div class="lbox">
+          <h4>推荐层级 · QUOTA <i>四个最容易混的词</i></h4>
+          <div class="quotas">
+            <div class="q"><b>主推荐</b><span>当天检索发现的 S/A，≤8 条（S ≤3）</span></div>
+            <div class="q"><b>特别展示</b><span>官方/大厂，≤3 条，不占主推荐名额</span></div>
+            <div class="q"><b>推荐过</b><span>历史上进过主推荐，≠ 今天的主推荐</span></div>
+            <div class="q"><b>二次推荐</b><span>老朋友里满 7 天 + 新信号，标 REPEAT，不占名额</span></div>
+          </div>
+        </div>
+
+        <div class="lbox">
+          <h4>日报结构 · 01–05 <i>内容块，不是版次</i></h4>
+          <p class="blocks"><b>01</b> 主承重跨 → <b>02</b> 模块阵列 → <b>03</b> 档案层 → <b>04</b> 特别栏目 → <b>05</b> 记忆层</p>
+          <p class="lg-note">S/A/B/C/D 是承重档位，不是版别；这个站点没有「C 版 / D 版」。</p>
         </div>
 
         <div class="lbox">

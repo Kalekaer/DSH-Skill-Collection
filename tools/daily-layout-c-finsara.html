@@ -375,7 +375,7 @@ button{font:inherit;color:inherit}
 <div class="frame">
   <aside class="spine" aria-hidden="true">
     <div class="spine-top">GITHUB<br>DAILY</div>
-    <div class="spine-vert">STRUCTURAL SECTION — 2026.10.18 — ISSUE 08</div>
+    <div class="spine-vert">STRUCTURAL SECTION — <span id="spineDate"></span> — ISSUE <span id="spineIssue"></span></div>
     <ol class="spine-bays"><li class="on">01</li><li>02</li><li>03</li><li>04</li><li>05</li></ol>
     <div class="spine-bottom">CC0 / OFL / NO TRACKING</div>
   </aside>
@@ -503,6 +503,9 @@ var D = /*__DAILY__*/null;
   document.getElementById('issueDate').textContent = (D.iso||'') + ' / ' + (D.week||'');
   var frT = document.getElementById('frTitle');
   if (frT) { frT.textContent = ((D.iso||'').replace(/-/g,'.') || '当前') + ' · 结构日报'; }
+  var sd = document.getElementById('spineDate'), si = document.getElementById('spineIssue');
+  if (sd) { sd.textContent = (D.iso||'').replace(/-/g,'.'); }
+  if (si) { si.textContent = String(D.issue||'').padStart(2,'0'); }
   document.getElementById('tbDate').textContent = (D.iso||'').replace(/-/g,'.');
   document.getElementById('tbNew').textContent = ST.new==null?ST.cand:ST.new;
   document.getElementById('tbRec').textContent = ST.rec;
@@ -601,7 +604,7 @@ var D = /*__DAILY__*/null;
     var shown=CD_ALL.slice(0,limit);
     var cs=shown.filter(function(p){return p.tier==='C'});
     var ds=shown.filter(function(p){return p.tier==='D'||p.tier==='dropped'});
-    document.getElementById('archive').innerHTML = arcCol('C / 观察',cs,'c')+arcCol('D / 淘汰',ds,'d');
+    document.getElementById('archive').innerHTML = arcCol('C / 观察',cs,'c')+arcCol('D / 不推荐',ds,'d');
     var fold=document.getElementById('cdFold');
     if(CD_ALL.length<=CD_LIMIT){ fold.innerHTML=''; return; }
     fold.innerHTML='<button class="foldbtn" id="cdFoldBtn" type="button">'+(cdExpanded?'收起 C/D':'查看全部 C/D（'+CD_ALL.length+'）')+'</button>';

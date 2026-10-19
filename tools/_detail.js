@@ -78,7 +78,7 @@
     if (has(p.last)) { m('最近更新', p.last); }
     if (has(p.evc)) { m('成长记录', p.evc + ' 条'); }
     if (has(p.status)) { m('状态', p.status); }
-    if (has(p.drop)) { m('退稿原因', p.drop); }
+    if (has(p.drop)) { m('D 档原因', p.drop); }
 
     var fit = (has(p.aud) || list(p.unfit).length)
       ? '<div class="pd-fit">' +
@@ -139,7 +139,7 @@
     return null;
   }
 
-  /* 日报「本日报相关」里的项目按钮（老朋友 / 退稿等，库里有卡片就直接复用） */
+  /* 日报「本日报相关」里的项目按钮（老朋友 / D 档 等，库里有卡片就直接复用） */
   document.addEventListener('click', function (e) {
     var el = e.target && e.target.closest ? e.target.closest('.relchip[data-pid]') : null;
     if (!el) { return; }

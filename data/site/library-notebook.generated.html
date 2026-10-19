@@ -363,7 +363,7 @@ body{background-image:radial-gradient(ellipse at 40% 0%,#3a2c24,#1d1714 72%);bac
 .frbody th,.frbody td{border:1px solid #cfc6b4;padding:4px 6px;text-align:left}
 .frbody a{color:#a3234a}
 
-/* 日报相关项目（picks / 退稿 / 老朋友，全部可点开详情） */
+/* 日报相关项目（picks / D 档 / 老朋友，全部可点开详情） */
 .relbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:14px 0 4px;padding-top:10px;border-top:1px dashed var(--pd-rule,#c9c2b0)}
 .relh{font:700 9px/1.4 var(--pd-mono,monospace);letter-spacing:.18em;text-transform:uppercase;color:var(--pd-ink2,#5a5a52);margin-right:4px}
 .relchip{font:600 10px/1.2 var(--pd-mono,monospace);letter-spacing:.02em;border:1px solid currentColor;background:transparent;color:inherit;padding:5px 7px;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -373,7 +373,7 @@ body{background-image:radial-gradient(ellipse at 40% 0%,#3a2c24,#1d1714 72%);bac
 .fr-relbar{margin:0 0 16px;padding:0 0 12px;border-top:0;border-bottom:2px solid #0a0a0a;background:#efe8d6;padding:10px 12px}
 .fr-relbar .relh{color:#5a5a52}
 
-/* 官方 / 大厂附加区（不计入 S/A/B；只在报告有这一节时显示） */
+/* 官方 / 特别栏目（不计入 S/A/B；只在报告有这一节时显示） */
 .official{margin:16px 0 6px;padding:10px 12px;border:2px solid var(--pd-ink,#141412);border-left:8px solid #ff1f6b;background:var(--pd-note,#efe7d2)}
 .ofhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin:0 0 8px}
 .ofhead b{font:700 12px/1.2 var(--pd-mono,monospace);letter-spacing:.1em}
@@ -654,7 +654,7 @@ body{background:#0a0a0a;background-image:
 .keyhint{max-width:1320px;margin:6px auto 18px;padding:0 20px;font:700 9px/1.6 var(--mono);letter-spacing:.16em;color:#6a6a60;text-transform:uppercase}
 .keyhint b{color:var(--bf);border:1.5px solid #3a3a36;padding:2px 5px;margin-right:4px}
 </style>
-<!-- BUILD-STAMP: build 2026-10-19 21:59 ｜ 数据指纹 5F8A946DA027 ｜ 15 条 -->
+<!-- BUILD-STAMP: build 2026-10-19 22:18 ｜ 数据指纹 5F8A946DA027 ｜ 15 条 -->
 </head>
 <body>
 
@@ -687,7 +687,7 @@ body{background:#0a0a0a;background-image:
         <div class="airmail"></div><div class="airmail b"></div>
         <div class="titlebox">
           <div class="t">本地开源项目<br>收藏册</div>
-          <div class="s">GitHub 精品 · 每日精选 · 手账式归档</div>
+          <div class="s">GitHub 日报 · 每日精选 · 手账式归档</div>
           <div class="m">NO.01 · 15 条档案 · 2026</div>
         </div>
         <div class="stamp s1"><div class="in"><b>LOCAL</b><i>15</i><span>items filed</span></div></div>
@@ -864,7 +864,7 @@ const PROJ = [{"id":"AbdelStark/awesome-typesafe-jev","url":"https://github.com/
     if (has(p.last)) { m('最近更新', p.last); }
     if (has(p.evc)) { m('成长记录', p.evc + ' 条'); }
     if (has(p.status)) { m('状态', p.status); }
-    if (has(p.drop)) { m('退稿原因', p.drop); }
+    if (has(p.drop)) { m('D 档原因', p.drop); }
 
     var fit = (has(p.aud) || list(p.unfit).length)
       ? '<div class="pd-fit">' +
@@ -925,7 +925,7 @@ const PROJ = [{"id":"AbdelStark/awesome-typesafe-jev","url":"https://github.com/
     return null;
   }
 
-  /* 日报「本日报相关」里的项目按钮（老朋友 / 退稿等，库里有卡片就直接复用） */
+  /* 日报「本日报相关」里的项目按钮（老朋友 / D 档 等，库里有卡片就直接复用） */
   document.addEventListener('click', function (e) {
     var el = e.target && e.target.closest ? e.target.closest('.relchip[data-pid]') : null;
     if (!el) { return; }
@@ -1021,7 +1021,7 @@ function buildCard(p, i, pi, variant, gi) {
     + '<p class="use">' + p.one + '</p>'
     + '<div class="foot"><span>' + (p.l2 || p.l1 || '') + '</span><span class="star">★ ' + p.stars + '</span></div>'
     + '<span class="tp a"></span><span class="tp b"></span>'
-    + '<span class="lbl l1">' + p.l1 + (p.tier ? ' · ' + ({ S: 'S 档', A: 'A 档', B: 'B 档', C: 'C 档', D: 'D 档', dropped: 'D 档', unrated: 'D 档' }[p.tier] || p.tier) : '') + '</span>'
+    + '<span class="lbl l1">' + p.l1 + (p.tier ? ' · ' + ({ S: 'S 档', A: 'A 档', B: 'B 档', C: 'C 档', D: 'D 档', dropped: 'D 档' }[p.tier] || p.tier) : '') + '</span>'
     + '<span class="pm ' + (i % 2 ? 'p2' : 'p1') + '">' + PM[(i + pi) % PM.length] + '<br>' + CR[(i + pi) % 3].split('/')[1] + '</span>'
     + '<span class="hintx">点开</span>';
   var open = function (ev) { ev.stopPropagation(); showPop(p, el); };
@@ -1165,7 +1165,7 @@ document.getElementById('next').onclick = function () {
   ];
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function h32(x) { var h = 0; x = String(x); for (var i = 0; i < x.length; i++) { h = (h * 31 + x.charCodeAt(i)) | 0; } return Math.abs(h); }
-  function tierCn(t) { var m = { S: 'S 档', A: 'A 档', B: 'B 档', C: 'C 档', D: 'D 档', dropped: 'D 档', unrated: 'D 档' }; return m[t] || (t ? t + ' 档' : 'D 档'); }
+  function tierCn(t) { var m = { S: 'S 档', A: 'A 档', B: 'B 档', C: 'C 档', D: 'D 档', dropped: 'D 档' }; return m[t] || (t ? t + ' 档' : 'D 档'); }
 
   function buildWall() {
     var secs = {}, order = [];
