@@ -1,6 +1,6 @@
 ---
 name: github-daily-picks
-description: 生成 GitHub 日报并维护个人开源工具库。每天抓取、筛选、去重、风险检查、排序，产出新手能看懂的中文简报，落盘到 reports/、data/snapshots/、data/seen.jsonl。也支持：用户主动推荐项目入库（「这个项目不错：owner/repo」）、项目对比（「比较 A 和 B」「找类似 X 的工具」）。当用户说「今日 GitHub 日报」「最近热门项目」「有什么值得关注的开源项目」「GitHub 日报」「跑今天的日报」「跑一下 GitHub 日报」「补跑 YYYY-MM-DD」「出周报」时使用本 skill；旧口令「今日 GitHub 精品」仍兼容。
+description: 生成 GitHub 日报并维护个人开源工具库。每天抓取、筛选、去重、风险检查、排序，产出新手能看懂的中文简报，落盘到 reports/、data/snapshots/、data/seen.jsonl。也支持：用户主动推荐项目入库（「这个项目不错：owner/repo」）、项目对比（「比较 A 和 B」「找类似 X 的工具」）。当用户说「今日 GitHub 日报」「最近热门项目」「有什么值得关注的开源项目」「GitHub 日报」「跑今天的日报」「跑一下 GitHub 日报」「补跑 YYYY-MM-DD」「出周报」时使用本 skill。
 ---
 
 # GitHub 日报
@@ -42,7 +42,7 @@ description: 生成 GitHub 日报并维护个人开源工具库。每天抓取�
 
 ## 二、触发条件
 
-- 口令：「今日 GitHub 日报」「最近热门项目」「有什么值得关注的开源项目」「GitHub 日报」「跑今天的日报」「跑一下 GitHub 日报」→ 执行 `PROMPT-daily.md` 完整流程；旧口令「今日 GitHub 精品」仍兼容。
+- 口令：「今日 GitHub 日报」「最近热门项目」「有什么值得关注的开源项目」「GitHub 日报」「跑今天的日报」「跑一下 GitHub 日报」→ 执行 `PROMPT-daily.md` 完整流程。
 - **补跑**：用户说「补跑 YYYY-MM-DD」→ 流程照跑，但检索式里的 `{D7}` / `{D30}` 按指定日期回推；产物写入对应日期文件，**不得覆盖已有文件**。
 - **出周报**：按 `TEMPLATES/weekly.md` 汇总本周，并读 `data/recommend-log.csv` 统计。
 - **定时触发**：`schedule_create`（daily 模式），提示词只写一行「按 `PROMPT-daily.md` 执行今天的每日流程」。
@@ -87,7 +87,7 @@ description: 生成 GitHub 日报并维护个人开源工具库。每天抓取�
 - **硬过滤**：盗版 / 破解 / 注册机、外挂 / 作弊、恶意软件 / 勒索 / 挖矿、爬虫绕过与反检测、薅羊毛 / 账号共享 / 批量注册、赌博 / 诈骗、纯营销、资源列表（`awesome-*`、`roadmap`、`books`、`interview-questions`）、`fork: true` 且无显著差异、镜像搬运、归档或无维护、无 License 且含大量可分发代码、刷星特征（star 暴涨但 fork/star < 0.02 且无 release 无 issue 讨论）。完整清单以 `RUBRIC.md` 为准。
 - **内容红线（合规，必须遵守）**：命中上述任一条的仓库**不得以任何形式进入日报**——既不进推荐区，也不进「老朋友动态」的加星表扬，**连链接都不给**；只能写成不带链接的一句话剔除备注。理由：日报若为违反 GitHub 服务条款或法律法规的项目导流，责任在你的账号，不在上游仓库。
 - **注意区分两类"不推荐"**：上面这些是**合规红线**（AI 能凭描述/topic 判断）；而「政治敏感」类 **API 无法验证、也不是平台条款问题**，**不得混进硬排除**，只能作低置信度提示，**只写证据、不做价值判断、不展开**。
-- **降权**（写成**减分**，不是淘汰）：营销味重、文档极差、长期不更新。
+- **降权**（写成**减分**，不是 D 档）：营销味重、文档极差、长期不更新。
 - 「政治敏感 / 赌博 / 色情」类 **API 无法验证**，**不进硬排除**；只能作低置信度提示，**只写证据、不做价值判断、不展开**（赌博类若同时命中上面的合规红线，则按红线处理：直接剔除且不给链接）。
 
 ## 五、去重与状态存储
@@ -102,8 +102,8 @@ description: 生成 GitHub 日报并维护个人开源工具库。每天抓取�
   - 日报的**行动建议**字段仍有「收藏」取值（`试玩 / 收藏 / 研究 / 放弃`，见 `RUBRIC.md`）——那是**日报对项目的建议**，与被撤销的"我的收藏"功能无关，**不要混为一谈**。
   - 存量数据只有过 `active` / `dropped` / `watching` / `saved`，**不得为了统一而重写存量行**（`saved` 的历史行已在 2026-10-13 迁移为 `watching`，见 `data/status-log.jsonl`）。
 - 用户说「研究 / 放弃」→ 当场回写 `status` 与 `note`——这是**必须动作**，否则状态字段就是摆设。
-- 冷却期：已推荐 7 天内不进推荐区；普通淘汰 14 天、红线淘汰 90 天不再评估；**同一 owner 3 天内最多推荐 1 个**（实现为 −10 降权，不消失；口径以 `RUBRIC.md` 第 5 节为准）。
-- **二次推荐**：7 天冷却到期不等于自动回锅，必须有新信号（release / 功能更新 / 涨星 ≥10%），并在 picks 标 `repeat` / `prev_tier` / `tier_changed`；否则只进老朋友动态。
+- 冷却期：已推荐 7 天内不进推荐区；D 档 14 天、合规剔除 90 天不再评估；**同一 owner 3 天内最多推荐 1 个**（实现为 −10 降权，不消失；口径以 `RUBRIC.md` 第 5 节为准）。
+- **二次推荐**：7 天冷却到期不等于自动二次推荐，必须有新信号（release / 功能更新 / 涨星 ≥10%），并在 picks 标 `repeat` / `prev_tier` / `tier_changed`；否则只进老朋友动态。
 - **满额不降档**：S+A 超过 8 条或 S 超过 3 条时，多出的 S/A 保留原档位，标 `daily_status=over_quota` / `quota_block`，**不得降成 B**；不算推荐、不启动 7 天冷却，版面只列「达线未刊」。
 - **`last_recommended` 兜底**：存量行没有该字段时，**回退用 `last_seen` 判断 7 天冷却，并在运行日志注明「本次回退」**；不要因为字段缺失就跳过去重。
 - **append 唯一写入口（2026-10-19）**：`picks` 唯一键 `date+full_name`、`recommend-log.csv` 唯一键 `仓库`（同日重跑/失败重试最容易撞）。**统一用 `tools\add-rows.ps1 -Target picks|csv -From <rows.jsonl>` 写入**：写入前校验字段并判重，已存在默认拒绝，`-Update` 才刷新旧行；只想快速问一句可跑 `append-guard.ps1`。`picks` / `snapshots` 已登记进 `data/schema.json`，`validate-lib.ps1` 会校验必填字段、枚举、`date`=文件名与唯一键。
@@ -128,7 +128,7 @@ description: 生成 GitHub 日报并维护个人开源工具库。每天抓取�
 - **项目唯一身份**：`full_name`（`owner/repo`）是唯一标识。**同一个仓库永远只有一条主档案**；已有项目只更新记录并追加事件，新项目才创建档案。
 - 每天产出六份文件，**各管各的、不要混**：
   - `reports/YYYY-MM-DD.md` —— 人读日报（格式以 `TEMPLATES/daily.md` 为准）
-  - `data/snapshots/YYYY-MM-DD.jsonl` —— **只有星数基线**，用于算 Δstars；**不得写入评分/风险/淘汰原因**
+  - `data/snapshots/YYYY-MM-DD.jsonl` —— **只有星数基线**，用于算 Δstars；**不得写入评分/风险/D 档原因**
   - `data/picks/YYYY-MM-DD.jsonl` —— 机器可读的推荐档案（含 `tier`/`score`/`risk`/`source`/`action`）
   - `data/meta/YYYY-MM-DD.jsonl` —— **关键**：本次检索结果的远端元数据（`description` / `license` / `topics` / `archived` / `pushed_at`），从 Search API 返回体直接落盘，**无需额外调用**。缺这份文件，新项目在主档案里就没有描述
   - `data/status-log.jsonl` —— **仅当用户说「收藏 / 研究 / 放弃」时**追加一行：`{"full_name":"...","date":"YYYY-MM-DD","from":"active","to":"saved"}`。这是"状态变化"事件的唯一来源，不写它就不会有状态历史
@@ -136,8 +136,15 @@ description: 生成 GitHub 日报并维护个人开源工具库。每天抓取�
   **不要新建 `data/YYYY-MM-DD.json`。** 字段定义见 `data/README.md`。
 - **收尾必须同步知识库**：跑 `& ".\tools\sync-projects.ps1"`（幂等，输入没变会自动跳过）与 `& ".\tools\build-overview.ps1"`。这两步失败**不影响**前面六份文件的产出，只在运行日志记一笔。
 - **页面生成后必须跑 `& ".\.dsh\skills\github-daily-picks\audit.ps1"` 的站点段（第 22 节）**：入口 / 4 个路由 / 日报 01–05 / 全库搜索分类 / 计划页 / BUILD-STAMP / 图表 aria 全部静态核对；想再稳一点，用浏览器打开 `index.html` 真点一次四个入口。理由：页面 JS 出错时**页面照常渲染**，只有点击/交互才暴露（2026-10-13「卡片点不了」：数据里混进 `[null]`，`detail()` 抛 TypeError，而卡片显示完全正常）。
-- **收尾必须给用户追问**：跑 `& ".\tools\daily-questions.ps1"`，从它列出的问题里**挑 3–5 条需要用户拍板的**问出去（核 README 补实命令 / 确认剔除理由 / 补词表 / 批同义词与分类建议 / 补人话层 / 用户自推补 SABCD 并进老朋友动态）。**不要只丢一份日报就完事**——日报是给用户做决定的，决定要问出来。
-  - 只问需要用户决定的，**不要拿教程式问题凑数**；用户没空就只给第 1 条。
+- **收尾默认不问**：能自动做完的（核 README 补实命令 / 补词表 / 批同义词与分类建议 / 补人话层 / 缺口复检 / 用户自推补 SABCD）**直接做完并写进运行日志**，不拿来问。
+  - 只有两类值得打断用户：**风险高的项目要不要用**、**发版 / 删数据 / 花钱 / 红线例外**。
+  - 想看还剩什么没做，跑 `& ".\tools\daily-questions.ps1"`：它只输出上面两类；**输出为空就别问**，不要凑数。
+- **周报巡检（2026-10-20 起，全部自动）**：出周报时先跑 `& ".\tools\weekly-check.ps1"`，按它列出的项**自己做完**再写周报——
+  - 人话层缺口用库内描述补（0 额度，每批 5 条）；同义词 count ≥ 5 并进最贴近的组；缺口词复检后 0 命中移除、有命中并表；分类/方案建议达阈值就落，不达阈值记运行日志；
+  - 用户自推缺档位按 `data/criteria.json` 评分落档；高风险主推荐在周报里直接给「用 / 不用 / 观察」的结论；
+  - 日报或运行日志缺日：能补就补，补不了写进周报「数据质量」段；
+  - 发布包：跑 `check-drift`，无异常就同步 + 构建 + 包内 audit + commit（push 失败只记录，不阻塞）。
+  - **只有删数据、超额 API 花费、红线例外三类才问用户**；其余不问、不列清单、不等人拍板。
 - **收尾顺带补人话层（每次 5 条）**：`& ".\tools\humanize-next.ps1" -N 5` 列出下一批该补的项目（优先：**正在使用 > 研究中 > 用户自己加的 > 新加入的 > 星数高的**），并标出哪些**能用项目自带中文描述直接写（0 额度）**、哪些需要 1 次 API 读 README。
   写好后用 `& ".\tools\add-intro.ps1" -File <批次.jsonl> -Apply -Sync` 批量写入。
   **补全规则（GPT 评审 2026-10-13 拍板，已固化）**：
@@ -218,7 +225,7 @@ description: 生成 GitHub 日报并维护个人开源工具库。每天抓取�
    ```
 
    **超长裁剪规则**（400 字是按 1–3 条算的，必须遵守）：每渠道只推 **Top 1–3 条**；仍超长时按顺序砍——先砍「亮点」，再砍「风险」，**永远保留**项目名 / 一句话 / 行动 / 链接；多条之间空一行，不加分隔线。
-3. **机器可读版**：`data/picks/YYYY-MM-DD.jsonl`，一行一个条目（**S/A/B/C/D 全部记**，不只推荐与淘汰），字段 `date` / `full_name` / `tier` / `score` / `risk` / `source` / `action` / `captured_at` / `recommend_count` / `repeat` / `prev_tier` / `tier_changed` / `daily_status` / `quota_block` / `drop_reason`，定义见 `data/README.md`。**它不写进 `snapshots/`**——那里要保持纯星数基线。
+3. **机器可读版**：`data/picks/YYYY-MM-DD.jsonl`，一行一个条目（**S/A/B/C/D 全部记**，不只推荐与 D 档），字段 `date` / `full_name` / `tier` / `score` / `risk` / `source` / `action` / `captured_at` / `recommend_count` / `repeat` / `prev_tier` / `tier_changed` / `daily_status` / `quota_block` / `drop_reason`，定义见 `data/README.md`。**它不写进 `snapshots/`**——那里要保持纯星数基线。
 
 **对话播报纪律（2026-10-18 起，取代旧的「≤5 行摘要」）**：
 
@@ -356,7 +363,7 @@ description: 生成 GitHub 日报并维护个人开源工具库。每天抓取�
 - **页内对比（首选，给用户自己用）**：`overview.html` 每张卡片右上角有「对比」按钮——**勾选两个**，右下角出现「查看对比」，点开即出对比表。**用户自己就能操作，不需要命令行、不需要经过对话。** 数据已内嵌，纯前端计算。
 - **命令行对比（脚本/批量场景）**：
   - 对比：`& ".\tools\compare.ps1" ownerA/repoA ownerB/repoB` → 输出 Markdown 对比表
-  - 找同类：`& ".\tools\compare.ps1" -Similar owner/repo` → 按「共同功能标签 + 同二级分类」列同类，已淘汰项目不参与
+  - 找同类：`& ".\tools\compare.ps1" -Similar owner/repo` → 按「共同功能标签 + 同二级分类」列同类，已不再看项目不参与
   - 数据全部来自 `data/projects.jsonl`（人话层 + 分类 + 标签 + 评分），**缺失字段标「（待补全）」，不编造**。
   - 「怎么选」是**自动判断**（只比体验评分 / 风险 / 上手难度三个数据项），必须带「仅供参考」标注，不构成使用担保。
   - **默认不落盘**；只有用户明确说「保存这次对比」才加 `-Save` 写入 `reports/comparisons/`。
@@ -435,8 +442,8 @@ description: 生成 GitHub 日报并维护个人开源工具库。每天抓取�
 | 工具 | 作用 | 何时跑 |
 |---|---|---|
 | `tools/auto-tag.ps1` | 用 topics + 中文描述给**缺标签**的项目自动补 `function_tags`/`user_keywords`；质量闸过滤长句/宽词，**两次复核**（第二次用二级分类兜底）。不覆盖人工条目，生成项带 `source:'auto(...)'` | **日报/入库后由 `rebuild-page.ps1` 自动执行 `-Apply -NoRebuild`**；不用等用户确认 |
-| `tools/suggest-terms.ps1` | 统计全库词频，**减去已收录的词**，输出「还没进词表」的待选词（含出现次数与示例仓库） | 库明显变大后（如每涨 30–50 条），或感觉搜不到时 |
-| `tools/gaps.ps1` | **搜索缺口闭环**：`-Add "词"` 记下搜不到的词；不带参数则复检每个缺口词——现在能搜到几条、和哪些已收录词最接近，并给出补词建议 | 用户反馈「搜不到」之后；页面上也能记（见下） |
+| `tools/suggest-terms.ps1` | 统计全库词频，**减去已入库的词**，输出「还没进词表」的待选词（含出现次数与示例仓库） | 库明显变大后（如每涨 30–50 条），或感觉搜不到时 |
+| `tools/gaps.ps1` | **搜索缺口闭环**：`-Add "词"` 记下搜不到的词；不带参数则复检每个缺口词——现在能搜到几条、和哪些已入库词最接近，并给出补词建议 | 用户反馈「搜不到」之后；页面上也能记（见下） |
 
 - **页面端**：搜不到时会出现「记下这个词」按钮（存 `localStorage` + 复制剪贴板），顶部显示「⚠ 搜索缺口 N（点我复制）」。**页面是本地静态文件、写不了工作区**，所以流程是：用户复制 → 发到对话 → Agent 用 `gaps.ps1 -Add` 落盘并补词。
 - **补词后必须**跑 `sync-projects.ps1` + `build-samples.ps1` + `validate-lib.ps1`。
