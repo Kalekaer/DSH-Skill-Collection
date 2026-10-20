@@ -53,7 +53,7 @@ description: 生成 GitHub 日报并维护个人开源工具库。每天抓取�
 
 ### 实测事实（不是推测，按此执行）
 
-- 运行目录固定 `E:\工作区\GitHub日报`，**只在此目录内写文件**。
+- 运行目录 = **当前工作区根目录**（DSH 工作区），**只在此目录内写文件**。
 - 唯一联网通道：`web_fetch`（宿主网络，`api.github.com` 实测 200）。
 - 本机 shell 直连 GitHub **不通**（curl 返回 000 / schannel 凭据失败）→ 禁止直连脚本。
 - `github.com/trending` **没有官方 API**，只有 HTML，`web_fetch` 抓取实测 30s 超时。第三方 trending 镜像数据滞后、`ossinsight` 的 star 事件自 2026-03-01 起不可用 → **均不得采用**。
