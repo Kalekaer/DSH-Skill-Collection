@@ -28,6 +28,14 @@
 
 ---
 
+## [5.1.7] — 2026-10-20 · 日报 6 块结构轴版 + 打印/窄屏修复 ✓
+
+- `tools/daily-layout-c-finsara.html`：日报改为 6 块结构轴版（01 今日头条 / 02 重点报道 / 03 观察面 / 04 边栏观察 / 05 特别栏目 / 06 旧闻新报），详情为浮窗卡片 + 背景模糊；01 只放 S，A 不代行。
+- `tools/build-samples.ps1`：同步 6 块数据字段（proof / overflow / allIn / oldFriends / selfPushed）；缺少 `data/site/kiosk-return.js` 时自动去掉该脚本引用（发布包内无此本地产物，避免 404 与假返回按钮）。
+- `tools/library-notebook.html`：补 `@media print`（隐藏侧脊/翻页/搜索/视图切换，卡片不跨页断开）。
+- `tools/home-brutal-token.html`、`site-shell.html`、`plans-shelf.html`：与 6 块日报一致的导航与统计。
+- 包内 `audit.ps1` 第 22 节两条旧断言改为新结构：`01–05` → `01–06`；S/A 档位改为读页面 `"tier"` 数据。
+- 校验：`audit.ps1` **166 项全通过**（2 项因包内无 `发布测试/` 目录跳过）。
 ## [5.1.6] — 2026-10-19 · 清理 `unrated` 语义债 ✓
 
 - `data/criteria.json`：删除“用户推荐项目 / 附加区”两处无用的 `tier` 旧字段；冷却键 `已淘汰`→`D档`、`红线淘汰`→`合规剔除`、`_淘汰`→`_D档`。

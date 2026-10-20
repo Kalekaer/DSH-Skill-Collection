@@ -143,9 +143,10 @@ html,body{margin:0;height:100%;background:#080807;color:var(--paper);font:14px/1
   .dock .k{display:none}
 }
 </style>
-<!-- BUILD-STAMP: build 2026-10-19 22:18 ｜ 数据指纹 5F8A946DA027 ｜ 15 条 -->
+  <link rel="stylesheet" href="../../assets/ui/motion.css">
+<!-- BUILD-STAMP: build 2026-10-20 19:44 ｜ 数据指纹 5F8A946DA027 ｜ 15 条 -->
 </head>
-<body>
+<body data-motion-page="shell">
 <div class="load" id="load">ARCHIVE<span style="color:var(--magenta)">//</span>LOADING</div>
 
 <div class="status" hidden>
@@ -216,7 +217,7 @@ html,body{margin:0;height:100%;background:#080807;color:var(--paper);font:14px/1
             <span><b>SELF</b> 用户自推</span>
             <span><b>REPEAT</b> 二次推荐</span>
           </div>
-          <p class="lg-note">SELF = 你自己带进库的（默认进记忆层，不占主推荐）；REPEAT = 满 7 天 + 新信号，仍不占名额。</p>
+          <p class="lg-note">SELF = 你自己带进库的（默认进旧闻新报，不占主推荐）；REPEAT = 满 7 天 + 新信号，仍不占名额。</p>
         </div>
 
         <div class="lbox score">
@@ -240,8 +241,8 @@ html,body{margin:0;height:100%;background:#080807;color:var(--paper);font:14px/1
         </div>
 
         <div class="lbox">
-          <h4>日报结构 · 01–05 <i>内容块，不是版次</i></h4>
-          <p class="blocks"><b>01</b> 主承重跨 → <b>02</b> 模块阵列 → <b>03</b> 档案层 → <b>04</b> 特别栏目 → <b>05</b> 记忆层</p>
+          <h4>日报结构 · 01–06 <i>内容块，不是版次</i></h4>
+          <p class="blocks"><b>01</b> 今日头条 → <b>02</b> 重点报道 → <b>03</b> 观察面 → <b>04</b> 边栏观察 → <b>05</b> 特别栏目 → <b>06</b> 旧闻新报</p>
           <p class="lg-note">S/A/B/C/D 是承重档位，不是版别；这个站点没有「C 版 / D 版」。</p>
         </div>
 
@@ -362,5 +363,6 @@ html,body{margin:0;height:100%;background:#080807;color:var(--paper);font:14px/1
   if ((location.hash || '').indexOf('legend') >= 0) { setTimeout(openLg, 260); }
 })();
 </script>
+  <script src="../../assets/ui/motion.js" defer></script>
 </body>
 </html>

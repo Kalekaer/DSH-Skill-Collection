@@ -285,6 +285,38 @@ $rejJson = '[' + (($rejects | ForEach-Object { & $J $_ }) -join ',') + ']'
 $catJson = '[' + (($cats | ForEach-Object { & $J $_ }) -join ',') + ']'
 $imgJson = '[' + (($imgs | ForEach-Object { '"' + ($_ -replace '\\', '/') + '"' }) -join ',') + ']'
 
+# ---------- 日报报头证明统计（FOUND / SCORED / NEW）----------
+# FOUND = 当天快照去重后的检索结果数；无快照时回退到当日 discovered 数。
+$found = 0
+$snapPath = P "data\snapshots\$Date.jsonl"
+if (Test-Path $snapPath) {
+  try {
+    $found = @(Get-Content $snapPath -Encoding UTF8 | Where-Object { $_.Trim() } |
+        ForEach-Object { [string]($_ | ConvertFrom-Json).full_name } | Sort-Object -Unique).Count
+  } catch { $found = 0 }
+}
+if ($found -le 0) { $found = [int]$cand }
+
+# SCORED = 当天真正评过的全部条目（含满额未刊与二次推荐；B/C/D 也计入）。
+$scoredCards = @(); $scoredSeen = @{}
+foreach ($sc in @(@($picksAll) + @($overflow) + @($repeatCards) + @($bAll) + @($cAll) + @($dAll))) {
+  if (-not $sc -or -not $sc.id) { continue }
+  if (-not $scoredSeen.ContainsKey([string]$sc.id)) { $scoredSeen[[string]$sc.id] = $true; $scoredCards += $sc }
+}
+function Get-TierCountMap($cards) {
+  $m = [ordered]@{ S = 0; A = 0; B = 0; C = 0; D = 0 }
+  foreach ($c in @($cards)) {
+    $t = [string]$c.tier
+    if ($t -eq 'dropped') { $t = 'D' }
+    if ($m.Contains($t)) { $m[$t] = [int]$m[$t] + 1 }
+  }
+  return $m
+}
+# NEW = first_seen 当天的项目，按库内档位统计。
+$newCards = @($all | Where-Object { [string]$_.first_seen -eq $Date })
+$proofJson = '{"found":' + [int]$found + ',"scoredTotal":' + $scoredCards.Count + ',"scored":' + (Get-TierCountMap $scoredCards | ConvertTo-Json -Compress) +
+  ',"newTotal":' + $newCards.Count + ',"new":' + (Get-TierCountMap $newCards | ConvertTo-Json -Compress) + ',"library":' + $all.Count + '}'
+
 $daily = '{'
 $daily += '"date":"' + $Date + '",'
 $daily += '"iso":"' + $Date + '",'
@@ -301,6 +333,7 @@ $daily += '"imgs":' + $imgJson + ','
 $daily += '"picks":' + $picksJson + ','
 $daily += '"rejects":' + $rejJson
 $daily += '}'
+$daily = $daily.Substring(0, $daily.Length - 1) + ',"proof":' + $proofJson + '}'
 $daily = $daily.Replace('</', '<\/')   # 防止数据里出现 </script> 提前闭合脚本
 
 # ---------- 完整日报 HTML（网页「每日精选」的全文浮层；reports/<date>.md 是内容源）----------
@@ -435,8 +468,8 @@ foreach ($c in @(@($picksAll) + @($bAll) + @($cAll) + @($dAll) + @($noTierCards)
   if (-not $allInSeen.ContainsKey([string]$c.id)) { $allInSeen[[string]$c.id] = $true; $allInCards += $c }
 }
 $allInJson = '[' + (($allInCards | ForEach-Object { & $J $_ }) -join ',') + ']'
-$dailyCore = $daily.TrimEnd('}') + ',"related":' + $relJson + ',"official":' + $ofJson + ',"watch":' + $watchJson + ',"overflow":' + $overflowJson + '}'
-$daily = $dailyCore.TrimEnd('}') + ',"oldFriends":' + $oldJson + ',"selfPushed":' + $selfJson + ',"bAll":' + $bAllJson + ',"cAll":' + $cAllJson + ',"allIn":' + $allInJson + '}'
+$dailyCore = $daily.Substring(0, $daily.Length - 1) + ',"related":' + $relJson + ',"official":' + $ofJson + ',"watch":' + $watchJson + ',"overflow":' + $overflowJson + '}'
+$daily = $dailyCore.Substring(0, $dailyCore.Length - 1) + ',"oldFriends":' + $oldJson + ',"selfPushed":' + $selfJson + ',"bAll":' + $bAllJson + ',"cAll":' + $cAllJson + ',"allIn":' + $allInJson + '}'
 $daily = $daily.Replace('</', '<\/')
 $dailyCore = $dailyCore.Replace('</', '<\/')
 $relatedHtml = if ($relatedCards.Count) {
@@ -675,19 +708,27 @@ foreach ($k in $Layout) {
   $after = [regex]::Matches($s, '/\*__[A-Z0-9_]+__\*/').Count
   if ($after -ne 0) { Fail "清理后仍有 $after 处占位符" }
 
+# 2026-10-20：kiosk-return.js 是本地上线产物（返回历史档案浮窗）；发布包里没有这个文件。
+#   包里生成时去掉引用，避免 404 + 页面上出现一个点不动的「← 历史档案」按钮。
+if ($key -eq 'c' -and -not (Test-Path (P 'data\site\kiosk-return.js'))) {
+  $s = [regex]::Replace($s, '(?s)\s*<script src="kiosk-return\.js"></script>', '')
+  Info '本环境没有 kiosk-return.js：已去掉引用（发布包/独立使用）'
+}
+
   # 2026-10-19：站点每页统一带 BUILD-STAMP（audit P1-14 / P1-17 靠它判断「页面比数据新」）
   $sig12 = (Get-FileHash (P 'data\projects.jsonl') -Algorithm SHA256).Hash.Substring(0,12)
   $stampLine = '<!-- BUILD-STAMP: build ' + (Get-Date).ToString('yyyy-MM-dd HH:mm') + ' ｜ 数据指纹 ' + $sig12 + ' ｜ ' + $all.Count + ' 条 -->'
   if ($s -match '</head>') { $s = $s -replace '</head>', ($stampLine + "`n</head>") } else { $s = $stampLine + "`n" + $s }
 
-  $outPath = Join-Path $tmp $t.out
+  $outFile = $t.out
+  $outPath = Join-Path $tmp $outFile
   [System.IO.File]::WriteAllText($outPath, $s, $enc)
   $kb = [math]::Round((Get-Item $outPath).Length / 1KB, 1)
   if ($key -eq 'notebook') {
-    OK ("{0,-34} {1,7} KB  全库 {2} 条 · 推荐 {3} · {4} 页" -f $t.out, $kb, $all.Count, $recCount, $nbPages)
+    OK ("{0,-34} {1,7} KB  全库 {2} 条 · 推荐 {3} · {4} 页" -f $outFile, $kb, $all.Count, $recCount, $nbPages)
   }
   else {
-    OK ("{0,-34} {1,7} KB  推荐 {2} · 退稿 {3} · 候选 {4} · 期号 {5}" -f $t.out, $kb, $picks.Count, $rejects.Count, $cand, $issueNo)
+    OK ("{0,-34} {1,7} KB  推荐 {2} · 退稿 {3} · 候选 {4} · 期号 {5}" -f $outFile, $kb, $picks.Count, $rejects.Count, $cand, $issueNo)
   }
   if ($left.Count -gt 0) { Info "（顺带清掉 $($left.Count) 处旧标记）" }
 }

@@ -249,6 +249,12 @@ body{background-image:radial-gradient(ellipse at 40% 0%,#3a2c24,#1d1714 72%);bac
   .cards{grid-template-columns:1fr}
   .notebook{width:min(680px,100%)}
 }
+/* 打印（2026-10-20 620/打印验收补）：去掉装饰与交互控件，卡片不跨页断开 */
+@media print{
+  .spine,.pager,.search,.viewswitch,.wscroll,.wall-rail,.foldbtn,.toast,.nav{display:none!important}
+  body{background:#fff!important;color:#111}
+  .notebook,.sheet,.pcard,.pcardwrap{break-inside:avoid}
+}
 /*__DETAIL_CSS__*/
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 /* ============================================================================
@@ -521,8 +527,9 @@ body{background:#0a0a0a;background-image:
 .keyhint{max-width:1320px;margin:6px auto 18px;padding:0 20px;font:700 9px/1.6 var(--mono);letter-spacing:.16em;color:#6a6a60;text-transform:uppercase}
 .keyhint b{color:var(--bf);border:1.5px solid #3a3a36;padding:2px 5px;margin-right:4px}
 </style>
+  <link rel="stylesheet" href="../../assets/ui/motion.css">
 </head>
-<body>
+<body data-motion-page="library">
 
 <header class="hudbar">
   <div>
@@ -1029,5 +1036,6 @@ document.getElementById('next').onclick = function () {
 })();
 </script>
 <div class="keyhint"><b>1</b> 手账本 <b>2</b> 线索墙 <b>← →</b> 翻页 <b>ESC</b> 关浮窗 · 点卡片看完整档案</div>
+  <script src="../../assets/ui/motion.js" defer></script>
 </body>
 </html>
