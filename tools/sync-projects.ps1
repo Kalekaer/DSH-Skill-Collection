@@ -153,7 +153,7 @@ if (Test-Path $widePath) {
 # --- 两级分类规则库 ---
 # 纪律：分类**只能**从 taxonomy.json 取。匹配不到就归「其他 → 其他工具」，
 #       不得运行时临时新建分类（否则会出现「AI绘画 / AI 绘图 / 生成式视觉」三个同义分类）。
-#       发现新方向时应写入 data/taxonomy-suggestions.json，等人工批准。
+#       发现新方向时应写入 data/taxonomy-suggestions.json，由周报巡检按四道闸自动晋升；不达标停 under_review。
 $taxonomy = $null
 if (Test-Path $taxonomyPath) {
   try { $taxonomy = Get-Content $taxonomyPath -Raw -Encoding UTF8 | ConvertFrom-Json } catch { Write-Warning "taxonomy.json 解析失败，两级分类将全部落到「其他」" }

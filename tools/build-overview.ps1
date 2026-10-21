@@ -690,7 +690,7 @@ $html = @"
 <div class="foot">
   数据来自 <code>data/projects.jsonl</code> + <code>data/events.jsonl</code>（由原始来源派生，可全量重建）。<b>本页是只读视图，数据已全部内嵌，双击即可用。</b><br>
   改状态：编辑 <code>data/seen.jsonl</code> 的 <code>status</code>（白名单 active/using/watching/researching/dropped；saved 为遗留值）并在 <code>data/status-log.jsonl</code> 追加一行，然后跑 <code>sync-projects.ps1</code> 与 <code>build-overview.ps1</code>。<br>
-  改分类：只改 <code>data/taxonomy.json</code>（<b>分类不允许运行时自由创建</b>，新方向先写入 <code>taxonomy-suggestions.json</code> 等人工批准）。<br>
+  改分类：只改 <code>data/taxonomy.json</code>（<b>分类不允许运行时自由创建</b>，新方向先写入 <code>taxonomy-suggestions.json</code>，由周报巡检按四道闸自动晋升；不达标停 under_review）。<br>
   字体：拉丁刊头 <b>Anton</b> $antonNote —— 中文一律系统字体栈；页面<b>运行期外部请求 = 0</b>。
 </div>
 <script>$jsBlock</script>

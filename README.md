@@ -126,7 +126,7 @@
 
 Agent 会读 `PROMPT-daily.md` 执行完整流程。
 
-**已建立定时任务**：每天 **09:00（Asia/Shanghai）** 自动触发。
+**定时任务默认不建**：需要时在会话里说「每天 09:00 跑日报」自己建；绑定当前会话，DSH 关闭不触发。
 ⚠️ **限制**：定时提醒**绑定当前 DSH 会话**——DSH 关闭时不会触发，重新打开后只补发最近一次错过的。**做不到 7×24 无人值守**；无人值守的替代方案见 `RUNBOOK.md`。
 
 ---
@@ -327,7 +327,7 @@ github-daily-picks/                 ← 解压出来的仓库根目录
 |---|---|---|
 | 本机 shell 直连 GitHub | `curl https://api.github.com` 返回 000 / schannel 凭证失败；`Invoke-RestMethod` SSL 失败 | 不要写本地直连脚本，走 DSH 的 `web_fetch`（宿主网络，实测 HTTP 200） |
 | `github.com/trending` HTML | `web_fetch` 30s 超时 | 不作为主源，仅作备用 |
-| 匿名 API 额度 | core 60 次/小时，Search 10 次/分钟 | 本方案每天 3–5 次调用，余量充足；要提额需 token |
+| 匿名 API 额度 | core 60 次/小时，Search 10 次/分钟 | 本方案每天 3–4 次调用，余量充足；要提额需 token |
 | 响应体截断 | `web_fetch` 对超长响应会截断（实测 `per_page=20` 会丢尾部条目） | 该条转 B 档待复检，**不用估算值填坑** |
 | ossinsight 趋势接口 | 自 2026-03-01 起 star 事件数据不可用（官方标注） | 已排除，不要用 |
 | 「热度」口径 | 官方 trending 含人工加权，无法复制 | 用自家快照的 `Δstars/天`，口径透明可追溯 |
