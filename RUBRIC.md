@@ -2,7 +2,7 @@
 
 日报质量 = 这份文件的质量。改这里，比改任何脚本都有效。
 
-## 1. 硬性排除（命中任意一条直接淘汰）
+## 1. 硬性排除（命中任意一条直接剔除）
 
 - 无描述（`description` 为空）且无 README 首段可读内容
 - `fork: true`、纯镜像、纯搬运
@@ -37,6 +37,13 @@
 - 只有拿到可核查证据（描述/README/topic 明确指向盗版、外挂、恶意软件等）时，才按 §1.1 转 `dropped`。
 - 词边界匹配，避免 `crackle`、`hackathon` 这类误命中。
 
+### 1.3 证据源（2026-10-21 起，可选但优先）
+
+评分时可引用两份外部证据，**拿不到就回退，不阻塞**：
+
+- `tools/fetch-evidence.ps1` → `data/enrich/evidence.jsonl`：deps.dev 的项目事实（许可、stars、scorecard 子集）、包映射与 SLSA 验证、findings（MALICIOUS / VULNERABLE / DEPRECATED / COOLDOWN / LOW_USAGE / NOT_FOUND）；`-FullScorecard` 另取 OpenSSF Scorecard 完整 18 项。
+- 可信度按 Scorecard 归一化（8 项均值 ÷10×10）；无数据记 5（中性）并标未验证。**组织白名单不加分**（只用于特别栏目）。
+- findings 处理：**只有 MALICIOUS 硬拦**（剔除 + 90 天冷却）；`VULNERABLE` critical/high → 风险「高」+ `researching`；`DEPRECATED` 扣分并备注；`COOLDOWN / LOW_USAGE / NOT_FOUND` 不判死。
 ## 2. 打分维度（满分 100）
 
 | 维度 | 权重 | 判断依据 |
@@ -45,7 +52,7 @@
 | 上手成本（反向） | 15 | 有 README 快速开始 +10；需要自建后端/申请密钥 +5；只有源码需编译 +2 |
 | 活跃度 | 20 | 近 7 天有提交 +10；有 issue 回复 +5；近 30 天有 release +5 |
 | 热度 | 20 | Δstars/天 ≥ 300 +12；≥ 100 +8；总 star ≥ 5000 +4；fork/star ≥ 0.05 +4 |
-| 可信度 | 10 | 知名组织/作者 +5；文档与测试齐全 +5 |
+| 可信度 | 10 | `OpenSSF Scorecard` 归一化 0–10：Maintained / Code-Review / CI-Tests / Security-Policy / Signed-Releases / Pinned-Dependencies / Dependency-Update-Tool / Vulnerabilities 八项均值 ÷10×10；`-1` 不计入分母；无数据记 5（中性）并标未验证。**组织白名单不加分**（只用于特别栏目） |
 
 ## 3. 分档与输出上限
 
@@ -61,7 +68,7 @@
 
 **满额处理（2026-10-18 起）**：S/A 达线但超出 `S≤3` 或 `S+A≤8` 的，**保留原档位，不降成 B**；在 `picks` 标 `daily_status=over_quota`、`quota_block=s_cap|total_cap`。当天版面只在「达线未刊」名单里列名字；不算推荐、不触发 7 天冷却；下一期重新评估，不自动占位。
 
-**版面展示上限（2026-10-18 起，只约束「每日精选」版面）**：B 档展示 4 条；C/D 名单合并展示 8 条（C 优先，再 D，同档按分数降序）。超出的**不删数据**：`picks`、`seen.jsonl`、`recommend-log.csv`、全库都保持全量；页面给「查看全部 / 折叠」入口。D 档退稿原因并入 C/D 名单（点名字看详情），不再单设 REJECTED 区。
+**日报展示上限（2026-10-18 起，只约束「每日精选」内容）**：B 档展示 4 条；C/D 名单合并展示 8 条（C 优先，再 D，同档按分数降序）。超出的**不删数据**：`picks`、`seen.jsonl`、`recommend-log.csv`、全库都保持全量；页面给「查看全部 / 折叠」入口。D 档原因并入 C/D 名单（点名字看详情），不再单设 REJECTED 区。
 
 ## 4. 「老朋友」处理
 
@@ -76,7 +83,7 @@
 ## 5. 去重与冷却
 
 - **已推荐过的仓库：7 天内不再进推荐区**（2026-10-18 由 30 天收紧）
-- **普通淘汰（D，非红线）：14 天内不再评估**；**红线 / 版权 / 合规淘汰：90 天内不再评估**（2026-10-18 调整）
+- **D 档（不推荐，非红线）：14 天内不再评估**；**红线 / 版权 / 合规剔除：90 天内不再评估**（2026-10-18 调整）
 - **二次推荐**：7 天冷却到期后，只有当**出现新信号**（新 release、新提交/功能、或较上次推荐涨星 ≥10%）才允许二次推荐；否则只进老朋友动态。二次推荐必须标 `repeat=true`、`prev_tier`、`tier_changed`（档位没变就不强调）；**留在老朋友动态，不占主推荐名额**。
 - **用户自推**：从没推荐过的，7 天从入库日 `first_seen` 算；有 `last_recommended` 的从该日算。
 - 同一 owner 的仓库，**3 天内最多推荐 1 个**（实现为**降权 −10 分**，不再整族消失）

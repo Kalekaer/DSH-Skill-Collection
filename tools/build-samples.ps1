@@ -152,6 +152,9 @@ function New-Card($p, $pk) {
     recCount = if ($p.recommend_count) { [int]$p.recommend_count } else { 0 }
     status  = $stCn
     drop    = [string]$p.drop_reason
+    # 2026-10-21 P1：分维度得分与证据（历史 picks 没有就留 null，页面不渲染）
+    parts   = if ($pk -and $pk.PSObject.Properties['parts']) { $pk.parts } else { $null }
+    evidence = if ($pk -and $pk.PSObject.Properties['evidence']) { $pk.evidence } else { $null }
   }
   return $card
 }

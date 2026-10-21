@@ -149,6 +149,15 @@ for ($i = 0; $i -lt $rows.Count; $i++) {
     if ($null -ne $r.score -and ($r.score -isnot [ValueType] -or [double]$r.score -lt 0 -or [double]$r.score -gt 100)) { $errs += "score 非法：$($r.score)" }
     if ($r.PSObject.Properties['daily_status'] -and [string]$r.daily_status -notin $dailyStatusVals) { $errs += "daily_status 非法：$($r.daily_status)" }
     if ($r.PSObject.Properties['quota_block'] -and [string]$r.quota_block -notin $quotaVals) { $errs += "quota_block 非法：$($r.quota_block)" }
+    # P1（2026-10-21）：分维度得分 / 证据（可选；有则校验形状与范围）
+    if ($r.PSObject.Properties['parts'] -and $null -ne $r.parts) {
+      $limits = @{ '实用性' = 44; '上手成本' = 15; '活跃度' = 20; '热度' = 20; '可信度' = 10 }
+      foreach ($pp in $r.parts.PSObject.Properties) {
+        if (-not $limits.ContainsKey($pp.Name)) { $errs += "parts 未知维度：$($pp.Name)"; continue }
+        if ([int]$pp.Value -lt 0 -or [int]$pp.Value -gt $limits[$pp.Name]) { $errs += "parts.$($pp.Name) 越界：$($pp.Value)" }
+      }
+    }
+    if ($r.PSObject.Properties['evidence'] -and $null -ne $r.evidence -and $r.evidence -isnot [pscustomobject]) { $errs += 'evidence 必须是对象' }
     if ($errs.Count) { $invalid += ("第 $($i + 1) 行：" + ($errs -join '；')); continue }
 
     $key = $Date + '|' + [string]$r.full_name

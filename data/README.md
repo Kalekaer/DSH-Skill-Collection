@@ -17,7 +17,7 @@
 | `recommend_count` | 被推荐次数 |
 | `status` | 状态白名单（**当前状态**，见下表） |
 | `last_recommended` | 最近一次进日报推荐区的日期，7 天冷却的唯一依据；**存量行没有此字段**，读不到时回退用 `last_seen` 并在运行日志注明回退 |
-| `drop_reason` | 淘汰原因（仅 `status: dropped` 时写） |
+| `drop_reason` | D 档 / 剔除原因（仅 `status: dropped` 时写） |
 | `first_stars` / `last_stars` | 首次与最近记录的星数，用于快速算增速 |
 | `note` | 一句话判断，供下次快速回忆 |
 
@@ -45,7 +45,7 @@
 
 用途：**只做一件事**——算 Δstars/天。间隔 > 3 天的旧快照标记 `stale`，不参与排序。
 
-**不要把评分、风险等级、淘汰原因写进快照**，那会让这个文件变成大杂烩，污染增速基线；这些内容放 `picks/`（见下）。
+**不要把评分、风险等级、D 档/剔除原因写进快照**，那会让这个文件变成大杂烩，污染增速基线；这些内容放 `picks/`（见下）。
 
 **同日多轮的唯一键是 `date+full_name+round`（2026-10-19 起）**：同一天同一仓库再次采集时写 `round: 2`、`3`……，`round` 从 1 起、按采集轮次递增；这样「合法多轮」与「失败重试重复追加」才分得开。存量 534 行已迁移（`tools/migrate-snapshots-round.ps1`，幂等），`tools/validate-lib.ps1` 会校验 `round` 必填且唯一。
 
@@ -53,7 +53,7 @@
 
 ## picks/YYYY-MM-DD.jsonl — 机器可读的推荐档案
 
-与 `reports/YYYY-MM-DD.md` 同源的机器可读版，一行一个条目（**S/A/B/C/D 全部记**，不只推荐与淘汰）：
+与 `reports/YYYY-MM-DD.md` 同源的机器可读版，一行一个条目（**S/A/B/C/D 全部记**，不只推荐与 D 档）：
 
 ```json
 {"date":"2026-10-12","full_name":"owner/repo","tier":"S","score":86,"risk":"低","source":"Q1","action":"saved","captured_at":"2026-10-12T09:03:00+08:00","recommend_count":1,"repeat":false,"prev_tier":null,"tier_changed":false}
@@ -63,7 +63,7 @@
 |---|---|
 | `date` | 归属日期，与文件名一致 |
 | `full_name` | 主键，与 `seen.jsonl` 对齐 |
-| `tier` | `S` / `A` / `B` / `C` / `D`（D=淘汰）；旧数据里的 `dropped` 是 D 的旧写法 |
+| `tier` | `S` / `A` / `B` / `C` / `D`（D=不推荐）；旧数据里的 `dropped` 是 D 的旧写法 |
 | `score` | 按 `RUBRIC.md` 的 100 分制得分 |
 | `risk` | `低` / `中` / `高` |
 | `source` | 来自哪个检索式（`Q1`–`Q5`、`Q3b`、`老朋友`、`方向匹配`） |
@@ -75,7 +75,9 @@
 | `tier_changed` | 二次推荐时档位是否变化 |
 | `daily_status` | `published`（默认）/ `over_quota`（达线但满额未刊）；over_quota 不算推荐、不启动冷却 |
 | `quota_block` | 满额原因：`s_cap` / `total_cap` |
-| `drop_reason` | 仅 D/淘汰项写，与 `seen.jsonl` 一致 |
+| `drop_reason` | 仅 D 档 / 剔除项写，与 `seen.jsonl` 一致 |
+| `parts` | 五维得分分解：`实用性`(≤44，冷启动) / `上手成本`(≤15) / `活跃度`(≤20) / `热度`(≤20) / `可信度`(≤10)；加总 = `score`。历史行可缺 |
+| `evidence` | 评分证据：`depsdev` / `scorecard`(0–10) / `scorecard_checks` / `slsa_verified` / `release_asset` / `readme_checked_at` / `install_test`；缺哪项写 `unavailable`，不编造 |
 
 用途：画趋势图、统计方向分布、核对"某天为什么没推荐某仓库"。**它是派生产物，丢了不影响日报**；`seen.jsonl` 与 `snapshots/` 才是不可再生的原始数据。
 
@@ -125,10 +127,10 @@
 | `description` / `license` / `topics` / `archived` / `pushed_at` / `language` | **GitHub 远端元数据**。可能缺失，用 `description_source` 标明：`api`=来自 API，`missing`=**历史数据缺失** |
 | `first_seen` / `last_seen` | 入库日期 / 最近一次出现的日期 |
 | `recommended` / `recommend_count` / `last_recommended` | 主推荐记录（冷却期依据；不含特别栏目/用户自推） |
-| `tier` / `score` / `risk` / `source` / `action` | 库内档位 S/A/B/C/D；`score` 是最近规则分，可为空；`tier=dropped` 是旧写法，迁移为 D |
+| `tier` / `score` / `risk` / `source` / `action` | 库内档位 S/A/B/C/D；`score` 是最近规则分，可为空；旧值 `dropped` 是历史写法，迁移为 D |
 | `origin` / `origin_note` | 谁把它引入库：`user`=用户自推（也必须 SABCD，默认进老朋友动态，不占主推荐）/ `auto`=流程自动发现；`origin_note` 是它的中文说明 |
 | `status` | 五态白名单同台账：`active`/`using`/`watching`/`researching`/`dropped`（`saved` 已于 2026-10-13 废弃） |
-| `drop_reason` | 淘汰原因。**2026-10-16 起投影进投影层**（此前只写在台账/`picks`，页面上看不到；见那一日运行日志的建议项 13） |
+| `drop_reason` | D 档 / 剔除原因。**2026-10-16 起投影进投影层**（此前只写在台账/`picks`，页面上看不到；见那一日运行日志的建议项 13） |
 | `tags` | 六维分类（与 `TEMPLATES/daily.md` 同枚举）。**自动推断**，见 `tags_confidence` |
 | `tags_confidence` | `inferred`（按关键词推断）/ `api`（依据 API 字段）/ `unknown`（信息不足） |
 | `function_tags_l1` | 功能标签**归到一级方向**（按 `data/tags-vocabulary.json` 的 `parent` 映射；P1-6；无映射则为空数组） |

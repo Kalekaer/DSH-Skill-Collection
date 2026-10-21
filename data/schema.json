@@ -75,7 +75,33 @@
         "tier_changed": { "type": "boolean" },
         "daily_status": { "$ref": "#/$defs/daily_status" },
         "quota_block": { "$ref": "#/$defs/quota_block" },
-        "drop_reason": { "type": "string" }
+        "drop_reason": { "type": "string" },
+        "parts": {
+          "type": "object",
+          "description": "五维得分分解；冷启动时实用性上限 44。加总应等于 score（缺失维度按 0）",
+          "properties": {
+            "实用性": { "type": "integer", "minimum": 0, "maximum": 44 },
+            "上手成本": { "type": "integer", "minimum": 0, "maximum": 15 },
+            "活跃度": { "type": "integer", "minimum": 0, "maximum": 20 },
+            "热度": { "type": "integer", "minimum": 0, "maximum": 20 },
+            "可信度": { "type": "integer", "minimum": 0, "maximum": 10 }
+          },
+          "additionalProperties": false
+        },
+        "evidence": {
+          "type": "object",
+          "description": "评分证据：缺哪项就写 unavailable；不编造",
+          "properties": {
+            "depsdev": { "type": "string" },
+            "scorecard": { "type": "integer", "minimum": 0, "maximum": 10 },
+            "scorecard_checks": { "type": "object" },
+            "slsa_verified": { "type": ["boolean", "null"] },
+            "release_asset": { "type": ["boolean", "null"] },
+            "readme_checked_at": { "type": "string" },
+            "install_test": { "type": "string" }
+          },
+          "additionalProperties": true
+        }
       }
     },
     "data/snapshots/<date>.jsonl": {

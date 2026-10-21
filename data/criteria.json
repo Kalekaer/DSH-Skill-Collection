@@ -38,7 +38,7 @@
     {
       "名称": "可信度",
       "权重": 10,
-      "判据": "知名组织/作者 +5；文档与测试齐全 +5（**建议改读 OpenSSF Scorecard，见 P0-7**）"
+      "判据": "OpenSSF Scorecard 归一化 0–10：Maintained/Code-Review/CI-Tests/Security-Policy/Signed-Releases/Pinned-Dependencies/Dependency-Update-Tool/Vulnerabilities 八项均值÷10×10；-1 不计入分母；无数据记 5（中性）并标未验证；组织白名单不加分（只用于特别栏目）"
     }
   ],
   "按类型停用维度": {
@@ -124,6 +124,15 @@
       "hack"
     ],
     "处理": "researching（待复核）+ 备注写明；**不得**直接 dropped"
+  },
+  "证据源_depsdev_findings": {
+    "_说明": "deps.dev findings 只作为证据；只有 MALICIOUS 能判死",
+    "MALICIOUS": "硬拦：剔除 + 90 天冷却，不给链接",
+    "VULNERABLE": "critical/high → risk 记「高」+ 转 researching；不自动剔除",
+    "DEPRECATED": "扣分并在备注写「上游已弃用」；不判死",
+    "COOLDOWN": "新版本隔离期，不是项目坏；备注即可",
+    "LOW_USAGE": "不判死",
+    "NOT_FOUND": "不判死（CLI/桌面项目常见，查无此包不等于坏）"
   },
   "红线匹配规则": {
     "词边界": "(?<![a-z0-9])词(?![a-z0-9])",

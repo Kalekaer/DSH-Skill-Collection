@@ -83,6 +83,7 @@ description: 生成 GitHub 日报并维护个人开源工具库。每天抓取�
 - 多源聚合顺序：Trending 日/周榜（HTML，**仅备用**）→ 全站热门 → 新项目发现 → 方向定向。检索式见 `SOURCES.md`，**此处不复制**。
 - 唯一主口径 = `RUBRIC.md` 的 100 分制：**实用性 35 / 上手成本 15 / 活跃度 20 / 热度 20 / 可信度 10**。「实用性」权重最高，**不得改成以 star 数主导的公式**。
 - 「热度」项内部可细化为归一化公式（`stars_norm`、`trend_norm`、`forks_norm`），算例见 `references/rubric-details.md`。热度口径见第三节，必须用自家快照。
+- **证据优先（2026-10-21 起）**：打分前尽量跑 `& ".\tools\fetch-evidence.ps1" -FromPicks -Date <date> -Limit 10`，把 deps.dev / Scorecard 结果写进 picks 的 `parts` 与 `evidence`；拿不到就回退，**不得因证据缺失阻塞日报**。deps.dev findings 只有 `MALICIOUS` 能硬拦；`VULNERABLE`（critical/high）→ 风险「高」+ `researching`；`DEPRECATED/COOLDOWN/LOW_USAGE/NOT_FOUND` 不判死。
 - **冷启动规则**：无可比快照（缺失，或间隔 >3 天标 `stale`）时，`trend_norm` **不参与排序，其权重按比例并入「实用性」**，不得记 0 分；可用 `created_at → 今日` 的平均日增 star 作临时替代，并**标注「估算」**。
 - **硬过滤**：盗版 / 破解 / 注册机、外挂 / 作弊、恶意软件 / 勒索 / 挖矿、爬虫绕过与反检测、薅羊毛 / 账号共享 / 批量注册、赌博 / 诈骗、纯营销、资源列表（`awesome-*`、`roadmap`、`books`、`interview-questions`）、`fork: true` 且无显著差异、镜像搬运、归档或无维护、无 License 且含大量可分发代码、刷星特征（star 暴涨但 fork/star < 0.02 且无 release 无 issue 讨论）。完整清单以 `RUBRIC.md` 为准。
 - **内容红线（合规，必须遵守）**：命中上述任一条的仓库**不得以任何形式进入日报**——既不进推荐区，也不进「老朋友动态」的加星表扬，**连链接都不给**；只能写成不带链接的一句话剔除备注。理由：日报若为违反 GitHub 服务条款或法律法规的项目导流，责任在你的账号，不在上游仓库。
