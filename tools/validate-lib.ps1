@@ -128,6 +128,14 @@ foreach ($rel in $fileEntries.Keys) {
             if ($minP -and [double]$val -lt [double]$minP.Value) { $issues.Add([pscustomobject]@{ file = $rel; line = $ln; issue = ($fname + ' 小于最小值 ' + $minP.Value) }); $lineBad++ }
             if ($maxP -and [double]$val -gt [double]$maxP.Value) { $issues.Add([pscustomobject]@{ file = $rel; line = $ln; issue = ($fname + ' 大于最大值 ' + $maxP.Value) }); $lineBad++ }
           }
+          # P1（2026-10-21）：parts 是嵌套对象，内置校验只到顶层，这里补一层
+          if ($fname -eq 'parts' -and $val -is [pscustomobject]) {
+            $limits = @{ '实用性' = 44; '上手成本' = 15; '活跃度' = 20; '热度' = 20; '可信度' = 10 }
+            foreach ($sp in $val.PSObject.Properties) {
+              if (-not $limits.ContainsKey($sp.Name)) { $issues.Add([pscustomobject]@{ file = $rel; line = $ln; issue = ('parts 未知维度：' + $sp.Name) }); $lineBad++; continue }
+              if ([int]$sp.Value -lt 0 -or [int]$sp.Value -gt $limits[$sp.Name]) { $issues.Add([pscustomobject]@{ file = $rel; line = $ln; issue = ('parts.' + $sp.Name + ' 越界：' + $sp.Value) }); $lineBad++ }
+            }
+          }
         }
       }
       # 唯一性：单键，或 `date+full_name` 这类复合键（date 取文件名）
