@@ -47,8 +47,9 @@ $rows = @()
 foreach ($l in [IO.File]::ReadAllLines($gp, [Text.Encoding]::UTF8)) {
   if (-not $l.Trim()) { continue }
   try { $o = $l | ConvertFrom-Json } catch { continue }
+  if ($humanMap.Count -gt 0 -and -not $humanMap.ContainsKey([string]$o.id)) { continue }
   $humanRaw = if ($humanMap.ContainsKey([string]$o.id)) { [string]$humanMap[[string]$o.id] } elseif ($UseGuess -and -not [string]$o.human) { [string]$o.guess } else { [string]$o.human }
-  $hr = Map-Label $humanRaw
+  $hr = if ($humanRaw -match '^\s*[0-5]\s*$') { [int]$humanRaw } else { Map-Label $humanRaw }
   $ar = Map-Label ([string]$o.agent)
   if ($null -eq $hr -or $null -eq $ar) { continue }
   $rows += [pscustomobject]@{ id = [string]$o.id; humanRaw = $humanRaw; human = $hr; agent = $ar; why = [string]$o.agent_why; source = $(if ([string]$o.human) { 'human' } else { 'guess' }) }
@@ -74,7 +75,8 @@ $kappa = if ($pe -lt 1) { [math]::Round(($po - $pe) / (1 - $pe), 3) } else { $nu
 $lines = New-Object System.Collections.ArrayList
 [void]$lines.Add('# 黄金集校准报告')
 [void]$lines.Add('')
-[void]$lines.Add("样本：**$n** 条 ｜ 标签来源：" + $(if ($UseGuess) { '`guess`（human 为空时的代用）' } else { '`human`' }))
+$labelSrc = if ($humanMap.Count -gt 0) { '`human` CSV（data/golden-set.human.csv）' } elseif ($UseGuess) { '`guess`（human 为空时的代用）' } else { '`human`' }
+[void]$lines.Add("样本：**$n** 条 ｜ 标签来源：" + $labelSrc)
 [void]$lines.Add('')
 [void]$lines.Add('| 指标 | 值 |')
 [void]$lines.Add('|---|---|')
