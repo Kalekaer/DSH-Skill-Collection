@@ -42,7 +42,11 @@ if (Test-Path $outPath) {
   foreach ($l in [IO.File]::ReadAllLines($outPath, [Text.Encoding]::UTF8)) {
     if (-not $l.Trim()) { continue }
     try { $o = $l | ConvertFrom-Json } catch { continue }
-    if ($o.id -and $o.fetched_at -and (@($o.errors).Count -eq 0)) { $seen["$($o.id)|$(([string]$o.fetched_at).Substring(0,10))"] = $true }
+    if ($o.id -and $o.fetched_at -and (@($o.errors).Count -eq 0)) {
+      $dt = $null
+      try { $dt = [datetime]$o.fetched_at } catch { $dt = $null }
+      if ($dt) { $seen["$($o.id)|$($dt.ToString('yyyy-MM-dd'))"] = $true }
+    }
   }
 }
 
