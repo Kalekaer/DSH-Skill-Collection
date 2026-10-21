@@ -36,6 +36,7 @@
 - **周报巡检（全部自动）**：新增 `tools/weekly-check.ps1`；周报时自动处理上述杂事，只有删数据、超额花费、红线例外才问；`TEMPLATES/weekly.md` 的「需要你拍板」改为「AI 自检结论」。
 - **全库页打印样式**：补 `@media print`，隐藏侧脊/翻页/搜索/视图切换。
 - 校验：`audit.ps1` **166 项全通过**（2 项因包内无 `发布测试/` 目录跳过）。
+- **2026-10-21 P2**：新增 `tools/calibrate.ps1`（黄金集一致性/κ/混淆矩阵）、`tools/taxonomy-guard.ps1`（分类四道闸）；周报巡检加 10 条抽样与「其他」占比；`taxonomy.json` 版本 1.6.3。
 - **2026-10-21 P1**：picks 支持 `parts`/`evidence`；新增 `tools/fetch-evidence.ps1`（deps.dev + Scorecard，失败回退）；可信度改 Scorecard 归一化、白名单不再加分；findings 仅 MALICIOUS 硬拦。
 - **2026-10-21 P0 修正**：分类改为「四道闸自动落」口径统一；对话人格指向 `PERSONA.md`；删掉「已建立 09:00 定时任务」的不实说明；查询次数统一为 3–4。
 ## [5.1.7] — 2026-10-20 · 日报 6 块结构轴版 + 打印/窄屏修复 ✓

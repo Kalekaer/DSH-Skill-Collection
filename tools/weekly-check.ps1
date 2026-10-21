@@ -63,7 +63,7 @@ if ($gaps.Count) {
 # ---------- 4. 分类 / 方案 待批 ----------
 $tax = JsonLines 'data\taxonomy-suggestions.jsonl'
 $taxPend = @($tax | Where-Object { $_.status -eq 'pending' })
-if ($taxPend.Count) { $auto += "分类建议：$($taxPend.Count) 条待批 → examples ≥ 10 且不冲突的自动落，其余记运行日志" }
+if ($taxPend.Count) { $auto += "分类建议：$($taxPend.Count) 条待批 → 先跑 tools\taxonomy-guard.ps1；四道闸 PASS 才落，其余记运行日志" }
 $plan = JsonLines 'data\plan-suggestions.jsonl'
 $planPend = @($plan | Where-Object { $_.status -eq 'pending' -or -not $_.status })
 if ($planPend.Count) { $auto += "方案建议：$($planPend.Count) 条 → 工具够 3 个且不重复的自动写进 data/plans.json" }
@@ -97,6 +97,15 @@ if (Test-Path $rel) {
   $auto += "发布包：跑 check-drift；无异常就同步 + 构建 + 包内 audit + commit；push 前看远端凭据"
 }
 
+# ---------- 9. 分类质量抽样 ----------
+$otherN = @($proj | Where-Object { $_.category.l1 -eq '其他' }).Count
+$otherRate = if ($proj.Count) { [math]::Round(100.0 * $otherN / $proj.Count, 1) } else { 0 }
+$seed = [int](($Date -replace '-', ''))
+$sample = @($proj | Get-Random -SetSeed $seed -Count ([math]::Min(10, $proj.Count)))
+Write-Host ""
+Write-Host "  分类抽样（人工复核 10 条）：" -ForegroundColor DarkCyan
+foreach ($sp in $sample) { Write-Host ("    {0}  →  {1} / {2}" -f $sp.id, $sp.category.l1, $sp.category.l2) -ForegroundColor DarkGray }
+Write-Host ("  「其他」占比：{0}%（{1}/{2}）｜ 复核后把不一致写进周报「数据质量」" -f $otherRate, $otherN, $proj.Count) -ForegroundColor DarkGray
 # ---------- 输出 ----------
 Write-Host ""
 Write-Host "=== 周报巡检 · $start → $Date ===" -ForegroundColor Cyan

@@ -31,6 +31,8 @@
 | `migrate-snapshots-round.ps1` | 给 `data/snapshots/*.jsonl` 补 `round`（同日多轮编号 1..n，幂等）；默认 dry-run，`-Apply` 才写盘 | 一次性迁移 / 以后补历史快照
 | `append-guard.ps1` | **append 写前唯一键**（只读，2026-10-19）：picks 按 `date+full_name`、CSV 按 `仓库` 判重；退出码 0=可追加 / 1=已存在（**刷新旧行，不要再追加**）/ 2=参数错误 | 写 `data/picks/<date>.jsonl` 或 `recommend-log.csv` 之前
 | `verify-handoff.ps1` | **交接验收**：把 `新会话交接-*.md` 里的数字/路径/编号/口径与实物逐条对账 → `& ".\tools\verify-handoff.ps1"` ✓ | 改完交接后必跑
+| `calibrate.ps1` | 黄金集校准（2026-10-21）：guess/human 与 agent 的 0–5 一致性、MAE、κ、混淆矩阵 → `data/_tmp/calibration.md` | 改 rubric 前后 |
+| `taxonomy-guard.ps1` | 分类建议四道闸（2026-10-21）：样本/定义/命名/重叠 + 废弃项检查；`-Strict` 可作门禁 | 落分类前 / 周报巡检 |
 | `fetch-evidence.ps1` | 抓评分证据（2026-10-21）：deps.dev 项目事实/包映射/SLSA/findings + 可选 Scorecard 18 项 → `data/enrich/evidence.jsonl`；只读、失败回退、按天缓存 | 打分前 / 周报巡检 |
 | `weekly-check.ps1` | **周报巡检**（2026-10-20，只读）：列出人话层缺口、同义词待批、缺口词、分类/方案建议、用户自推缺档位、高风险主推荐、缺日、发布态；周报时由 AI 按清单自动处理，只有删数据/超额花费/红线例外才问 | 每周出周报前 |
 | `build-weekly.ps1` | **周报页生成器**（2026-10-20）：按 `周报设计-2026-10-20.md` §3 口径算 found / scored / 主推荐 / 新入库 / 星数周增 / 状态变更，换掉样张里的数据与周标签 → `data/site/weekly-<周日>.generated.html`；`-Check` 只算不写（W01 与样张逐项对得上） | 每周一日报落盘后 |
