@@ -1,0 +1,62 @@
+/* site-motion.css — 全站动效层（2026-10-20）
+   原则：状态先可见；只做有目的的运动；减少动态效果优先。 */
+:root{
+  --mo-fast:140ms;--mo-base:220ms;--mo-slow:420ms;--mo-focal:820ms;
+  --mo-ease:cubic-bezier(.16,1,.3,1);
+}
+/* ---------- 可见性优先：未启用 JS 时内容始终可见 ---------- */
+body.motion-ready [data-motion-reveal]{opacity:0;transform:translateY(10px)}
+body.motion-ready [data-motion-reveal].is-in{opacity:1;transform:none;transition:opacity .5s var(--mo-ease),transform .5s var(--mo-ease);transition-delay:var(--mo-delay,0ms)}
+body.motion-ready [data-motion-reveal="fade"]{transform:none}
+/* ---------- 顶部读取进度：日报 / 周报 ---------- */
+.motion-progress{position:fixed;left:0;top:0;z-index:9998;height:2px;width:0;background:var(--red,#c81f16);box-shadow:0 0 10px rgba(200,31,22,.55);pointer-events:none;transition:width .08s linear}
+/* ---------- 首页：一次性扫描 + 色差 + 局部光斑 ---------- */
+body[data-motion-page="home"] .hero{position:relative;isolation:isolate}
+.motion-spotlight{position:absolute;inset:0;z-index:2;pointer-events:none;background:radial-gradient(260px 220px at var(--mx,50%) var(--my,40%),rgba(233,255,46,.10),transparent 72%);opacity:.9;mix-blend-mode:screen}
+.motion-scanline-home{position:absolute;inset:0;z-index:3;pointer-events:none;overflow:hidden}
+.motion-scanline-home::before{content:"";position:absolute;left:0;right:0;top:-18%;height:18%;background:linear-gradient(180deg,transparent,rgba(46,242,208,.24),rgba(233,255,46,.12),transparent);filter:blur(1px);animation:moScanHome 860ms cubic-bezier(.2,.8,.2,1) 120ms both}
+.motion-glitch{animation:moGlitch 780ms steps(1,end) 120ms both}
+.motion-glitch::after{content:attr(data-text);position:absolute;inset:0;pointer-events:none}
+@keyframes moScanHome{0%{transform:translateY(-20%);opacity:0}18%{opacity:.9}100%{transform:translateY(620%);opacity:0}}
+@keyframes moGlitch{0%,100%{text-shadow:none;transform:none}8%{text-shadow:2px 0 #ff1f6b,-2px 0 #2ef2d0;transform:translateX(1px)}16%{text-shadow:-2px 0 #e9ff2e,2px 0 #2ef2d0;transform:translateX(-1px)}24%{text-shadow:none;transform:none}32%{text-shadow:1px 0 #ff1f6b,-1px 0 #2ef2d0;transform:translateX(1px)}42%{text-shadow:none;transform:none}}
+/* ---------- 站点壳：切页扫描幕 + iframe 过渡 ---------- */
+body[data-motion-page="shell"] #view{transition:opacity .28s var(--mo-ease),filter .28s var(--mo-ease),transform .28s var(--mo-ease)}
+body[data-motion-page="shell"].motion-route #view{opacity:.35;filter:blur(2px) contrast(1.1);transform:translateY(4px)}
+.motion-route-curtain{position:fixed;inset:0;z-index:9997;pointer-events:none;background:url("../bg/archive-awt-00387-plate.jpg") center/cover;opacity:0;mix-blend-mode:screen;filter:grayscale(1) contrast(1.3) brightness(.7);transition:opacity .16s linear}
+.motion-route-curtain.on{opacity:.16;animation:moCurtain 420ms var(--mo-ease) both}
+@keyframes moCurtain{0%{clip-path:inset(0 0 100% 0)}35%{clip-path:inset(0 0 0 0)}100%{clip-path:inset(100% 0 0 0)}}
+/* ---------- 工业底纹：新素材只做低强度环境层 ---------- */
+.motion-texture{position:fixed;inset:0;z-index:0;pointer-events:none;background-size:cover;background-position:center;opacity:.035;mix-blend-mode:multiply}
+.motion-texture.ribbed{background-image:url("../bg/archive-ribbed-concrete.jpg")}
+.motion-texture.rebar{background-image:url("../bg/archive-rebar-concrete.jpg");opacity:.05;mix-blend-mode:screen;filter:grayscale(1) contrast(1.4) brightness(.65)}
+.motion-texture.tunnel{background-image:url("../bg/archive-awt-00386-plate.jpg");opacity:.045;mix-blend-mode:multiply;filter:grayscale(1) contrast(1.25) brightness(.9)}
+/* ---------- 周报图版：轻微视差（只动 transform，幅度小） ---------- */
+body[data-motion-page="weekly"] .plate{will-change:transform}
+/* ---------- 每周图表：入视口时一次扫描 ---------- */
+.chart-wrap{position:relative}
+.chart-wrap.motion-scan::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,transparent,rgba(46,242,208,.20),transparent);mix-blend-mode:screen;animation:moChartScan 1.15s var(--mo-ease) both}
+@keyframes moChartScan{0%{transform:translateY(-110%);opacity:0}30%{opacity:.9}100%{transform:translateY(110%);opacity:0}}
+/* ---------- 档案浮窗：只加一条扫描边，不再加整套动画 ---------- */
+.archive-window::after{content:"";position:absolute;left:0;right:0;top:0;height:1px;z-index:4;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(46,242,208,.65),transparent);animation:moArchiveScan 1.1s var(--mo-ease) .18s both}
+@keyframes moArchiveScan{0%{transform:translateY(0);opacity:0}25%{opacity:.9}100%{transform:translateY(68vh);opacity:0}}
+/* ---------- 微交互：只补反馈，不改布局 ---------- */
+@media(hover:hover){
+  .motion-ready .wcard:hover .wcard-in{filter:brightness(1.06)}
+  .motion-ready .box:hover{filter:brightness(1.04)}
+  .motion-ready .aw-card:hover{filter:brightness(1.03)}
+}
+/* ---------- 减少动态效果 ---------- */
+@media(prefers-reduced-motion:reduce){
+  body.motion-ready [data-motion-reveal]{opacity:1!important;transform:none!important;transition:none!important}
+  .motion-spotlight,.motion-scanline-home,.motion-route-curtain,.motion-texture{display:none!important}
+  .motion-glitch{animation:none!important;text-shadow:none!important;transform:none!important}
+  .motion-progress{display:none!important}
+  .archive-window::after,.chart-wrap.motion-scan::after{display:none!important}
+  #view{transition:none!important}
+}
+/* 打印：揭示动画不应让正文消失 */
+@media print{
+  body.motion-ready [data-motion-reveal]{opacity:1!important;transform:none!important;transition:none!important}
+  .motion-spotlight,.motion-scanline-home,.motion-route-curtain,.motion-texture,.motion-progress{display:none!important}
+  .archive-window::after,.chart-wrap.motion-scan::after{display:none!important}
+}
