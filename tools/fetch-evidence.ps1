@@ -51,14 +51,33 @@ if (Test-Path $outPath) {
 }
 
 function Get-Json([string]$url, [int]$timeout = 20) {
-  # 本机 PowerShell 的 TLS 栈对 api.deps.dev 报 SSL 失败（2026-10-21 实测），curl --insecure 可通
+  # 本机 PowerShell 的 TLS 栈对 api.deps.dev 报 SSL 失败（2026-10-21 实测），curl --insecure 可通。
+  # 注意：不能直接 `$raw = & curl.exe ...`——当前 PowerShell 会抛
+  #   "StandardOutputEncoding is only supported when standard output is redirected"
+  # 所以改成「重定向到临时文件再读」，并显式去掉可能的 BOM/空行。
   $raw = $null
   for ($i = 0; $i -lt 2 -and -not $raw; $i++) {
-    $raw = & curl.exe -s --insecure --max-time $timeout -H 'User-Agent: dsh-daily-evidence' $url 2>$null
+    $tmp = [IO.Path]::Combine([IO.Path]::GetTempPath(), ('evidence-' + [guid]::NewGuid().ToString('N') + '.json'))
+    $tmpErr = [IO.Path]::Combine([IO.Path]::GetTempPath(), ('evidence-' + [guid]::NewGuid().ToString('N') + '.err'))
+    try {
+      $p = Start-Process -FilePath 'curl.exe' -ArgumentList @(
+        '-s', '--insecure', '--max-time', "$timeout",
+        '-H', 'User-Agent: dsh-daily-evidence', $url
+      ) -NoNewWindow -Wait -PassThru -RedirectStandardOutput $tmp -RedirectStandardError $tmpErr -ErrorAction Stop
+      if (Test-Path $tmp) {
+        $txt = [IO.File]::ReadAllText($tmp, [Text.Encoding]::UTF8)
+        if ($txt) { $raw = $txt.TrimStart([char]0xFEFF).Trim() }
+      }
+    } catch {
+      $raw = $null
+    } finally {
+      if (Test-Path $tmp) { Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue }
+      if (Test-Path $tmpErr) { Remove-Item -LiteralPath $tmpErr -Force -ErrorAction SilentlyContinue }
+    }
     if (-not $raw) { Start-Sleep -Milliseconds 400 }
   }
   if (-not $raw) { return $null }
-  try { return ($raw -join "`n" | ConvertFrom-Json) } catch { return $null }
+  try { return ($raw | ConvertFrom-Json) } catch { return $null }
 }
 function Enc([string]$s) { return [uri]::EscapeDataString($s) }
 
