@@ -71,7 +71,7 @@ Local-first, zero dependencies, double-click to open; all data lives in plain-te
 | 图 / Image | 展示什么 / What it shows | 图注 / Caption |
 |---|---|---|
 | ① `docs/screenshots/1-home.jpg` | 首页：四个入口（每日精选 / 全库 / 计划与工作区 / 图例）+ DATA 看板 / Home: four entries + DATA board | **打开即用的本地项目档案站** / A local project archive that just works |
-| ② `docs/screenshots/2-daily.jpg` | 每日精选：01 主承重跨 + 02 模块阵列（带配图）+ 03 档案层 / Daily picks: 01 lead span + 02 module array + 03 archive | **每天一页结构日报，S/A/B/C/D 是承重等级** / A structured daily brief; S/A/B/C/D are load-bearing tiers |
+| ② `docs/screenshots/2-daily.jpg` | 每日精选：01 今日头条 + 02 重点报道 + 03 观察面 + 04 边栏观察（05 特别栏目 / 06 旧闻新报）/ Daily picks: 01 headline + 02 features + 03 observation + 04 margin (05 special / 06 old friends) | **每天一页结构日报，S/A/B/C/D 是承重等级** / A structured daily brief; S/A/B/C/D are load-bearing tiers |
 | ③ `docs/screenshots/3-plans.jpg` | 计划页：11 个组合预设 + 工作区 / Plans: 11 presets + workspaces | **根据目标组合工具，而不是收藏链接** / Compose tools by goal, not bookmarks |
 
 ---

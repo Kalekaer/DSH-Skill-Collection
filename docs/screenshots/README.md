@@ -9,7 +9,7 @@
 | 文件名 / File | 拍什么 / What to capture | README 里的图注 / Caption |
 |---|---|---|
 | `1-home.jpg` | **首页**：ARCHIVE 标题、四个入口、下方 DATA 看板 / Home: ARCHIVE title, four entries, DATA board | 打开即用的本地项目档案站 / A local project archive that just works |
-| `2-daily.jpg` | **日报页**：01 主承重跨 + 02 模块阵列（带配图）+ 03 档案层 / Daily page: 01 lead span + 02 module array + 03 archive | 每天一页结构日报，S/A/B/C/D 是承重等级 / A structured daily brief; S/A/B/C/D are load-bearing tiers |
+| `2-daily.jpg` | **日报页**：01 今日头条 + 02 重点报道 + 03 观察面 + 04 边栏观察（05/06 特别栏目与旧闻新报）/ Daily page: 01 headline + 02 features + 03 observation + 04 margin (05/06 special & old friends) | 每天一页结构日报，S/A/B/C/D 是承重等级 / A structured daily brief; S/A/B/C/D are load-bearing tiers |
 | `3-plans.jpg` | **计划页**：11 个组合预设 + 「我的工作区」 / Plans: 11 presets + workspaces | 根据目标组合工具，而不是收藏链接 / Compose tools by goal, not bookmarks |
 
 ## 拍之前的两点注意 / Before shooting
