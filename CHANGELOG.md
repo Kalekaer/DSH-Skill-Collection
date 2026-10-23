@@ -31,6 +31,7 @@
 
 ## [1.1.0] — 2026-10-23 · 检索式单一真源 + 当天计划/覆盖门禁 + add-repo 修复
 
+- **README 中英对照**：全篇补英文对照；修订过时口径（5–8 次检索 / 60–100 候选 / S/A/B/C/D 五档 / 日报 01–06 / 代理说明 / `data/queries.json`）；重拍首页截图（20 EVENTS）。
 - **检索式单一真源**：新增 `data/queries.json`；`tools/gen-query-docs.ps1` 由它生成 `SOURCES.md` 表格、skill reference、`PROMPT-daily.md` 顺序行（`-Check` 只比对）。
 - **当天计划 / 覆盖门禁**：`tools/fetch-daily.ps1` 出计划（`-PlanOnly`）并登记 `web_fetch` 结果（`-Import`）；`tools/check-queries.ps1 -Date` 检查必跑项登记，缺项让清单变红。
 - **run-manifest**：新增 `queries` 步骤，覆盖 fail 会阻断收工。
