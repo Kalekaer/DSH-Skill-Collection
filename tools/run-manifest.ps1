@@ -28,7 +28,7 @@ function P($r) { Join-Path $root $r }
 if (-not $Date) { $Date = (Get-Date).ToString('yyyy-MM-dd') }
 if ($Date -notmatch '^\d{4}-\d{2}-\d{2}$') { Write-Host "✗ 日期格式应为 YYYY-MM-DD：$Date" -ForegroundColor Red; exit 1 }
 
-$steps = @('backup', 'report', 'snapshot', 'seen', 'index', 'csv', 'picks', 'univer', 'build')
+$steps = @('backup', 'queries', 'report', 'snapshot', 'seen', 'index', 'csv', 'picks', 'univer', 'build')
 $mp = P "data\runs\$Date.manifest.json"
 $m = $null
 if (Test-Path $mp) { try { $m = Get-Content $mp -Raw -Encoding UTF8 | ConvertFrom-Json } catch { $m = $null } }
@@ -38,6 +38,7 @@ if ($m) {
   foreach ($p in $m.steps.PSObject.Properties) { $sh[$p.Name] = $p.Value }
   $m | Add-Member -NotePropertyName steps -NotePropertyValue $sh -Force
 }
+if ($m) { foreach ($s in $steps) { if (-not $m.steps.ContainsKey($s)) { $m.steps[$s] = [ordered]@{ status = 'pending'; at = $null; note = 'added' } } } }
 if ($Init -or -not $m) {
   $m = [ordered]@{ date = $Date; started_at = (Get-Date).ToString('o'); updated_at = (Get-Date).ToString('o'); steps = [ordered]@{} }
   foreach ($s in $steps) { $m.steps[$s] = [ordered]@{ status = 'pending'; at = $null; note = '' } }
@@ -64,12 +65,16 @@ if ($Sync) {
   $picks = Test-Path (P "data\picks\$Date.jsonl")
   $backup = Test-Path (P "data\_backup\$Date\pre-daily\manifest.json")
   $build = $picks -and ((Get-Item (P 'data\site\daily-layout-c-finsara.generated.html') -ErrorAction SilentlyContinue).LastWriteTime -gt (Get-Item (P "data\picks\$Date.jsonl")).LastWriteTime)
-  $map = [ordered]@{ backup = $backup; report = $report; snapshot = $snap; seen = $seen; index = $index; csv = $csv; picks = $picks; build = $build }
+  $covPath = P "data\raw\$Date\coverage.json"
+  $covStatus = ''
+  if (Test-Path $covPath) { try { $covStatus = [string](Get-Content $covPath -Raw -Encoding UTF8 | ConvertFrom-Json).status } catch { $covStatus = '' } }
+  $map = [ordered]@{ backup = $backup; report = $report; snapshot = $snap; seen = $seen; index = $index; csv = $csv; picks = $picks; build = $build; queries = ($covStatus -eq 'pass' -or $covStatus -eq 'warn') }
   foreach ($k in $map.Keys) {
     if ($steps -notcontains $k) { continue }
     if ($m.steps[$k].status -eq 'fail') { continue }   # 人工标 fail 不覆盖
     $m.steps[$k] = [ordered]@{ status = $(if ($map[$k]) { 'ok' } else { 'pending' }); at = (Get-Date).ToString('o'); note = 'sync' }
   }
+  if ($covStatus) { $m.steps['queries'] = [ordered]@{ status = $(if ($covStatus -eq 'fail') { 'fail' } else { 'ok' }); at = (Get-Date).ToString('o'); note = "coverage: $covStatus" } }
   $m.updated_at = (Get-Date).ToString('o')
   [IO.File]::WriteAllText($mp, ($m | ConvertTo-Json -Depth 6), (New-Object Text.UTF8Encoding($false)))
 }

@@ -105,7 +105,7 @@ foreach ($p in $proj) {
     if ($days -gt $StaleDays -and $note -notmatch '停更|未更新|最后推送') { $soft += "停更 $days 天但备注未说明" }
   }
   if ($p.archived -eq $true -and $p.status -ne 'dropped')   { $soft += '已归档但未 dropped' }
-  if (-not [string]$p.risk)                                 { $soft += '风险等级为空' }
+  if (-not [string]$p.risk -and $note -notmatch '风险(等级)?[:：]?\s*(低|中|高)|【风险】') { $soft += '风险等级为空' }
   if ($p.status -ne 'dropped' -and -not (Test-Path (Join-Path $root 'data\series'))) { $null = $null }
 
   # --- 补标签候选（机器标签：只用 GitHub 官方 topics / 语言，不猜中文） ---

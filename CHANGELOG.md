@@ -8,10 +8,10 @@
 
 | 项 | 值 |
 |---|---|
-| SKILL.md | 474 行 / 50402 B |
-| SHA256 | 219DEF9C0C8DD7C4F94A2D1DC2446AB2172AC502DA512B4E473B2892649AE0B0 |
-| 校验 | 166 项全通过（`audit.ps1`） |
-| 定版日期 | 2026-10-20 |
+| SKILL.md | 476 行 / 51371 B |
+| SHA256 | 36872D6C2F2B83E84A3A97681658ECDDFE3B484AE2B5786CD94052D93F681153 |
+| 校验 | 167 项全通过（`audit.ps1`） |
+| 定版日期 | 2026-10-23 |
 
 ---
 
@@ -29,6 +29,15 @@
 
 ---
 
+## [1.1.0] — 2026-10-23 · 检索式单一真源 + 当天计划/覆盖门禁 + add-repo 修复
+
+- **检索式单一真源**：新增 `data/queries.json`；`tools/gen-query-docs.ps1` 由它生成 `SOURCES.md` 表格、skill reference、`PROMPT-daily.md` 顺序行（`-Check` 只比对）。
+- **当天计划 / 覆盖门禁**：`tools/fetch-daily.ps1` 出计划（`-PlanOnly`）并登记 `web_fetch` 结果（`-Import`）；`tools/check-queries.ps1 -Date` 检查必跑项登记，缺项让清单变红。
+- **run-manifest**：新增 `queries` 步骤，覆盖 fail 会阻断收工。
+- **add-repo 修复**：快照补 `round` + `date`、写前校验；新增 `-Risk 低/中/高` 与 `-DryRun`。
+- **intake-check**：备注里已写明风险等级时不再报「风险等级为空」。
+- **检索能力阶梯**：`SOURCES.md` §1.4 新增 HN Algolia 补充源与 L0–L4 阶梯；anysearch 改为可选，web_search 失败只重试 1 次。
+- **audit 167 项**：第 17 节新增「CHANGELOG 指纹表结构完整」检查。
 ## [1.0.0] — 2026-10-20 · 首个正式版（版本号重置：5.x 为测试版）
 
 - **日报 6 块结构轴版**：01 今日头条 / 02 重点报道 / 03 观察面 / 04 边栏观察 / 05 特别栏目 / 06 旧闻新报；浮窗详情。

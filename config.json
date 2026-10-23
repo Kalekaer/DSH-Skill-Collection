@@ -17,8 +17,8 @@
   },
 
   "sources": {
-    "search_min_calls": 3,
-    "search_max_calls": 4,
+    "search_min_calls": 5,
+    "search_max_calls": 8,
     "verify_max_calls": 5,
     "daily_api_ceiling": 9,
     "allow_token": true,

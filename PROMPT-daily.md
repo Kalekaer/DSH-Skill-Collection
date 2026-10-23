@@ -11,11 +11,14 @@
 ## 步骤
 
 1. **开工备份 + 读台账**：先跑 `tools/daily-backup.ps1`（把台账 / CSV / 当日 picks·快照·元数据 / 投影备份到 `data/_backup/<date>/pre-daily/`，不覆盖已有备份），再跑 `tools/run-manifest.ps1 -Init`；然后读 `data/seen.jsonl`（不存在则视为空）、`data/snapshots/` 最近一份快照。
-2. **取检索结果**：按 `SOURCES.md` 顺序执行 Q1 → Q2 → **Q2b（中间星段，每天必跑）** → Q3。
-   - `Q3` 的 `{TODAY_TOPIC}` 查 `SOURCES.md` 第 2 节的星期轮换表；周三、周六额外跑 Q3b，**周四额外跑 Q3c（第二方向 `developer-tools`，2026-10-15 用户批准）**。
-   - **Q3s 兜底**：Q3 结果里新面孔 <3 或 `total_count` <10 时，加跑同一 topic 的 `stars:200..800+pushed:>{D14}`（每天最多 1 次）；正常不跑。
-   - 用 `web_fetch` 直接请求完整 URL，一次一个，串行执行。
-   - 任何一次失败（超时/403/限流）**最多重试 1 次**，仍失败则记入运行日志并继续下一步。
+2. **取检索结果**：先跑 `tools/fetch-daily.ps1 -Date <日期> -PlanOnly` 生成当天计划（`data/raw/<date>/r<N>/plan.json`），再按计划里的 URL 逐条 `web_fetch`，取回后跑 `tools/fetch-daily.ps1 -Import <Q编号> -File <JSON 文件>` 登记。
+   <!-- QGEN:ORDER:START -->
+   当天顺序：Q1 → Q2 → Q2b → Q2c → Q3（周三 + Q3b、Q2d；周四 + Q3c；周六 + Q3b；Q3 新面孔 <3 或 total_count <10 时加跑 Q3s）。
+   <!-- QGEN:ORDER:END -->
+   - `Q3` 的 `{TODAY_TOPIC}` 来自 `data/queries.json` 的 `weekdays`，不要再手抄轮换表。
+   - **Q2d 实验槽**：每周三 1 次，结果只写 `data/_tmp`，不入库、不进 picks、不进日报。
+   - **Q3s 兜底**：由计划自动判定（Q3 新面孔 <3 或 `total_count` <10），一天最多 1 次。
+   - 用 `web_fetch` 请求完整 URL，一次一个，串行；任何失败最多重试 1 次，仍失败写入运行日志继续。
 3. **去重分类**：把检索结果分成 `库里没有（新面孔）` / `库里已有（老面孔）` / `已不再看` 三组，规则见 `RUBRIC.md` 第 4、5 节。
 4. **补数据**：只对进入 S/A 的检索结果调用 `GET /repos/{owner}/{repo}`（≤5 次），确认 license、release、最近提交。
 5. **打分排序**：按 `RUBRIC.md` 第 2、3 节给**所有过筛检索结果**打分，分 S/A/B/C/D（不要只算前 8）；S/A 按主推荐上限取，B/C/D 也要有分数和档位。**满额多出来的 S/A 保留原档**，标 `daily_status=over_quota` / `quota_block`，**不得降成 B**。
@@ -29,7 +32,7 @@
    7. `GitHub推荐记录.univer` —— 用 `univer_execute` 把 CSV 的差异同步进 Sheet。**表格永远排最后**，失败不影响前六项。
 7. **重建网页日报**：`& ".\tools\rebuild-page.ps1" -Quiet` —— 先 `sync-projects` 把新项目写进投影，再重建旧版工具库与网页「每日精选」（含完整日报浮层），最后同步 `data/site` 与根入口。失败写运行日志，不阻断前六项落盘。
    - **补跑历史日期**：`rebuild-page` 会用最新 picks；要回填网页请用 `build-samples.ps1 -Date <日期> -Layout c`（会临时把 `data/site` 改成该日期），之后**再跑一次全量 `build-samples.ps1`** 恢复最新站点，或明确不动站点、只留报告归档。
-8. **对账 + 清单**：先跑 `tools/run-manifest.ps1 -Sync`（按文件推断七步状态；`univer` 需手工 `-Mark univer -Status ok` 或 fail），再跑 `& ".\tools\reconcile.ps1"` 检查 picks / CSV / 日报 / 重复键；有差异先修（或写进运行日志），不要带着差异收工。
+8. **对账 + 清单**：先跑 `tools/check-queries.ps1 -Date <日期>`（必跑 Q 有缺就回去补，别带着 fail 收工）；再跑 `tools/run-manifest.ps1 -Sync`（按文件推断七步状态；`univer` 需手工 `-Mark univer -Status ok` 或 fail），再跑 `& ".\tools\reconcile.ps1"` 检查 picks / CSV / 日报 / 重复键；有差异先修（或写进运行日志），不要带着差异收工。
 9. **运行日志**：`data/runs/YYYY-MM-DD.md`，写：成功/失败的查询、实际 API 调用次数、遇到的反常（如检索结果数骤降），以及对账结果。
 10. **汇报**：**3–5 行播报（语气按 `PERSONA.md`）**——今天搜到的类型、1–2 个真实项目名 + 一句看点、轻松的吐槽/邀功、明确引导「`overview.html` → 02 每日精选」（本地服务在跑时可附 `http://127.0.0.1:8788/#/daily`）。当天没发现/抓取失败就如实说，用角色口吻，不伪造。完整内容在网页与 `reports/`，**不要在对话里复制整篇日报**。
 

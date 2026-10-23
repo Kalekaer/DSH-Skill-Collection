@@ -7,12 +7,14 @@
 
 | 项 | 值 |
 |---|---|
-| SKILL.md | 474 行 / 50466 B |
-| SHA256 | 455D363CEBF5AD10BB0A8A93CD91B9ECE74B96A0EC7BB52885121AC682B9E4B0 |
-| 校验 | 166 项全通过（`audit.ps1`） |
-| 定版日期 | 2026-10-20 |
+| SKILL.md | 476 行 / 51371 B |
+| SHA256 | 36872D6C2F2B83E84A3A97681658ECDDFE3B484AE2B5786CD94052D93F681153 |
+| 校验 | 167 项全通过（`audit.ps1`） |
+| 定版日期 | 2026-10-23 |
 
 ---
+
+- 2026-10-23 检索式单一真源（queries.json + fetch-daily/check-queries/gen-query-docs）；run-manifest 新增 queries 步骤；add-repo 补 round/date、-Risk、-DryRun；intake-check 风险提示加备注豁免；SOURCES 新增 HN Algolia 补充源与 L0–L4 阶梯；audit 新增 CHANGELOG 指纹表结构检查（166 → 167）。
 
 ---
 

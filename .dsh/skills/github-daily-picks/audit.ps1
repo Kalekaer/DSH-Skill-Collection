@@ -18,7 +18,7 @@ $dread = Join-Path $root 'data\README.md'
 $script:pass = 0; $script:fail = 0; $script:skip = 0
 # 本脚本的检查项总数。**新增/删除 Chk 时必须同步改这里**，并同步 CHANGELOG.md 与 README.md 里的「N 项」，
 # 否则第 17 节会报 FAIL —— 这是故意设计的，防止校验项被悄悄删掉而无人察觉。
-$script:TOTAL_CHECKS = 166
+$script:TOTAL_CHECKS = 167
 function Chk([string]$name, [bool]$ok, [string]$detail = '') {
   if ($ok) { $script:pass++; Write-Host ("  [PASS] {0}" -f $name) -ForegroundColor Green }
   else     { $script:fail++; Write-Host ("  [FAIL] {0} {1}" -f $name, $detail) -ForegroundColor Red }
@@ -237,7 +237,20 @@ if (Test-Path $chg) {
   Chk "CHANGELOG 记录的 SHA256 与当前 SKILL.md 一致" ($C -match $realHash) "当前=$realHash"
   Chk "CHANGELOG 记录的行数一致" ($C -match "\b$realLines 行\b") "当前=$realLines 行"
   Chk "CHANGELOG 记录的字节数一致" ($C -match "\b$realBytes B\b") "当前=$realBytes B"
-  Chk "CHANGELOG 声明校验项数 = $($script:TOTAL_CHECKS) 项" ($C -match "\b$($script:TOTAL_CHECKS) 项") "CHANGELOG 未声明 $($script:TOTAL_CHECKS) 项"
+  Chk "CHANGELOG 声明校验项数 = $($script:TOTAL_CHECKS) 项" ($C -match "\b$($script:TOTAL_CHECKS) 项") "CHANGELOG 未声明 $($script:TOTAL_CHECKS) 项"  # 2026-10-23：表结构检查——原来只比值，表格被插坏也能过
+  $cl = $C -split "`r?`n"
+  $hi = [array]::IndexOf($cl, '| 项 | 值 |')
+  $tblOk = $false
+  if ($hi -ge 0 -and ($hi + 6) -lt $cl.Count) {
+    $ok1 = $cl[$hi + 1] -eq '|---|---|'
+    $ok2 = $cl[$hi + 2] -match '^\| SKILL\.md \| \d+ 行 / \d+ B \|$'
+    $ok3 = $cl[$hi + 3] -match '^\| SHA256 \| [0-9A-F]{64} \|$'
+    $ok4 = $cl[$hi + 4] -match '^\| 校验 \| \d+ 项全通过（`audit\.ps1`） \|$'
+    $ok5 = $cl[$hi + 5] -match '^\| 定版日期 \| \d{4}-\d{2}-\d{2} \|$'
+    $ok6 = $cl[$hi + 6] -eq ''
+    $tblOk = $ok1 -and $ok2 -and $ok3 -and $ok4 -and $ok5 -and $ok6
+  }
+  Chk "CHANGELOG 指纹表结构完整（表头/分隔/四行连续）" $tblOk
 } else { Chk "CHANGELOG.md 存在" $false }
 
 Write-Host "`n=== 18. owner 冷却期三处口径一致（防标准漂移）==="

@@ -7,7 +7,7 @@
 | `query.ps1` | 命令行查询项目库（`-Tag/-Status/-Text/-Top`，支持同义词扩展） | 需要快速查库时 |
 | （页内） | **项目对比**：直接在 overview.html 勾选两张卡片 → 右下角「查看对比」，**纯前端、不用命令行** | 用户自己想比两个工具时 |
 | `compare.ps1` | **项目对比**（第二阶段⑦）：`.\tools\compare.ps1 A B` 出对比表；`-Similar owner/repo` 找同类；`-Save` 才落盘。**不调 API** | 用户说「比较 A 和 B」「找类似 X」 |
-| `add-repo.ps1` | **用户推荐项目入库**（第二阶段⑥）：Agent 先 `web_fetch` 核实，再把字段传进来；已存在则只记用户备注。**脚本本身不联网** | 用户说「这个项目不错：owner/repo」 |
+| `add-repo.ps1` | **用户推荐项目入库**（第二阶段⑥）：Agent 先 `web_fetch` 核实，再把字段传进来；已存在则只记用户备注。**脚本本身不联网**；`-Risk 低/中/高` 写台账风险，`-DryRun` 只打印将写入的行（含 round/date）不落盘 | 用户说「这个项目不错：owner/repo」 |
 | `compose.ps1` | **工具组合建议**（v3.1 第八节）：按需求从库里挑工具并**按用途分组**（每组最优 1–2 个）。只归类、不编造流程。**不调 API** | 用户说「我要做 ___」 |
 | `auto-tag.ps1` | 给缺标签的项目**自动补功能标签/搜索词**（topics + 中文描述片段；不覆盖人工条目）。批量入库后跑 | 用户一次加了多个项目后 |
 | `suggest-terms.ps1` | 挖「还没进词表」的新词作为同义词候选（频率 + 示例仓库），**让词表随库增长** | 库每涨 30–50 条 |
@@ -16,6 +16,10 @@
 | `daily-questions.ps1` | 收尾只输出**真需要拍板**的问题（风险高的项目、发版/删数据/花钱）；其余自动做完不问，输出为空就别问（2026-10-20 改） | **每日流程收尾** |
 | `suggest-plans.ps1` | 挖「工具攒够但没有对应场景」的方向 → data/plan-suggestions.jsonl 待批 | 库明显变大后 |
 | `check-config.ps1` | 校验 `config.json` 与标准不冲突 + status 读写实测（`-StatusRoundTrip -Restore`） | 改配置后 / 验收 |
+| `daily-backup.ps1` | 开工备份：台账 / CSV / 当日 picks·快照·元数据 / 投影 → `data/_backup/<date>/pre-daily/`（不覆盖已有） | 每天开工第一步 |
+| `fetch-daily.ps1` | 当天检索计划（`-PlanOnly` → `data/raw/<date>/r<N>/plan.json`）+ 把 `web_fetch` 结果登记成 raw（`-Import Q2b -File x.json`）；**不联网** | 每天开工 / 补跑 |
+| `check-queries.ps1` | 检索式一致性（`-Static`：文档 / 星期表 / 调用区间）+ 当天覆盖（`-Date`：必跑有没有登记） | 改检索式后 / 收工前 |
+| `gen-query-docs.ps1` | 从 `data/queries.json` 生成三份检索式文档（SOURCES / skill reference / PROMPT 顺序行）；`-Check` 只比对 | 改检索式之后 |
 | `check-page.ps1` | **真跑页面 JS**（`+ check-page.js`）：语法 → 初始化 → **逐个项目验证卡片能点开** → 筛选 → **hash 路由 ⑪–⑭**（进入/后退/刷新一致、facet 复原、legend 冷启动不白屏、深链开面板）→ 数组 null 扫描。单文件页 JS 出错时页面照常渲染，只有真跑才发现 ｜ **加 `-Real` 再跑真机层**（真 Edge + CDP **两个探针：路由 14 + 页面功能 21～22 = 36 项**；沙箱内 Chromium 起不来 → 打印 SKIP、退出码 2，**不代表页面坏**） | **每次 build-overview 之后，PASS 才算出货** |
 | `history-probe-cdp.js` | **真机探针**（真 Edge + CDP，14 项）：真鼠标事件点导航、**真浏览器历史前进/后退**、页面内 `history.back/forward`、筛选进 URL、连续后退不崩 → 结果落 `data\_tmp\hist.json`（退出码 0=全过 / 2=有失败）。**沙箱内起不了浏览器**（需一次性放开权限，或在普通桌面会话跑）。**已被 `check-page.ps1 -Real` 包装** ✓（E-3，2026-10-17） | 改了路由/导航之后，想确认真机行为 |
 | `history-probe.js` | 同上，**Electron 窗口版**（备选；`webContents.navigationHistory` 真机后退）。❗**不要**设 `ELECTRON_RUN_AS_NODE`（那会退化成 Node，就不是真浏览器了） | 上面那条跑不动时 |

@@ -1,0 +1,127 @@
+{
+  "version": 1,
+  "enforce_from": "2026-10-24",
+  "timezone": "Asia/Shanghai",
+  "_说明": "检索式唯一真源。文档由 tools/gen-query-docs.ps1 生成；不要手改生成的表格。",
+  "placeholders": ["{D7}", "{D14}", "{D30}", "{TODAY_TOPIC}", "{TODAY_TOPIC2}", "{OWNER}", "{REPO}"],
+  "queries": [
+    {
+      "id": "Q1",
+      "name": "新星爆发（近 7 天新建）",
+      "mode": "search",
+      "q": "created:>{D7} stars:>150",
+      "sort": "stars", "order": "desc", "per_page": 20,
+      "frequency": "daily", "required": true,
+      "note": "7 天内新建、已起量的新库"
+    },
+    {
+      "id": "Q2",
+      "name": "近 30 天新星（过滤玩具）",
+      "mode": "search",
+      "q": "created:>{D30} stars:>800",
+      "sort": "stars", "order": "desc", "per_page": 15,
+      "frequency": "daily", "required": true,
+      "note": "30 天内新建且 800★+"
+    },
+    {
+      "id": "Q2b",
+      "name": "中间星段（200–800★，顶部）",
+      "mode": "search",
+      "q": "stars:200..800 pushed:>{D7}",
+      "sort": "stars", "order": "desc", "per_page": 15,
+      "frequency": "daily", "required": true,
+      "note": "取区间顶部，保留为「成熟项目」视图"
+    },
+    {
+      "id": "Q2c",
+      "name": "中间星段（200–800★，按活跃度）",
+      "mode": "search",
+      "q": "stars:200..800 pushed:>{D7}",
+      "sort": "updated", "order": "desc", "per_page": 15,
+      "frequency": "daily", "required": true,
+      "note": "同一星段按最近更新采样，补 Q2b 的天花板偏差"
+    },
+    {
+      "id": "Q2d",
+      "name": "实验槽（星速探针）",
+      "mode": "probe",
+      "q": "",
+      "per_page": 15,
+      "frequency": "weekly:3", "required": false, "enabled": false,
+      "note": "每周三 1 次，结果只写 data/_tmp，不入库"
+    },
+    {
+      "id": "Q3",
+      "name": "方向定向（按星期轮换）",
+      "mode": "search",
+      "q": "topic:{TODAY_TOPIC} created:>{D30} stars:>200",
+      "sort": "stars", "order": "desc", "per_page": 10,
+      "frequency": "daily", "required": true,
+      "note": "方向见 weekdays"
+    },
+    {
+      "id": "Q3s",
+      "name": "星段兜底",
+      "mode": "search",
+      "q": "topic:{TODAY_TOPIC} stars:200..800 pushed:>{D14}",
+      "sort": "stars", "order": "desc", "per_page": 10,
+      "frequency": "conditional", "required": true,
+      "when": { "field": "Q3", "newFacesLt": 3, "totalCountLt": 10, "maxPerDay": 1 },
+      "note": "Q3 新面孔 <3 或 total_count <10 时加跑"
+    },
+    {
+      "id": "Q3b",
+      "name": "实用小工具（cli）",
+      "mode": "search",
+      "q": "topic:cli created:>{D30} stars:>300",
+      "sort": "stars", "order": "desc", "per_page": 10,
+      "frequency": "weekly:3,6", "required": true,
+      "note": "周三、周六加跑"
+    },
+    {
+      "id": "Q3c",
+      "name": "第二方向（developer-tools）",
+      "mode": "search",
+      "q": "topic:{TODAY_TOPIC2} created:>{D30} stars:>200",
+      "sort": "stars", "order": "desc", "per_page": 10,
+      "frequency": "weekly:4", "required": true,
+      "note": "周四加跑"
+    },
+    {
+      "id": "Q4",
+      "name": "老朋友续热（逐仓库复检）",
+      "mode": "repo",
+      "q": "/repos/{OWNER}/{REPO}",
+      "per_page": 5,
+      "frequency": "manual", "required": false,
+      "note": "每次最多 5 个"
+    },
+    {
+      "id": "Q5",
+      "name": "读 README（S 档核实）",
+      "mode": "repo",
+      "q": "/repos/{OWNER}/{REPO}/readme",
+      "per_page": 5,
+      "frequency": "manual", "required": false,
+      "note": "仅 S 档候选；走三级降级链"
+    },
+    {
+      "id": "Q6",
+      "name": "备用：聚合检索",
+      "mode": "external",
+      "q": "web_search",
+      "per_page": 8,
+      "frequency": "manual", "required": false,
+      "note": "非 GitHub API；失败改用 HN Algolia 等 JSON 源，仅外部讨论信号"
+    }
+  ],
+  "weekdays": {
+    "1": { "topic": "ai-agent" },
+    "2": { "topic": "mcp" },
+    "3": { "topic": "self-hosted", "extras": ["Q3b", "Q2d"] },
+    "4": { "topic": "windows", "topic2": "developer-tools", "extras": ["Q3c"] },
+    "5": { "topic": "automation" },
+    "6": { "topic": "developer-tools", "extras": ["Q3b"] },
+    "7": { "topic": "llm" }
+  }
+}

@@ -50,7 +50,7 @@ Get-ChildItem (P 'reports') -Filter '2026-10-*.md' | ForEach-Object {
   $section = ''
   foreach ($line in (Get-Content $_.FullName -Encoding UTF8)) {
     if ($line -match '^#{1,2}\s+(.*)') { $section = $Matches[1]; continue }
-    if ($section -notmatch '重点推荐|次级推荐|第二轮补跑|图像专题|精选') { continue }
+    if ($section -notmatch '重点推荐|次级推荐|图像专题|精选|A 档|补跑|(?<!不占)主推荐') { continue }
     if ($line -match '^###\s+\d+\.\s+([^\s·]+)\s+·\s+([SA])\s*档') {
       $reportItems += [pscustomobject]@{ date = $date; repo = $Matches[1]; tier = $Matches[2] }
     } elseif ($line -match '^-\s+\*\*([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)\*\*') {

@@ -8,12 +8,14 @@
 #
 # 用法（Agent 侧）：
 #   & ".\tools\add-repo.ps1" -FullName owner/repo -Stars 1234 -Language Rust -License MIT `
-#     -Description "..." -PushedAt "2026-10-12T00:00:00Z" -Note "事实性备注" -UserNote "朋友推荐，说很好用"
+#     -Description "..." -PushedAt "2026-10-12T00:00:00Z" -Note "事实性备注" -UserNote "朋友推荐，说很好用" `
+#     -Risk 低
 #   可选：-Status active|using|watching|researching|dropped（默认 watching）　-NoSync（只落盘不重建）
+#         -DryRun（只打印将写入的行，不落盘、不重建；用于自测）
 #
 # 行为：
-#   * 新项目  → 追加 seen.jsonl（origin=user）+ data/meta/今天.jsonl + data/snapshots/今天.jsonl，
-#               然后自动跑 sync + build（可用 -NoSync 跳过）
+#   * 新项目  → 追加 seen.jsonl（origin=user + risk）+ data/meta/今天.jsonl + data/snapshots/今天.jsonl
+#               （快照带 date + round），然后自动跑 sync + build（可用 -NoSync 跳过）
 #   * 已存在  → **不重复添加**；把「用户曾推荐过 + 备注」追加进 data/user-notes.jsonl（原始层）
 #
 # 纪律（与 SKILL.md 第十二节一致）：
@@ -36,7 +38,9 @@ param(
   [string]$Status = 'watching',
   [string]$Note = '',             # 台账备注（只写事实，不写臆测）
   [string]$UserNote = '',         # 用户备注（用户原话）
-  [switch]$NoSync
+  [ValidateSet('', '低', '中', '高')][string]$Risk = '',
+  [switch]$NoSync,
+  [switch]$DryRun
 )
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
@@ -53,6 +57,20 @@ if ($validStatus -notcontains $Status) {
 $today = (Get-Date).ToString('yyyy-MM-dd')
 $now   = (Get-Date).ToString('yyyy-MM-ddTHH:mm:sszzz')
 
+# 快照 round：按「同一个仓库当天已用的最大 round」+1（schema 唯一键 date+full_name+round）
+function Get-SnapshotRound([string]$date, [string]$repo) {
+  $p = P "data\snapshots\$date.jsonl"
+  $max = 0
+  if (Test-Path $p) {
+    foreach ($l in (Get-Content $p -Encoding UTF8)) {
+      if (-not $l.Trim()) { continue }
+      try { $o = $l | ConvertFrom-Json } catch { continue }
+      if ([string]$o.full_name -eq $repo -and [int]$o.round -gt $max) { $max = [int]$o.round }
+    }
+  }
+  return ($max + 1)
+}
+
 # ---- 读台账，判断是否已存在（唯一身份 = full_name）----
 $exists = $false
 $seenPath = P 'data\seen.jsonl'
@@ -66,8 +84,12 @@ if (Test-Path $seenPath) {
 if ($exists) {
   # ---- 路径 A：已在库中 → 不重复创建，只记用户提及 ----
   $noteTxt = if ($UserNote) { $UserNote } else { '用户再次提及推荐（无备注）' }
-  $unLine = [pscustomobject]@{ full_name=$FullName; date=$today; note=$noteTxt; by='user' } | ConvertTo-Json -Compress
-  Add-Content -Path (P 'data\user-notes.jsonl') -Value $unLine -Encoding UTF8
+  $unObj = [pscustomobject]@{ full_name=$FullName; date=$today; note=$noteTxt; by='user' }
+  if ($DryRun) {
+    Write-Output ('DRYRUN ' + ([ordered]@{ action='exists'; user_note=$unObj } | ConvertTo-Json -Depth 5 -Compress))
+    exit 0
+  }
+  Add-Content -Path (P 'data\user-notes.jsonl') -Value ($unObj | ConvertTo-Json -Compress) -Encoding UTF8
   Write-Host "↩ $FullName 已在库中，未重复添加；已记录用户提及（$today）：$noteTxt" -ForegroundColor Yellow
 } else {
   # ---- 路径 B：新项目入库（origin=user）----
@@ -80,7 +102,7 @@ if ($exists) {
     note=$(if ($Note) { $Note } else { '用户推荐入库' })
     origin='user'
   }
-  Add-Content -Path $seenPath -Value ([pscustomobject]$row | ConvertTo-Json -Compress) -Encoding UTF8
+  if ($Risk) { $row['risk'] = $Risk }
 
   # 元数据层（当日）—— description/license/topics 进主档案的关键来源
   $topicsArr = @()
@@ -98,23 +120,43 @@ if ($exists) {
     created_at=$CreatedAt
     fetched_at=$now
   }
-  $metaFile = P "data\meta\$today.jsonl"
-  Add-Content -Path $metaFile -Value ([pscustomobject]$metaRow | ConvertTo-Json -Compress) -Encoding UTF8
 
-  # 快照（星数基线，明天起可算 Δstars）
+  # 快照（星数基线，明天起可算 Δstars）：必须带 round + date
   $snapRow = [ordered]@{
+    date=$today
+    round=(Get-SnapshotRound $today $FullName)
     full_name=$FullName
     stars=$(if ($Stars -match '^\d+$') { [int]$Stars } else { 0 })
     forks=$(if ($Forks -match '^\d+$') { [int]$Forks } else { 0 })
     created_at=$CreatedAt; pushed_at=$PushedAt; captured_at=$now
   }
+
+  # 写前校验：坏行不落盘
+  if ([int]$snapRow.round -lt 1) { Write-Host "❌ 快照 round 计算失败：$($snapRow.round)" -ForegroundColor Red; exit 2 }
+  if ($null -eq $snapRow.stars -or [int]$snapRow.stars -lt 0) { Write-Host "❌ 快照 stars 非法：$($snapRow.stars)" -ForegroundColor Red; exit 2 }
+  if ([string]$snapRow.date -notmatch '^\d{4}-\d{2}-\d{2}$') { Write-Host "❌ 快照 date 非法：$($snapRow.date)" -ForegroundColor Red; exit 2 }
+
+  if ($DryRun) {
+    $plan = [ordered]@{
+      action   = 'insert'
+      seen     = $row
+      meta     = $metaRow
+      snapshot = $snapRow
+      user_note = $(if ($UserNote) { [pscustomobject]@{ full_name=$FullName; date=$today; note=$UserNote; by='user' } } else { $null })
+    }
+    Write-Output ('DRYRUN ' + ($plan | ConvertTo-Json -Depth 6 -Compress))
+    exit 0
+  }
+
+  Add-Content -Path $seenPath -Value ([pscustomobject]$row | ConvertTo-Json -Compress) -Encoding UTF8
+  $metaFile = P "data\meta\$today.jsonl"
+  Add-Content -Path $metaFile -Value ([pscustomobject]$metaRow | ConvertTo-Json -Compress) -Encoding UTF8
   Add-Content -Path (P "data\snapshots\$today.jsonl") -Value ([pscustomobject]$snapRow | ConvertTo-Json -Compress) -Encoding UTF8
 
   if ($UserNote) {
-    $unLine = [pscustomobject]@{ full_name=$FullName; date=$today; note=$UserNote; by='user' } | ConvertTo-Json -Compress
-    Add-Content -Path (P 'data\user-notes.jsonl') -Value $unLine -Encoding UTF8
+    Add-Content -Path (P 'data\user-notes.jsonl') -Value ([pscustomobject]@{ full_name=$FullName; date=$today; note=$UserNote; by='user' } | ConvertTo-Json -Compress) -Encoding UTF8
   }
-  Write-Host "✅ 已入库：$FullName（origin=user，默认老朋友动态，status=$Status）" -ForegroundColor Green
+  Write-Host "✅ 已入库：$FullName（origin=user，默认老朋友动态，status=$Status，risk=$(if($Risk){$Risk}else{'未填'})）" -ForegroundColor Green
 }
 
 # 需求 3：用户主动添加的项目，也要自动补标签与搜索词（与日报同一条流水线）
