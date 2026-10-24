@@ -29,6 +29,7 @@
 | `rebuild-page.ps1` | **写入即重建的统一入口**（P1-16）：sync 投影 → build 页面 → **自检页面真的变新**。写入器写盘后自动调用；`$env:DSH_SKIP_REBUILD=1` 跳过、`-Quiet` 只静默进度（**错误永远打印**）、`-Force` 强制重算投影 | 一般不用手跑；想手动同步就双击根目录 **`刷新页面.cmd`** |
 | `validate-lib.ps1` | **数据契约校验**（零依赖，读 `data/schema.json`）：必填字段 / 枚举 / 唯一键 / `date`=文件名 / 分类；2026-10-19 起含 `data/picks/<date>.jsonl` 与 `data/snapshots/<date>.jsonl` | 改数据或 `schema.json` 之后
 | `add-rows.ps1` | **picks / CSV 的唯一写入口**（2026-10-19）：写入前校验字段 + 判重；已存在默认拒绝，`-Update` 刷新旧行，`-DryRun` 只看计划 | 写 `data/picks/<date>.jsonl` / `recommend-log.csv` 时（**不要再手写**）
+| `append-snapshot.ps1` | **写当天快照的唯一入口**：自动按 `date+repo` 取已用最大 `round` +1、日期强制 ISO 8601、写前查唯一键；`-Apply` 才落盘，`-Json` 给脚本读 | 每天写完检索结果后 |
 | `migrate-snapshots-round.ps1` | 给 `data/snapshots/*.jsonl` 补 `round`（同日多轮编号 1..n，幂等）；默认 dry-run，`-Apply` 才写盘 | 一次性迁移 / 以后补历史快照
 | `append-guard.ps1` | **append 写前唯一键**（只读，2026-10-19）：picks 按 `date+full_name`、CSV 按 `仓库` 判重；退出码 0=可追加 / 1=已存在（**刷新旧行，不要再追加**）/ 2=参数错误 | 写 `data/picks/<date>.jsonl` 或 `recommend-log.csv` 之前
 | `calibrate.ps1` | 黄金集校准（2026-10-21）：guess/human 与 agent 的 0–5 一致性、MAE、κ、混淆矩阵 → `data/_tmp/calibration.md` | 改 rubric 前后 |

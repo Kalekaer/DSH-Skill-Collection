@@ -77,6 +77,13 @@ if ($Sync) {
   if ($covStatus) { $m.steps['queries'] = [ordered]@{ status = $(if ($covStatus -eq 'fail') { 'fail' } else { 'ok' }); at = (Get-Date).ToString('o'); note = "coverage: $covStatus" } }
   $m.updated_at = (Get-Date).ToString('o')
   [IO.File]::WriteAllText($mp, ($m | ConvertTo-Json -Depth 6), (New-Object Text.UTF8Encoding($false)))
+  # 2026-10-24：硬门禁——收工前跑数据契约校验；重复键 / 日期格式 / 枚举越界都别带着走
+  $vOut = & (P 'tools\validate-lib.ps1') *>&1
+  $vOut | Out-Host
+  if ($LASTEXITCODE -ne 0) {
+    Write-Host '✗ 数据契约校验未通过（validate-lib），先修再收工' -ForegroundColor Red
+    exit 1
+  }
 }
 if (-not $Init -and -not $Sync -and -not $Mark -or $Show) {
   Write-Host "== 清单 $Date ==" -ForegroundColor Cyan

@@ -24,7 +24,7 @@
 5. **打分排序**：按 `RUBRIC.md` 第 2、3 节给**所有过筛检索结果**打分，分 S/A/B/C/D（不要只算前 8）；S/A 按主推荐上限取，B/C/D 也要有分数和档位。**满额多出来的 S/A 保留原档**，标 `daily_status=over_quota` / `quota_block`，**不得降成 B**。
 6. **落盘七件事**（顺序固定）：
    1. `reports/YYYY-MM-DD.md` —— 按 `TEMPLATES/daily.md` 写，中文，不写套话；**同时是网页「每日精选」完整日报浮层的内容源**；
-   2. `data/snapshots/YYYY-MM-DD.jsonl` —— 本次全部检索结果的星数快照，**只含星数**，不写评分/风险；**同日多轮必须带 `round`**（从 1 起：先读当天已有行，同 `date+repo` 的 `round` 取已用最大值 +1）；存量已带 round，别重写旧行；`created_at` / `pushed_at` 一律 ISO 8601（UTC，带 `Z`），不要写 `10/14/2026 23:21:44` 这类本地化格式；
+   2. `data/snapshots/YYYY-MM-DD.jsonl` —— 本次全部检索结果的星数快照，**只含星数**，不写评分/风险；**统一用 `tools\append-snapshot.ps1 -From <rows.jsonl> -Apply` 写入**（自动按 `date+repo` 取已用最大 `round` +1、日期强制 ISO 8601、写前查唯一键）；**不要手写行、不要手填 `round`**；存量已带 round，别重写旧行（新行只追加）。
    3. `data/seen.jsonl` —— 追加本次新入库（已存在的只更新 `last_seen`）；
    4. `reports/index.md` —— 在表格顶部插入今天一行；
    5. `data/recommend-log.csv` —— 按 `TABLE.md` 的列新增/刷新推荐记录，**统一用 `tools\add-rows.ps1 -Target csv -From <rows.jsonl>`**（行对象用 CSV 列名；已有仓库要刷新 H/I 列时加 `-Update`，否则会被拒绝）；**不要手写 CSV**；
@@ -87,5 +87,4 @@
 - **第 2 轮**：`reports/YYYY-MM-DD.md` 已存在 → **不覆盖**，以「🔁 第二轮补跑」一节**追加**在同一份日报里（放在「一键入口」之前，保持文件以入口区结尾）；原始层（`snapshots/` / `meta/` / `picks/` / `seen.jsonl` / `recommend-log.csv`）一律**追加**，不重写历史行。
 - **第 3 轮起**：**先取证据再决定**——若 Q1/Q2/Q3 的 `total_count` 与前一轮完全相同、前 10 条逐条一致，说明没有新面孔，**判定不值得跑并汇报**；确实要跑则**另开** `reports/YYYY-MM-DD-第N轮.md`（需用户点头）。
 - 天数跨零点时：`data/` 下的日期文件按**自然日**新建，同步脚本会自动备份脚本到 `data/_backup/YYYY-MM-DD/`。
-
 

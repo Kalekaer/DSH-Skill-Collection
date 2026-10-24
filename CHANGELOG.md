@@ -29,6 +29,12 @@
 
 ---
 
+## [1.1.2] — 2026-10-24 · 快照写入门禁
+
+- **run-manifest -Sync 硬门禁**：收工前自动跑 `validate-lib`，重复键 / 日期格式 / 枚举越界任一红就 `exit 1`，不再靠“记得跑”。
+- **新增 `tools/append-snapshot.ps1`**：写当天快照的唯一入口——自动按 `date+repo` 取已用最大 `round` +1、日期强制 ISO 8601、写前查唯一键；`-Apply` 才落盘，写后自校验。
+- **PROMPT 改为强制走写入器**：不再手写快照行、不再手填 `round`。
+- **demo 投影重建**：`projects.jsonl` 的 `created_at` 全部 ISO 化（11 行历史斜杠格式清零）。
 ## [1.1.1] — 2026-10-24 · 快照 round / 日期修复
 
 - **快照 round 撞号修复**：当日两批采集都被写成 `round=1`，按 `captured_at` 重排为 1/2/3；`validate-lib` 唯一键恢复 0 违规。
