@@ -21,14 +21,24 @@ param(
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 function P([string]$rel) { Join-Path $root $rel }
-function Fail([string]$msg) { if ($Json) { Write-Output (@{ ok = $false; error = $msg } | ConvertTo-Json -Compress) } else { Write-Host "✗ $msg" -ForegroundColor Red }; exit 1 }
+function Fail([string]$msg) {
+  if ($Json) { Write-Output (@{ ok = $false; error = $msg } | ConvertTo-Json -Compress) }
+  else { Write-Host "✗ $msg" -ForegroundColor Red }
+  exit 1
+}
 
 if ($Date -notmatch '^\d{4}-\d{2}-\d{2}$') { Fail "日期格式应为 YYYY-MM-DD：$Date" }
 if (-not (Test-Path $From)) { Fail "找不到输入文件：$From" }
 
 function To-Iso([object]$v, [string]$field, [string]$default) {
   if ($null -eq $v -or [string]$v -eq '') { return $default }
-  if ($v -is [datetime]) { return $v.ToString('yyyy-MM-ddTHH:mm:ssZ') }
+  if ($v -is [datetime]) {
+    switch ($v.Kind) {
+      'Utc' { return $v.ToString('yyyy-MM-ddTHH:mm:ssZ') }
+      'Local' { return $v.ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') }
+      default { return $v.ToString('yyyy-MM-ddTHH:mm:ssZ') }
+    }
+  }
   $s = [string]$v
   if ($s -match '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$') { return $s }
   if ($s -match '^(\d{1,2})/(\d{1,2})/(\d{4}) (\d{2}):(\d{2}):(\d{2})$') {
@@ -79,21 +89,28 @@ foreach ($p in $plan) {
   $keys[$k] = $true
 }
 
-if ($Json) {
-  Write-Output (@{ ok = $true; date = $Date; count = $plan.Count; apply = [bool]$Apply; rows = $plan; out = $snapPath } | ConvertTo-Json -Depth 6 -Compress)
-} else {
-  Write-Host ("快照计划：{0} 行 → {1}{2}" -f $plan.Count, $snapPath, $(if ($Apply) { '（写入）' } else { '（dry-run）' })) -ForegroundColor Cyan
-  foreach ($p in $plan) { Write-Host ("  {0}  round={1}  stars={2}  captured={3}" -f $p.full_name, $p.round, $p.stars, $p.captured_at) }
+$result = @{ ok = $true; date = $Date; count = $plan.Count; apply = [bool]$Apply; rows = $plan; out = $snapPath }
+if (-not $Apply) {
+  if ($Json) { Write-Output ($result | ConvertTo-Json -Depth 6 -Compress) }
+  else {
+    Write-Host ("快照计划：{0} 行 → {1}（dry-run）" -f $plan.Count, $snapPath) -ForegroundColor Cyan
+    foreach ($p in $plan) { Write-Host ("  {0}  round={1}  stars={2}  captured={3}" -f $p.full_name, $p.round, $p.stars, $p.captured_at) }
+  }
+  exit 0
 }
 
-if (-not $Apply) { exit 0 }
-
 New-Item -ItemType Directory -Force -Path (Split-Path -Parent $snapPath) | Out-Null
+$nlPrefix = ''
+if (Test-Path $snapPath) {
+  $ex = [IO.File]::ReadAllText($snapPath, [Text.Encoding]::UTF8)
+  if ($ex.Length -gt 0 -and -not $ex.EndsWith("`n")) { $nlPrefix = "`r`n" }
+}
 $text = ($plan | ForEach-Object { $_ | ConvertTo-Json -Compress }) -join "`r`n"
-[IO.File]::AppendAllText($snapPath, $text + "`r`n", (New-Object System.Text.UTF8Encoding($false)))
-if (-not $Json) { Write-Host '✅ 已追加' -ForegroundColor Green }
+[IO.File]::AppendAllText($snapPath, $nlPrefix + $text + "`r`n", (New-Object System.Text.UTF8Encoding($false)))
 
-# 写后立刻校验（重复键 / 日期格式 / 枚举）
 $v = & (P 'tools\validate-lib.ps1') *>&1
 if ($LASTEXITCODE -ne 0) { $v | Out-Host; Fail '写入后 validate-lib 未通过' }
+
+if ($Json) { Write-Output ($result | ConvertTo-Json -Depth 6 -Compress) }
+else { Write-Host '✅ 已追加（validate-lib 通过）' -ForegroundColor Green }
 exit 0
