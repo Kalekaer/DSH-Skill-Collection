@@ -47,9 +47,13 @@
 
 **不要把评分、风险等级、D 档/剔除原因写进快照**，那会让这个文件变成大杂烩，污染增速基线；这些内容放 `picks/`（见下）。
 
-**同日多轮的唯一键是 `date+full_name+round`（2026-10-19 起）**：同一天同一仓库再次采集时写 `round: 2`、`3`……，`round` 从 1 起、按采集轮次递增；这样「合法多轮」与「失败重试重复追加」才分得开。存量 534 行已迁移（`tools/migrate-snapshots-round.ps1`，幂等），`tools/validate-lib.ps1` 会校验 `round` 必填且唯一。
+**同日多轮的唯一键是 `date+full_name+round`（2026-10-19 起）**：同一天同一仓库再次采集时写 `round: 2`、`3`……，`round` 从 1 起、按采集轮次递增；这样「合法多轮」与「失败重试重复追加」才分得开。存量行由 `tools/migrate-snapshots-round.ps1` 补号（幂等，可反复跑）；本演示包不含快照数据，实际行数以运行时文件为准，`tools/validate-lib.ps1` 会校验 `round` 必填且唯一。
 
 `captured_at` 格式统一为带 **`+08:00` 偏移**的 ISO 8601（如 `2026-10-11T09:03:00+08:00`）。存量行没有该字段 → 用**文件日期补齐**即可，不作为硬校验。
+
+**写入规则（2026-10-24 起）**：新行统一走 `tools\append-snapshot.ps1`（自动按 `date+full_name` 取已用最大 `round` +1、日期 ISO 化、写前查唯一键）；手写行仍可能绕过，收工时 `validate-lib` 会拦。
+
+`created_at` / `pushed_at` 必须是 ISO 8601（UTC，带 `Z`，如 `2026-10-07T08:34:24Z`）；不要写 `10/07/2026 08:34:24` 这类本地化格式，`validate-lib` 会报红。
 
 ## picks/YYYY-MM-DD.jsonl — 机器可读的推荐档案
 
