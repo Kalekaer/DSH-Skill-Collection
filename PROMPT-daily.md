@@ -24,7 +24,7 @@
 5. **打分排序**：按 `RUBRIC.md` 第 2、3 节给**所有过筛检索结果**打分，分 S/A/B/C/D（不要只算前 8）；S/A 按主推荐上限取，B/C/D 也要有分数和档位。**满额多出来的 S/A 保留原档**，标 `daily_status=over_quota` / `quota_block`，**不得降成 B**。
 6. **落盘七件事**（顺序固定）：
    1. `reports/YYYY-MM-DD.md` —— 按 `TEMPLATES/daily.md` 写，中文，不写套话；**同时是网页「每日精选」完整日报浮层的内容源**；
-   2. `data/snapshots/YYYY-MM-DD.jsonl` —— 本次全部检索结果的星数快照，**只含星数**，不写评分/风险；**同日多轮必须带 `round`**（从 1 起：先读当天已有行，同 `date+repo` 的 `round` 取已用最大值 +1）；存量已带 round，别重写旧行；
+   2. `data/snapshots/YYYY-MM-DD.jsonl` —— 本次全部检索结果的星数快照，**只含星数**，不写评分/风险；**同日多轮必须带 `round`**（从 1 起：先读当天已有行，同 `date+repo` 的 `round` 取已用最大值 +1）；存量已带 round，别重写旧行；`created_at` / `pushed_at` 一律 ISO 8601（UTC，带 `Z`），不要写 `10/14/2026 23:21:44` 这类本地化格式；
    3. `data/seen.jsonl` —— 追加本次新入库（已存在的只更新 `last_seen`）；
    4. `reports/index.md` —— 在表格顶部插入今天一行；
    5. `data/recommend-log.csv` —— 按 `TABLE.md` 的列新增/刷新推荐记录，**统一用 `tools\add-rows.ps1 -Target csv -From <rows.jsonl>`**（行对象用 CSV 列名；已有仓库要刷新 H/I 列时加 `-Update`，否则会被拒绝）；**不要手写 CSV**；
@@ -32,7 +32,7 @@
    7. `GitHub推荐记录.univer` —— 用 `univer_execute` 把 CSV 的差异同步进 Sheet。**表格永远排最后**，失败不影响前六项。
 7. **重建网页日报**：`& ".\tools\rebuild-page.ps1" -Quiet` —— 先 `sync-projects` 把新项目写进投影，再重建旧版工具库与网页「每日精选」（含完整日报浮层），最后同步 `data/site` 与根入口。失败写运行日志，不阻断前六项落盘。
    - **补跑历史日期**：`rebuild-page` 会用最新 picks；要回填网页请用 `build-samples.ps1 -Date <日期> -Layout c`（会临时把 `data/site` 改成该日期），之后**再跑一次全量 `build-samples.ps1`** 恢复最新站点，或明确不动站点、只留报告归档。
-8. **对账 + 清单**：先跑 `tools/check-queries.ps1 -Date <日期>`（必跑 Q 有缺就回去补，别带着 fail 收工）；再跑 `tools/run-manifest.ps1 -Sync`（按文件推断七步状态；`univer` 需手工 `-Mark univer -Status ok` 或 fail），再跑 `& ".\tools\reconcile.ps1"` 检查 picks / CSV / 日报 / 重复键；有差异先修（或写进运行日志），不要带着差异收工。
+8. **对账 + 清单**：先跑 `tools/check-queries.ps1 -Date <日期>`（必跑 Q 有缺就回去补，别带着 fail 收工）；再跑 `tools/run-manifest.ps1 -Sync`（按文件推断七步状态；`univer` 需手工 `-Mark univer -Status ok` 或 fail），再跑 `& ".\tools\reconcile.ps1"` 检查 picks / CSV / 日报 / 重复键；有差异先修（或写进运行日志），不要带着差异收工。**再跑 `tools\validate-lib.ps1`**：重点看快照 `date+full_name+round` 重复与 `created_at`/`pushed_at` 日期格式，红就当场修。
 9. **运行日志**：`data/runs/YYYY-MM-DD.md`，写：成功/失败的查询、实际 API 调用次数、遇到的反常（如检索结果数骤降），以及对账结果。
 10. **汇报**：**3–5 行播报（语气按 `PERSONA.md`）**——今天搜到的类型、1–2 个真实项目名 + 一句看点、轻松的吐槽/邀功、明确引导「`overview.html` → 02 每日精选」（本地服务在跑时可附 `http://127.0.0.1:8788/#/daily`）。当天没发现/抓取失败就如实说，用角色口吻，不伪造。完整内容在网页与 `reports/`，**不要在对话里复制整篇日报**。
 

@@ -29,6 +29,11 @@
 
 ---
 
+## [1.1.1] — 2026-10-24 · 快照 round / 日期修复
+
+- **快照 round 撞号修复**：当日两批采集都被写成 `round=1`，按 `captured_at` 重排为 1/2/3；`validate-lib` 唯一键恢复 0 违规。
+- **日期 ISO 化**：`sync-projects` 不再把 DateTime 直接 `[string]`（会变成本地域格式）；`validate-lib` 新增 `created_at`/`pushed_at` 必须 ISO 8601 的检查；PROMPT 要求写快照后跑 `validate-lib`。
+- 数据修复：快照/元数据 124 个字段归一化为 ISO；投影层重建后 0 非 ISO。
 ## [1.1.0] — 2026-10-23 · 检索式单一真源 + 当天计划/覆盖门禁 + add-repo 修复
 
 - **README 中英对照**：全篇补英文对照；修订过时口径（5–8 次检索 / 60–100 候选 / S/A/B/C/D 五档 / 日报 01–06 / 代理说明 / `data/queries.json`）；重拍首页截图（20 EVENTS）。

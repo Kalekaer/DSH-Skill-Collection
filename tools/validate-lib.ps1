@@ -110,6 +110,13 @@ foreach ($rel in $fileEntries.Keys) {
       if ($obj.PSObject.Properties['risk'] -and $null -ne $obj.risk -and ($riskAllowed -notcontains [string]$obj.risk)) {
         $issues.Add([pscustomobject]@{ file = $rel; line = $ln; issue = ('risk 越界：' + $obj.risk) }); $lineBad++
       }
+      # 2026-10-24：created_at / pushed_at 必须是 ISO 8601（UTC），别让 Excel 格式混进来
+      foreach ($dm in [regex]::Matches($lines[$i], '"(created_at|pushed_at)":"([^"]*)"')) {
+        $dv = $dm.Groups[2].Value
+        if ($dv -and $dv -notmatch '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$') {
+          $issues.Add([pscustomobject]@{ file = $rel; line = $ln; issue = ('日期不是 ISO 8601：' + $dm.Groups[1].Value + '=' + $dv) }); $lineBad++
+        }
+      }
       # properties 里声明的 enum / 数值范围（status/tier/risk 上面已查，跳过避免重复报）
       if ($props) {
         foreach ($pp in $props.PSObject.Properties) {

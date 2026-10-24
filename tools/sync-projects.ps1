@@ -671,7 +671,9 @@ foreach ($s in $seen) {
 
   # --- P0-1：趋势口径显式化（只加不改；delta_7d 语义不变）---
   $forkVal    = if ($m -and $m.PSObject.Properties['forks'] -and $null -ne $m.forks) { [int]$m.forks } elseif ($snaps.Count -gt 0 -and $snaps[-1].PSObject.Properties['forks']) { [int]$snaps[-1].forks } else { $null }
-  $createdVal = if ($m -and $m.PSObject.Properties['created_at'] -and $m.created_at) { [string]$m.created_at } elseif ($snaps.Count -gt 0 -and $snaps[-1].PSObject.Properties['created_at']) { [string]$snaps[-1].created_at } else { $null }   # 优先 meta
+  $createdRaw = if ($m -and $m.PSObject.Properties['created_at'] -and $m.created_at) { $m.created_at } elseif ($snaps.Count -gt 0 -and $snaps[-1].PSObject.Properties['created_at']) { $snaps[-1].created_at } else { $null }   # 优先 meta
+  # DateTime 直接 ToString 会按本机区域变成 10/14/2026 23:21:44；统一回 ISO 8601（UTC）
+  $createdVal = if ($createdRaw -is [datetime]) { $createdRaw.ToString('yyyy-MM-ddTHH:mm:ssZ') } elseif ($createdRaw) { [string]$createdRaw } else { $null }
   $winDays = 0; $winValid = $false
   if ($snaps.Count -ge 2) {
     $winDays = [int]([datetime]::ParseExact($snaps[-1].date, 'yyyy-MM-dd', $null) - [datetime]::ParseExact($snaps[0].date, 'yyyy-MM-dd', $null)).TotalDays
